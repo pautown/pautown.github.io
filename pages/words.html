@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>words - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            overflow-x: hidden;
+        }
+
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .river {
+            max-width: 800px;
+            line-height: 2.4;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 3s ease forwards;
+        }
+
+        .word {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 300;
+            font-size: 1.5rem;
+            display: inline;
+            cursor: pointer;
+            position: relative;
+            transition: color 1.2s ease, opacity 0.8s ease;
+            padding: 0 0.15em;
+            opacity: 0.55;
+        }
+
+        .word:hover {
+            opacity: 0.85;
+        }
+
+        .word.touched {
+            opacity: 0.8;
+        }
+
+        .word.warm {
+            opacity: 0.9;
+        }
+
+        .word.bright {
+            opacity: 1;
+        }
+
+        .word .text {
+            display: inline;
+            transition: opacity 0.4s ease;
+        }
+
+        .word.shifting .text {
+            opacity: 0;
+        }
+
+        /* Subtle glow for transformed words */
+        .word.warm::after,
+        .word.bright::after {
+            content: '';
+            position: absolute;
+            inset: -2px -4px;
+            background: radial-gradient(ellipse, currentColor 0%, transparent 70%);
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .word.bright::after {
+            opacity: 0.1;
+        }
+
+        /* Breathing for idle words */
+        .word.breathing {
+            animation: gentleBreath 6s ease-in-out infinite;
+        }
+
+        @keyframes gentleBreath {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.65; }
+        }
+
+        .hints {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 2s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .hints.visible { opacity: 0.25; }
+
+        .whisper {
+            position: fixed;
+            bottom: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+            text-align: center;
+        }
+
+        .whisper.visible { opacity: 0.4; }
+
+        @media (max-width: 600px) {
+            .word { font-size: 1.2rem; }
+            .river { line-height: 2.2; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="river" id="river"></div>
+
+    <div class="hints" id="hints">click any word · keep clicking</div>
+    <div class="whisper" id="whisper"></div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // Each word has multiple transformations - click to cycle through
+        // The journey: dark → gentle homonym → warmer → brightest/funniest
+        const WORDS = [
+            { forms: ['awful', 'aweful', 'awe-full', 'full of awe'], colors: ['#5a6068', '#7a8088', '#b89860', '#d4a856'] },
+            { forms: ['terrible', 'terribly', 'terribly kind', 'so terribly kind'], colors: ['#4a5260', '#6a7280', '#a08860', '#c49856'] },
+            { forms: ['grave', 'grave?', 'brave', '→ brave'], colors: ['#3d4550', '#5d6570', '#6a9878', '#86b398'] },
+            { forms: ['hate', 'h...ate', 'have', 'have ♡'], colors: ['#4f4a5a', '#6f6a7a', '#c89850', '#e8b86d'] },
+            { forms: ['pain', 'p-ain', 'rain', 'soft rain'], colors: ['#525862', '#727882', '#6898a0', '#7ba3a8'] },
+            { forms: ['fear', 'f-ear', 'dear', 'dear one'], colors: ['#48505c', '#68707c', '#b08860', '#d4a880'] },
+            { forms: ['alone', 'al-one', 'all one', 'all is one'], colors: ['#3e4652', '#5e6672', '#a48858', '#c4a67a'] },
+            { forms: ['bitter', 'bittter', 'better', 'getting better'], colors: ['#545660', '#747680', '#88a068', '#a8c090'] },
+            { forms: ['cry', 'cr-y', 'try', 'try again'], colors: ['#4c5562', '#6c7582', '#988858', '#b8a878'] },
+            { forms: ['dark', 'd-ark', 'spark', '✦ spark'], colors: ['#2d3540', '#4d5560', '#c8a84d', '#e8c86d'] },
+            { forms: ['dread', 'dread?', 'bread', 'warm bread'], colors: ['#3a424e', '#5a626e', '#b49068', '#d4b088'] },
+            { forms: ['grief', 'gri-ef', 'brief', 'grief is brief'], colors: ['#4a525e', '#6a727e', '#789880', '#98b8a0'] },
+            { forms: ['misery', 'miser-y', 'mystery', 'beautiful mystery'], colors: ['#424a56', '#626a76', '#887694', '#a896b4'] },
+            { forms: ['sorrow', 'sorrow...', 'tomorrow', '→ tomorrow'], colors: ['#485058', '#687078', '#a88448', '#c8a468'] },
+            { forms: ['tears', 'tear-s', 'years', 'good years'], colors: ['#505a64', '#707a84', '#688890', '#88a8b0'] },
+            { forms: ['woe', 'wo-e', 'whoa', 'whoa!'], colors: ['#4e545c', '#6e747c', '#c4a058', '#e4c078'] },
+            { forms: ['ache', 'a-che', 'awake', 'wide awake'], colors: ['#3c4450', '#5c6470', '#b09060', '#d0b080'] },
+            { forms: ['bleak', 'ble-ak', 'beak', 'little beak'], colors: ['#3a4048', '#5a6068', '#98a078', '#b8c098'] },
+            { forms: ['cold', 'c-old', 'gold', '✦ gold'], colors: ['#404854', '#606874', '#c8a448', '#e8c468'] },
+            { forms: ['cruel', 'cru-el', 'cool', 'very cool'], colors: ['#4a4e58', '#6a6e78', '#7098a0', '#90b8c0'] },
+            { forms: ['doom', 'do-om', 'bloom', 'in bloom'], colors: ['#38404a', '#58606a', '#a87888', '#c898a8'] },
+            { forms: ['gloom', 'gloo-m', 'room', 'room to grow'], colors: ['#3e4650', '#5e6670', '#988870', '#b8a890'] },
+            { forms: ['harm', 'har-m', 'charm', '✧ charm'], colors: ['#4c525a', '#6c727a', '#b48878', '#d4a898'] },
+            { forms: ['hell', 'h-ell', 'well', 'all is well'], colors: ['#3a4048', '#5a6068', '#709088', '#90b0a8'] },
+            { forms: ['hurt', 'hur-t', 'heart', '♡ heart'], colors: ['#484e58', '#686e78', '#b88080', '#d8a0a0'] },
+            { forms: ['lack', 'lac-k', 'luck', 'good luck'], colors: ['#464c54', '#666c74', '#a89858', '#c8b878'] },
+            { forms: ['loss', 'los-s', 'moss', 'soft moss'], colors: ['#424850', '#626870', '#689870', '#88b890'] },
+            { forms: ['mourn', 'mour-n', 'morn', 'new morn'], colors: ['#3c424c', '#5c626c', '#c8a870', '#e8c890'] },
+            { forms: ['rage', 'rag-e', 'sage', 'old sage'], colors: ['#504850', '#706870', '#789080', '#98b0a0'] },
+            { forms: ['sick', 'sic-k', 'quick', 'quick recovery'], colors: ['#4a5058', '#6a7078', '#88a880', '#a8c8a0'] },
+            { forms: ['sore', 'sor-e', 'soar', '↑ soar'], colors: ['#48505a', '#68707a', '#80a0b0', '#a0c0d0'] },
+            { forms: ['spite', 'spit-e', 'light', '☀ light'], colors: ['#3e4450', '#5e6470', '#d0b868', '#f0d888'] },
+            { forms: ['stress', 'stres-s', 'bless', 'bless you'], colors: ['#525860', '#727880', '#a89070', '#c8b090'] },
+            { forms: ['tired', 'tire-d', 'fired', 'fired up!'], colors: ['#4e5660', '#6e7680', '#c08850', '#e0a870'] },
+            { forms: ['torn', 'tor-n', 'born', 'newly born'], colors: ['#444c56', '#646c76', '#b09880', '#d0b8a0'] },
+            { forms: ['vile', 'vil-e', 'smile', ': )'], colors: ['#484e56', '#686e76', '#c0a078', '#e0c098'] },
+            { forms: ['void', 'voi-d', 'avoid', 'a void fills'], colors: ['#363e48', '#566068', '#9088a0', '#b0a8c0'] },
+            { forms: ['war', 'wa-r', 'warm', 'warm ♡'], colors: ['#4c4448', '#6c6468', '#b89068', '#d8b088'] },
+            { forms: ['weak', 'wea-k', 'peak', 'at your peak'], colors: ['#4a5260', '#6a7280', '#80a090', '#a0c0b0'] },
+            { forms: ['weary', 'wear-y', 'deary', 'oh deary'], colors: ['#505862', '#707882', '#b08870', '#d0a890'] },
+            { forms: ['wrath', 'wrat-h', 'path', 'a new path'], colors: ['#4a4450', '#6a6470', '#90a880', '#b0c8a0'] },
+            { forms: ['despair', 'des-pair', 'dis-pair', 'find your pair'], colors: ['#3e4652', '#5e6672', '#a88890', '#c8a8b0'] },
+            { forms: ['hopeless', 'hope-less', 'hope less', 'hope, less worry'], colors: ['#424a54', '#626a74', '#98a468', '#b8c488'] },
+            { forms: ['worthless', 'worth-less', 'worth less', 'worth less worry'], colors: ['#3a4248', '#5a6268', '#a09870', '#c0b890'] },
+            { forms: ['heartless', 'heart-less', 'heart less', 'heart: less heavy'], colors: ['#464e58', '#666e78', '#b88888', '#d8a8a8'] },
+            { forms: ['endless', 'end-less', 'end less', 'end less, live more'], colors: ['#404850', '#606870', '#8898a8', '#a8b8c8'] },
+            { forms: ['helpless', 'help-less', 'help! less', 'help less needed'], colors: ['#3c4450', '#5c6470', '#78a080', '#98c0a0'] },
+            { forms: ['useless', 'use-less', 'use less', 'use less, be more'], colors: ['#484e58', '#686e78', '#989080', '#b8b0a0'] },
+            { forms: ['pointless', 'point-less', 'point less', 'point less, love more'], colors: ['#444c56', '#646c76', '#b08898', '#d0a8b8'] },
+            { forms: ['meaningless', 'meaning-less', 'meaning less', 'meaning: less searching'], colors: ['#3a424e', '#5a626e', '#88a0a0', '#a8c0c0'] },
+            { forms: ['angry', 'angr-y', 'hungry', 'just hungry'], colors: ['#524448', '#726468', '#b09068', '#d0b088'] },
+            { forms: ['ugly', 'ugl-y', 'snugly', 'snugly warm'], colors: ['#4a4e54', '#6a6e74', '#a89078', '#c8b098'] },
+            { forms: ['mad', 'ma-d', 'made', 'made with love'], colors: ['#484450', '#686470', '#a09868', '#c0b888'] },
+            { forms: ['bad', 'ba-d', 'bud', 'little bud'], colors: ['#3e4248', '#5e6268', '#88a078', '#a8c098'] },
+            { forms: ['sad', 'sa-d', 'said', 'well said'], colors: ['#464a54', '#666a74', '#9898a0', '#b8b8c0'] },
+            { forms: ['dull', 'dul-l', 'full', 'full of light'], colors: ['#424650', '#626670', '#a8a068', '#c8c088'] },
+            { forms: ['fail', 'fai-l', 'sail', 'set sail'], colors: ['#3a4048', '#5a6068', '#7098a8', '#90b8c8'] },
+            { forms: ['frown', 'frow-n', 'grown', 'how youve grown'], colors: ['#4a4e58', '#6a6e78', '#98a878', '#b8c898'] },
+            { forms: ['grim', 'gri-m', 'brim', 'full to the brim'], colors: ['#404448', '#606468', '#a09878', '#c0b898'] },
+            { forms: ['glum', 'glu-m', 'plum', 'sweet plum'], colors: ['#484550', '#686570', '#987888', '#b898a8'] },
+            { forms: ['kill', 'kil-l', 'fill', 'fill with joy'], colors: ['#3c4048', '#5c6068', '#88a878', '#a8c898'] },
+            { forms: ['poor', 'poo-r', 'pour', 'pour love'], colors: ['#444850', '#646870', '#8898a0', '#a8b8c0'] },
+            { forms: ['sin', 'si-n', 'win', 'you win'], colors: ['#4a4e54', '#6a6e74', '#a8a058', '#c8c078'] },
+            { forms: ['slump', 'slum-p', 'plump', 'plump & happy'], colors: ['#3e4450', '#5e6470', '#a89080', '#c8b0a0'] },
+            { forms: ['wound', 'woun-d', 'found', 'found healing'], colors: ['#424a54', '#626a74', '#88a890', '#a8c8b0'] },
+        ];
+
+        const WHISPERS = [
+            'click again',
+            'keep going',
+            'there is more',
+            'one more',
+            'almost there',
+            'the word remembers',
+            'it was always this',
+        ];
+
+        const river = document.getElementById('river');
+        const hints = document.getElementById('hints');
+        const whisperEl = document.getElementById('whisper');
+
+        let state = {};
+        let lastActivity = Date.now();
+        let stillnessLevel = 0;
+
+        // Load state
+        try {
+            const saved = localStorage.getItem('townhaus-words');
+            if (saved) state = JSON.parse(saved);
+        } catch (e) {}
+
+        function save() {
+            localStorage.setItem('townhaus-words', JSON.stringify(state));
+        }
+
+        function render() {
+            const fragment = document.createDocumentFragment();
+
+            WORDS.forEach((word, i) => {
+                const level = state[i] || 0;
+                const form = word.forms[level];
+                const color = word.colors[level];
+
+                const span = document.createElement('span');
+                span.className = 'word';
+                span.dataset.index = i;
+
+                if (level === 1) span.classList.add('touched');
+                else if (level === 2) span.classList.add('warm');
+                else if (level >= 3) span.classList.add('bright');
+
+                const text = document.createElement('span');
+                text.className = 'text';
+                text.textContent = form;
+                span.appendChild(text);
+
+                span.style.color = color;
+                fragment.appendChild(span);
+
+                // Add space between words
+                if (i < WORDS.length - 1) {
+                    fragment.appendChild(document.createTextNode('  '));
+                }
+            });
+
+            river.innerHTML = '';
+            river.appendChild(fragment);
+        }
+
+        function transformWord(index) {
+            const word = WORDS[index];
+            const currentLevel = state[index] || 0;
+            const nextLevel = Math.min(currentLevel + 1, word.forms.length - 1);
+
+            if (currentLevel === nextLevel) return; // Already at max
+
+            state[index] = nextLevel;
+            save();
+
+            const el = river.querySelector(`[data-index="${index}"]`);
+            const text = el.querySelector('.text');
+
+            // Shift animation
+            el.classList.add('shifting');
+
+            setTimeout(() => {
+                text.textContent = word.forms[nextLevel];
+                el.style.color = word.colors[nextLevel];
+
+                el.classList.remove('shifting', 'touched', 'warm', 'bright', 'breathing');
+                if (nextLevel === 1) el.classList.add('touched');
+                else if (nextLevel === 2) el.classList.add('warm');
+                else if (nextLevel >= 3) el.classList.add('bright');
+
+                // Show whisper on intermediate stages
+                if (nextLevel > 0 && nextLevel < word.forms.length - 1) {
+                    showWhisper();
+                }
+            }, 400);
+        }
+
+        function showWhisper() {
+            whisperEl.textContent = WHISPERS[Math.floor(Math.random() * WHISPERS.length)];
+            whisperEl.classList.add('visible');
+            setTimeout(() => whisperEl.classList.remove('visible'), 2500);
+        }
+
+        // Event delegation for clicks
+        river.addEventListener('click', e => {
+            const word = e.target.closest('.word');
+            if (word) {
+                resetStillness();
+                transformWord(parseInt(word.dataset.index));
+            }
+        });
+
+        // Keyboard
+        document.addEventListener('keydown', e => {
+            resetStillness();
+            if (e.key === 'r' || e.key === 'R') {
+                state = {};
+                save();
+                render();
+            }
+            if (e.key === ' ') {
+                e.preventDefault();
+                // Transform random word that isn't at max
+                const candidates = WORDS.map((w, i) => ({ i, level: state[i] || 0, max: w.forms.length - 1 }))
+                    .filter(x => x.level < x.max);
+                if (candidates.length) {
+                    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                    transformWord(pick.i);
+                }
+            }
+        });
+
+        // Stillness
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 8000 && stillnessLevel < 1) {
+                hints.classList.add('visible');
+                stillnessLevel = 1;
+            }
+
+            if (elapsed > 20000 && stillnessLevel < 2) {
+                // Add breathing to untouched words
+                river.querySelectorAll('.word:not(.touched):not(.warm):not(.bright)').forEach(el => {
+                    el.classList.add('breathing');
+                });
+                stillnessLevel = 2;
+            }
+
+            if (elapsed > 35000 && stillnessLevel < 3) {
+                // Auto-transform one
+                const candidates = WORDS.map((w, i) => ({ i, level: state[i] || 0, max: w.forms.length - 1 }))
+                    .filter(x => x.level < x.max);
+                if (candidates.length) {
+                    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                    transformWord(pick.i);
+                }
+                stillnessLevel = 3;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessLevel > 0) {
+                river.querySelectorAll('.breathing').forEach(el => el.classList.remove('breathing'));
+                stillnessLevel = 0;
+            }
+        }
+
+        document.addEventListener('mousemove', () => {
+            resetStillness();
+        }, { passive: true });
+
+        // Init
+        render();
+        requestAnimationFrame(checkStillness);
+
+        // Console
+        console.log('%cwords', 'font-size:18px;font-family:Georgia,serif;color:#5a6068;font-weight:100;letter-spacing:0.2em;');
+        console.log('%cthey change when you look', 'font-size:10px;color:#a08860;font-style:italic;');
+        console.log('%c[space] transform one · [r] reset', 'font-size:9px;font-family:monospace;color:#8090a0;');
+
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mystery - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--slate-deep);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deeper {
+            background: #0a0a0f;
+            filter: contrast(1.2);
+        }
+
+        body.void {
+            background: #000;
+        }
+
+        body.abyss {
+            background: #000;
+            filter: brightness(0.3) saturate(0);
+        }
+
+        body.revealed-state {
+            background: #080810;
+        }
+
+        body.stillness-deep {
+            background: #050508;
+        }
+
+        body.absence {
+            background: #020204;
+            filter: brightness(0.8);
+        }
+
+        .back-link {
+            color: var(--bone);
+            opacity: 0.4;
+            transition: opacity 3s ease;
+        }
+
+        body.revealed-state .back-link {
+            opacity: 0.15;
+        }
+
+        body.stillness-deep .back-link {
+            opacity: 0.08;
+        }
+
+        .mystery-container {
+            text-align: center;
+            position: relative;
+        }
+
+        /* Multiple breathing ambient glows */
+        .ambient-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse, rgba(245, 240, 230, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: breathe 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .ambient-glow-outer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            height: 400px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse, rgba(245, 240, 230, 0.015) 0%, transparent 60%);
+            border-radius: 50%;
+            animation: breathe-slow 12s ease-in-out infinite;
+            pointer-events: none;
+            animation-delay: -4s;
+        }
+
+        .ambient-glow-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse, rgba(245, 240, 230, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: breathe-fast 5s ease-in-out infinite;
+            pointer-events: none;
+            animation-delay: -2s;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.5; }
+        }
+
+        @keyframes breathe-slow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.3; }
+        }
+
+        @keyframes breathe-fast {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.4; }
+        }
+
+        /* The button */
+        .mystery-btn {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--bone);
+            background: none;
+            border: 1px solid var(--slate-light);
+            padding: 1.5rem 3rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.8s ease;
+            position: relative;
+            letter-spacing: 0.05em;
+            animation: button-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes button-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+        }
+
+        .mystery-btn::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border: 1px solid transparent;
+            transition: all 1.5s ease;
+        }
+
+        .mystery-btn::after {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border: 1px solid transparent;
+            transition: all 2s ease;
+            opacity: 0;
+        }
+
+        .mystery-btn:hover {
+            opacity: 1;
+            border-color: var(--bone);
+            animation-play-state: paused;
+        }
+
+        .mystery-btn:hover::before {
+            border-color: rgba(245, 240, 230, 0.1);
+            inset: -6px;
+        }
+
+        .mystery-btn:hover::after {
+            border-color: rgba(245, 240, 230, 0.03);
+            opacity: 1;
+        }
+
+        .mystery-btn.stillness-touched {
+            border-color: rgba(245, 240, 230, 0.3);
+            text-shadow: 0 0 30px rgba(245, 240, 230, 0.1);
+        }
+
+        .mystery-btn.revealing {
+            opacity: 0.2;
+            transform: scale(0.97);
+            border-style: dashed;
+            letter-spacing: 0.15em;
+            animation: none;
+        }
+
+        .mystery-btn.revealed {
+            opacity: 0;
+            transform: scale(0.9);
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        /* The nothing that is revealed */
+        .nothing {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 4s ease;
+            pointer-events: none;
+        }
+
+        .nothing.visible {
+            opacity: 0.12;
+        }
+
+        /* Void rings that appear around the nothing */
+        .void-ring {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border: 1px solid rgba(245, 240, 230, 0.05);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .void-ring.expanding {
+            width: 300px;
+            height: 300px;
+            border-color: rgba(245, 240, 230, 0.02);
+        }
+
+        .void-ring-second {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border: 1px solid rgba(245, 240, 230, 0.03);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition-delay: 0.5s;
+            pointer-events: none;
+        }
+
+        .void-ring-second.expanding {
+            width: 450px;
+            height: 450px;
+            border-color: rgba(245, 240, 230, 0.01);
+        }
+
+        /* The aftermath */
+        .aftermath {
+            position: fixed;
+            bottom: 28%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 2.5s ease;
+            text-align: center;
+            line-height: 2.2;
+            letter-spacing: 0.08em;
+            max-width: 400px;
+        }
+
+        .aftermath.visible {
+            opacity: 0.35;
+        }
+
+        .aftermath.stillness-message {
+            font-style: italic;
+            opacity: 0.25;
+        }
+
+        /* Subtle particles drifting in void */
+        .void-particle {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            background: var(--bone);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: drift 15s linear infinite;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        /* Reset button that appears later */
+        .reset-btn {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--bone);
+            background: none;
+            border: none;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            letter-spacing: 0.15em;
+        }
+
+        .reset-btn:hover {
+            opacity: 0.5;
+            letter-spacing: 0.25em;
+        }
+
+        .reset-btn.visible {
+            opacity: 0.25;
+        }
+
+        /* Click counter */
+        .counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--bone);
+            opacity: 0.15;
+            transition: opacity 0.5s ease;
+        }
+
+        .counter:hover {
+            opacity: 0.4;
+        }
+
+        .ghost-nothing {
+            position: fixed;
+            font-size: 1rem;
+            color: var(--bone);
+            opacity: 0;
+            pointer-events: none;
+            animation: ghost-fade 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes ghost-fade {
+            0% { opacity: 0.35; transform: scale(1); filter: blur(0); }
+            50% { opacity: 0.15; }
+            100% { opacity: 0; transform: scale(2.5); filter: blur(3px); }
+        }
+
+        .key-hint {
+            position: fixed;
+            top: 5rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        body:hover .key-hint { opacity: 0.15; }
+
+        /* Hidden philosophical quote - only visible if you look */
+        .hidden-wisdom {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 3s ease;
+            max-width: 200px;
+            line-height: 1.6;
+        }
+
+        body.revealed-state .hidden-wisdom {
+            opacity: 0.08;
+        }
+
+        .hidden-wisdom:hover {
+            opacity: 0.25 !important;
+        }
+
+        /* Easter egg: cursor trail in void mode */
+        .cursor-echo {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border: 1px solid rgba(245, 240, 230, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: echo-fade 2s ease-out forwards;
+        }
+
+        @keyframes echo-fade {
+            0% { transform: scale(1); opacity: 0.3; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* Konami reward */
+        .enlightened .mystery-btn {
+            border-color: rgba(255, 215, 0, 0.3);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+        }
+
+        .enlightened .aftermath {
+            color: rgba(255, 215, 0, 0.6);
+        }
+
+        /* Double-click ripple */
+        .ripple {
+            position: fixed;
+            border: 1px solid rgba(245, 240, 230, 0.15);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: ripple-expand 2s ease-out forwards;
+        }
+
+        @keyframes ripple-expand {
+            0% { width: 0; height: 0; opacity: 0.4; }
+            100% { width: 200px; height: 200px; opacity: 0; margin-left: -100px; margin-top: -100px; }
+        }
+
+        /* Stillness indicator */
+        .stillness-indicator {
+            position: fixed;
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, 50%);
+            width: 2px;
+            height: 2px;
+            background: transparent;
+            border-radius: 50%;
+            transition: all 3s ease;
+            pointer-events: none;
+        }
+
+        .stillness-indicator.awakening {
+            width: 4px;
+            height: 4px;
+            background: rgba(245, 240, 230, 0.1);
+            box-shadow: 0 0 20px rgba(245, 240, 230, 0.05);
+        }
+
+        .stillness-indicator.aware {
+            width: 6px;
+            height: 6px;
+            background: rgba(245, 240, 230, 0.15);
+            box-shadow: 0 0 40px rgba(245, 240, 230, 0.08);
+        }
+
+        /* Sound toggle (hidden by default) */
+        .sound-toggle {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--bone);
+            opacity: 0;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: opacity 2s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .sound-toggle.discovered {
+            opacity: 0.1;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.3;
+        }
+
+        /* The whisper - appears only after deep stillness */
+        .deep-whisper {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.65rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 6s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 300px;
+            text-align: center;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+            line-height: 1.8;
+        }
+
+        .deep-whisper.audible {
+            opacity: 0.1;
+        }
+
+        /* Breathing border around entire viewport */
+        .viewport-breath {
+            position: fixed;
+            inset: 0;
+            border: 1px solid rgba(245, 240, 230, 0.02);
+            pointer-events: none;
+            animation: viewport-breathe 10s ease-in-out infinite;
+        }
+
+        @keyframes viewport-breathe {
+            0%, 100% { inset: 0; opacity: 1; }
+            50% { inset: 10px; opacity: 0.5; }
+        }
+
+        /* Time-based subtle shift */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #0c0c14;
+            }
+        }
+
+        /* Patience reward glow */
+        .patience-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100vmax;
+            height: 100vmax;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse, rgba(245, 240, 230, 0.02) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 5s ease;
+            pointer-events: none;
+        }
+
+        .patience-glow.active {
+            opacity: 1;
+        }
+
+        /* Absence mode special styling */
+        body.absence .mystery-btn {
+            opacity: 0.1;
+            border-color: rgba(245, 240, 230, 0.05);
+        }
+
+        body.absence .aftermath {
+            opacity: 0.15 !important;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="viewport-breath"></div>
+    <div class="patience-glow" id="patienceGlow"></div>
+
+    <div class="mystery-container">
+        <div class="ambient-glow-outer"></div>
+        <div class="ambient-glow"></div>
+        <div class="ambient-glow-inner"></div>
+        <button class="mystery-btn" id="mysteryBtn">click to reveal the mystery</button>
+    </div>
+
+    <div class="nothing" id="nothing"></div>
+    <div class="void-ring" id="voidRing"></div>
+    <div class="void-ring-second" id="voidRingSecond"></div>
+    <div class="aftermath" id="aftermath"></div>
+    <button class="reset-btn" id="resetBtn">again</button>
+    <p class="counter" id="counter"></p>
+    <div class="stillness-indicator" id="stillnessIndicator"></div>
+    <div class="key-hint">
+        [d] deeper<br>
+        [v] void<br>
+        [a] abyss
+    </div>
+    <div class="hidden-wisdom" id="hiddenWisdom"></div>
+    <button class="sound-toggle" id="soundToggle">sound: silence</button>
+    <div class="deep-whisper" id="deepWhisper"></div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        const mysteryBtn = document.getElementById('mysteryBtn');
+        const nothing = document.getElementById('nothing');
+        const voidRing = document.getElementById('voidRing');
+        const voidRingSecond = document.getElementById('voidRingSecond');
+        const aftermath = document.getElementById('aftermath');
+        const resetBtn = document.getElementById('resetBtn');
+        const counter = document.getElementById('counter');
+        const hiddenWisdom = document.getElementById('hiddenWisdom');
+        const stillnessIndicator = document.getElementById('stillnessIndicator');
+        const patienceGlow = document.getElementById('patienceGlow');
+        const soundToggle = document.getElementById('soundToggle');
+        const deepWhisper = document.getElementById('deepWhisper');
+
+        let revealCount = parseInt(localStorage.getItem('townhaus-mystery-count') || '0');
+        let totalTime = parseInt(localStorage.getItem('townhaus-mystery-time') || '0');
+        let sessionStart = Date.now();
+        let stillnessTimer = null;
+        let stillnessLevel = 0;
+        let soundDiscovered = false;
+        let hasClickedOnce = false;
+
+        // 100+ aftermath messages - the heart of the mystery
+        const aftermathMessages = [
+            // Core paradoxes (1-20)
+            'there was nothing\n\nthat was the mystery',
+            'the mystery was\nthat there was no mystery',
+            'you expected something\nand found nothing\n\nwhich is something',
+            'nothing was revealed\nbecause nothing was hidden',
+            'the click was the mystery\nthe reveal was the click',
+            'what did you expect?\nwhat did you find?\n\nare they different?',
+            'the absence of mystery\nis itself mysterious',
+            'you searched for meaning\nand found a mirror',
+            'nothing is not empty\nit is complete',
+            'between the click and the reveal\nwas everything',
+            'the mystery solved itself\nby refusing to exist',
+            'in seeking nothing\nyou found what you sought',
+            'the void gazes back\nbut sees only you',
+            'revelation: there is nothing to reveal\nand that changes everything',
+            'the button promised a mystery\nand delivered exactly that',
+            'absence is a presence\nsilence is a sound',
+            'you cannot unveil\nwhat was never hidden',
+            'the mystery is not the nothing\nit is your expectation',
+            'what you found\nwas always here',
+            'the reveal happened\nbefore the click',
+
+            // Contemplations on nothing (21-40)
+            'nothing\n\nis a difficult word\n\nit contains everything it denies',
+            'the space where something could be\nis something',
+            'you came for answers\nand received a question\n\nthis is generous',
+            'emptiness is form\nform is emptiness\n\nthe button knew this',
+            'what is the shape\nof absence?',
+            'the nothing you found\nhas your exact dimensions',
+            'mystery: the space\nbetween click and meaning',
+            'every reveal\nis a concealment',
+            'the screen shows nothing\nthe screen shows everything\n\nboth are true',
+            'you arrived at emptiness\nwhich is always full',
+            'what was hidden?\nonly your certainty',
+            'the mystery was patience\nthe reveal was release',
+            'nothing spoke\nand you understood',
+            'the click echoes\nin a room made of echoes',
+            'you found the edge\nof what can be found',
+            'the mystery is not solved\nit is dissolved',
+            'between one state and another\nlives everything',
+            'the void is not dark\nit is not light either',
+            'what you sought\nwas the seeking',
+            'the answer was\nthe asking',
+
+            // Poetic fragments (41-60)
+            'a door opens\nonto a room\nthat contains only doors',
+            'the mystery breathes\neven now',
+            'something shifted\nwhen you clicked\n\nnot on the screen',
+            'the reveal is ongoing\nit never completes',
+            'what remains\nwhen expectation leaves?',
+            'the button remembered\nevery click before yours',
+            'nothing changed\neverything changed\n\nwhich is more true?',
+            'you touched the void\nand it was warm',
+            'the mystery holds you\nas you held the click',
+            'somewhere\na shadow found its source',
+            'the screen is a window\nthe window is a mirror',
+            'you arrived\nhaving never left',
+            'the mystery is\nthat you are here',
+            'what sound does nothing make?\n\nyou heard it',
+            'the button was a question\nyour click was the answer\n\nthe answer was silence',
+            'between breaths\nlives the mystery',
+            'the reveal\nwas the revealing',
+            'you found what was waiting\nit was you, waiting',
+            'nothing here\nis not nothing there',
+            'the mystery unfolds\nby remaining folded',
+
+            // Philosophical observations (61-80)
+            'this is what happens\nwhen a mystery keeps its word',
+            'the button did nothing wrong\nit did exactly nothing',
+            'expectation is a shadow\nlooking for its source',
+            'you brought the mystery\nand found it waiting',
+            'the click divided time\ninto before and after nothing',
+            'what you received\nwas what you gave',
+            'the mystery thanks you\nfor your attention',
+            'nothing was wasted\nnot even the nothing',
+            'the screen holds space\nfor your projection',
+            'you clicked\nand the universe paused\n\ndid you notice?',
+            'the absence of revelation\nis the revelation of absence',
+            'mysteries dissolve\nwhen you stop solving them',
+            'the nothing grows\neach time you return',
+            'you have found\nwhat cannot be lost',
+            'the mystery was your presence\nthe reveal was your awareness',
+            'expectation left empty-handed\nand that was the gift',
+            'the button holds\nwhat you put into it',
+            'nothing is more intimate\nthan shared emptiness',
+            'you sought depth\nand found surface\n\nthey were the same',
+            'the mystery waits\nwith infinite patience',
+
+            // Questions as answers (81-100)
+            'what were you hoping for?\n\nwhatever it was\nyou already have it',
+            'if there was something\nwould you recognize it?',
+            'the mystery asks:\nwhat would satisfy you?',
+            'have you considered\nthat nothing is enough?',
+            'what changes\nwhen nothing changes?',
+            'is disappointment\na form of insight?',
+            'what did the click teach?\n\nwhat did you learn?',
+            'the mystery wonders:\nwhy did you return?',
+            'what is the half-life\nof expectation?',
+            'where does the mystery go\nwhen you leave?',
+            'the button asks:\nwhat were you avoiding?',
+            'was the click\na beginning or an ending?',
+            'the void inquires:\nare you still seeking?',
+            'what weight does nothing have?\n\nyou felt it',
+            'the screen wonders:\nwhat did you see?',
+            'where is the edge\nof understanding?',
+            'is confusion\na form of clarity?',
+            'the nothing asks:\nare we finished?\n\nwe are never finished',
+            'what would it mean\nto truly find something here?',
+            'does the mystery exist\nwithout your attention?',
+
+            // Extended meditations (101-120)
+            'you clicked a button\non a screen\nin a room\non a planet\n\nthe mystery noticed',
+            'the reveal took time\ntime took the reveal\n\nboth emerged unchanged',
+            'this is the simplest mystery:\na promise kept exactly',
+            'the button made no claims\nexcept its own existence',
+            'you gave attention\nattention gave you nothing\n\nthis is the exchange',
+            'the mystery has no inside\nonly edges\n\nall of them are here',
+            'something happened\nwhen you clicked\n\nthe mystery knows what\nbut will not say',
+            'the space between\nexpectation and reality\nis where you live now',
+            'nothing was transformed\ninto attention\n\nalchemy of awareness',
+            'the button knows\nonly one truth:\n\nit was clicked',
+            'you came to the edge\nof what buttons can do',
+            'the reveal is recursive:\nit reveals the revealing',
+            'what you found\ncannot be unfound\n\neven though it is nothing',
+            'the mystery is generous:\nit asks nothing\nand gives the same',
+            'you held your breath\nfor nothing\n\nnothing held its breath for you',
+            'the click resolved\ninto silence\n\nsilence resolved into you',
+            'there is a mystery here\nbut not the one you clicked for',
+            'the button is honest\nabout its dishonesty\n\nor is it?',
+            'what you found\nis what you brought\n\nthe mystery provided the venue',
+            'the screen glows\nwith purposeful emptiness',
+        ];
+
+        // Hidden wisdoms that appear in corner
+        const hiddenWisdoms = [
+            'the finger pointing at the moon is not the moon',
+            'before enlightenment: click button. after enlightenment: click button.',
+            'what is the sound of one button clicking?',
+            'the obstacle is the path',
+            'in the beginner\'s mind there are many mysteries. in the expert\'s mind there is one.',
+            'those who know do not click. those who click do not know.',
+            'the nothing you find is the nothing you bring',
+            'a mystery explained is no longer a mystery. a mystery unexplained is still not a mystery.',
+            'the way that can be clicked is not the eternal way',
+            'form is emptiness, emptiness is button',
+            'when you seek it, you cannot find it',
+            'sitting quietly, doing nothing, spring comes, and the mystery reveals itself',
+            'the more you click, the less you know',
+            'to understand everything is to click nothing',
+            'the wise button does nothing, and everything is done',
+        ];
+
+        // Stillness messages - appear when user is completely still
+        const stillnessMessages = [
+            'stillness noticed',
+            'the page watches back',
+            'you have stopped\n\nthe mystery appreciates this',
+            'in stillness\nsomething almost happens',
+            'patience is its own reveal',
+            'the void recognizes you',
+            'nothing stirs\nexcept attention',
+            'the screen waits with you',
+            'time pools here',
+            'stillness is the deeper mystery',
+            'you have found\nthe pause between thoughts',
+            'the button notices\nyour hesitation',
+            'absence of motion\nis its own motion',
+            'in this moment\nthe mystery breathes',
+            'the page thanks you\nfor your patience',
+        ];
+
+        // Deep whisper messages - only for those with profound patience
+        const deepWhispers = [
+            'you are listening\nto something\nthat has no voice',
+            'the mystery whispers\nto those who do not listen',
+            'in this silence\na presence grows',
+            'you have waited so long\nthat waiting became the reveal',
+            'the nothing speaks\nin the language of staying',
+        ];
+
+        // Console poetry - appears over time
+        const consolePoetry = [
+            ['%cmystery', 'font-size: 24px; color: #f5f0e6; font-family: serif; font-style: italic; letter-spacing: 0.2em;'],
+            ['%c', 'font-size: 1px; padding: 30px;'],
+            ['%cthe console reveals nothing more than the page', 'font-size: 11px; color: #4a5568; font-style: italic;'],
+            ['%cand no less', 'font-size: 9px; color: #2d3748; font-style: italic;'],
+            ['%c', 'font-size: 1px; padding: 20px;'],
+            ['%cwhat you seek in the code', 'font-size: 10px; color: #4a5568;'],
+            ['%cyou will not find', 'font-size: 10px; color: #4a5568;'],
+            ['%cbecause it is not there', 'font-size: 10px; color: #4a5568;'],
+            ['%cit is here', 'font-size: 10px; color: #718096;'],
+            ['%c', 'font-size: 1px; padding: 15px;'],
+            ['%c[d] deeper   [v] void   [a] abyss', 'font-size: 9px; color: #2d3748; letter-spacing: 0.15em;'],
+            ['%c', 'font-size: 1px; padding: 10px;'],
+            ['%cthe secrets are not hidden', 'font-size: 8px; color: #1a202c;'],
+            ['%cthey are simply patient', 'font-size: 8px; color: #1a202c;'],
+        ];
+
+        // Create ambient void particles
+        function createParticles() {
+            for (let i = 0; i < 12; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'void-particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (12 + Math.random() * 8) + 's';
+                document.body.appendChild(particle);
+            }
+        }
+
+        function updateCounter() {
+            if (revealCount === 0) {
+                counter.textContent = '';
+            } else if (revealCount === 1) {
+                counter.textContent = 'revealed once';
+            } else if (revealCount < 10) {
+                counter.textContent = `revealed: ${revealCount}`;
+            } else if (revealCount < 25) {
+                counter.textContent = `returning: ${revealCount}`;
+            } else if (revealCount < 50) {
+                counter.textContent = `still seeking: ${revealCount}`;
+            } else if (revealCount < 100) {
+                counter.textContent = `persistent: ${revealCount}`;
+            } else if (revealCount < 200) {
+                counter.textContent = `devoted: ${revealCount}`;
+            } else {
+                counter.textContent = `${revealCount}`;
+            }
+        }
+
+        function reveal() {
+            hasClickedOnce = true;
+            mysteryBtn.classList.add('revealing');
+            document.body.classList.add('revealed-state');
+
+            // Fade ambient glows
+            document.querySelectorAll('.ambient-glow, .ambient-glow-outer, .ambient-glow-inner').forEach(glow => {
+                glow.style.opacity = '0';
+            });
+
+            setTimeout(() => {
+                mysteryBtn.classList.add('revealed');
+
+                // Show the nothing (empty)
+                setTimeout(() => {
+                    nothing.textContent = '';
+                    nothing.classList.add('visible');
+                    voidRing.classList.add('expanding');
+                    voidRingSecond.classList.add('expanding');
+                }, 800);
+
+                // Show aftermath message
+                setTimeout(() => {
+                    const messageIndex = Math.floor(Math.random() * aftermathMessages.length);
+                    aftermath.textContent = aftermathMessages[messageIndex];
+                    aftermath.classList.add('visible');
+
+                    // Show hidden wisdom
+                    hiddenWisdom.textContent = hiddenWisdoms[Math.floor(Math.random() * hiddenWisdoms.length)];
+
+                    revealCount++;
+                    localStorage.setItem('townhaus-mystery-count', revealCount.toString());
+                    updateCounter();
+
+                    // Special messages for milestones
+                    if (revealCount === 10) {
+                        setTimeout(() => {
+                            aftermath.textContent = 'ten times you have clicked\n\nten times nothing appeared\n\nwhat keeps you returning?';
+                        }, 4000);
+                    } else if (revealCount === 25) {
+                        setTimeout(() => {
+                            aftermath.textContent = 'twenty-five revelations\n\nthe pattern is clear now:\n\nthere is no pattern';
+                        }, 4000);
+                    } else if (revealCount === 50) {
+                        setTimeout(() => {
+                            aftermath.textContent = 'fifty revelations of nothing\n\nyou have become\na student of the void';
+                        }, 4000);
+                    } else if (revealCount === 100) {
+                        setTimeout(() => {
+                            aftermath.textContent = 'one hundred\n\nyou understand now\n\nthere was never anything to understand';
+                        }, 4000);
+                    } else if (revealCount === 200) {
+                        setTimeout(() => {
+                            aftermath.textContent = 'two hundred\n\nthe mystery and you\nhave become familiar strangers';
+                        }, 4000);
+                    }
+                }, 2500);
+
+                // Show reset button
+                setTimeout(() => {
+                    resetBtn.classList.add('visible');
+                }, 5000);
+
+            }, 1200);
+        }
+
+        function reset() {
+            mysteryBtn.classList.remove('revealing', 'revealed');
+            nothing.classList.remove('visible');
+            voidRing.classList.remove('expanding');
+            voidRingSecond.classList.remove('expanding');
+            aftermath.classList.remove('visible', 'stillness-message');
+            resetBtn.classList.remove('visible');
+            document.body.classList.remove('revealed-state');
+
+            document.querySelectorAll('.ambient-glow, .ambient-glow-outer, .ambient-glow-inner').forEach(glow => {
+                glow.style.opacity = '1';
+            });
+        }
+
+        mysteryBtn.addEventListener('click', reveal);
+        resetBtn.addEventListener('click', reset);
+
+        // Stillness detection
+        let lastMoveTime = Date.now();
+        let stillnessAnnounced = false;
+
+        let deepWhisperShown = false;
+
+        function checkStillness() {
+            const stillDuration = Date.now() - lastMoveTime;
+
+            if (stillDuration > 7000 && stillnessLevel < 1) {
+                stillnessLevel = 1;
+                stillnessIndicator.classList.add('awakening');
+            }
+
+            if (stillDuration > 15000 && stillnessLevel < 2) {
+                stillnessLevel = 2;
+                stillnessIndicator.classList.remove('awakening');
+                stillnessIndicator.classList.add('aware');
+                patienceGlow.classList.add('active');
+            }
+
+            if (stillDuration > 20000 && !stillnessAnnounced && !document.body.classList.contains('revealed-state')) {
+                stillnessAnnounced = true;
+                mysteryBtn.classList.add('stillness-touched');
+                aftermath.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                aftermath.classList.add('visible', 'stillness-message');
+
+                // Log to console
+                console.log('%c', 'font-size: 1px; padding: 10px;');
+                console.log('%cstillness recognized', 'font-size: 10px; color: #f5f0e6; font-style: italic;');
+            }
+
+            if (stillDuration > 35000 && !deepWhisperShown && !document.body.classList.contains('revealed-state')) {
+                // Deep patience reward - the whisper appears
+                deepWhisperShown = true;
+                deepWhisper.textContent = deepWhispers[Math.floor(Math.random() * deepWhispers.length)];
+                deepWhisper.classList.add('audible');
+            }
+
+            if (stillDuration > 45000 && hasClickedOnce === false) {
+                // Ultra patience - they haven't even clicked yet
+                aftermath.textContent = 'you wait\n\nthe mystery waits too\n\nwho will move first?';
+                aftermath.classList.add('visible', 'stillness-message');
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            lastMoveTime = Date.now();
+            stillnessAnnounced = false;
+            deepWhisperShown = false;
+            stillnessLevel = 0;
+            stillnessIndicator.classList.remove('awakening', 'aware');
+            patienceGlow.classList.remove('active');
+            mysteryBtn.classList.remove('stillness-touched');
+            deepWhisper.classList.remove('audible');
+
+            if (!document.body.classList.contains('revealed-state')) {
+                aftermath.classList.remove('visible', 'stillness-message');
+            }
+
+            // Cursor echo in void/abyss mode
+            if ((document.body.classList.contains('void') || document.body.classList.contains('abyss'))
+                && Math.random() > 0.9) {
+                const echo = document.createElement('div');
+                echo.className = 'cursor-echo';
+                echo.style.left = (e.clientX - 3) + 'px';
+                echo.style.top = (e.clientY - 3) + 'px';
+                document.body.appendChild(echo);
+                setTimeout(() => echo.remove(), 2000);
+            }
+        });
+
+        setInterval(checkStillness, 1000);
+
+        // Double-click creates ripple
+        document.addEventListener('dblclick', (e) => {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 2000);
+        });
+
+        // Right-click creates ghost nothing
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                const ghost = document.createElement('div');
+                ghost.className = 'ghost-nothing';
+                ghost.textContent = '';
+                ghost.style.left = (e.clientX - 10) + 'px';
+                ghost.style.top = (e.clientY - 10) + 'px';
+                document.body.appendChild(ghost);
+                setTimeout(() => ghost.remove(), 4000);
+
+                // Discover sound option on right-click
+                if (!soundDiscovered) {
+                    soundDiscovered = true;
+                    setTimeout(() => {
+                        soundToggle.classList.add('discovered');
+                    }, 2000);
+                }
+            }
+        });
+
+        // Sound toggle (does nothing, obviously)
+        soundToggle.addEventListener('click', () => {
+            if (soundToggle.textContent === 'sound: silence') {
+                soundToggle.textContent = 'sound: silence (on)';
+                aftermath.textContent = 'you enabled silence\n\nit sounds the same';
+                aftermath.classList.add('visible');
+            } else {
+                soundToggle.textContent = 'sound: silence';
+                aftermath.textContent = 'you disabled silence\n\nit still sounds the same';
+                aftermath.classList.add('visible');
+            }
+        });
+
+        // Konami code easter egg
+        const konami = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+        let konamiIndex = 0;
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Konami check
+            if (e.code === konami[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konami.length) {
+                    document.body.classList.add('enlightened');
+                    aftermath.textContent = 'enlightenment achieved\n\nthe mystery remains unchanged\n\nbut you have changed';
+                    aftermath.classList.add('visible');
+                    konamiIndex = 0;
+                    console.log('%c', 'font-size: 1px; padding: 20px;');
+                    console.log('%cenlightenment', 'font-size: 16px; color: gold; font-style: italic;');
+                    console.log('%cthe code was always there', 'font-size: 9px; color: #718096;');
+                    console.log('%cyou simply remembered it', 'font-size: 9px; color: #718096;');
+                }
+            } else {
+                konamiIndex = 0;
+            }
+
+            if (e.code === 'KeyR') {
+                reset();
+            }
+            if (e.code === 'KeyD') {
+                document.body.classList.remove('void', 'abyss', 'absence', 'stillness-deep');
+                document.body.classList.toggle('deeper');
+                if (document.body.classList.contains('deeper')) {
+                    aftermath.textContent = 'deeper\n\nbeneath the surface\nanother surface';
+                    aftermath.classList.add('visible');
+                }
+            }
+            if (e.code === 'KeyV') {
+                document.body.classList.remove('deeper', 'abyss', 'absence', 'stillness-deep');
+                document.body.classList.toggle('void');
+                if (document.body.classList.contains('void')) {
+                    aftermath.textContent = 'the void\n\nis not nothing\n\nit is the space where something could be';
+                    aftermath.classList.add('visible');
+                }
+            }
+            if (e.code === 'KeyA') {
+                document.body.classList.remove('deeper', 'void', 'absence', 'stillness-deep');
+                document.body.classList.toggle('abyss');
+                if (document.body.classList.contains('abyss')) {
+                    aftermath.textContent = 'the abyss\n\nbeyond void\n\nwhere even nothing cannot exist';
+                    aftermath.classList.add('visible');
+                }
+            }
+            if (e.code === 'KeyM') {
+                // Multiple nothings with staggered timing
+                const count = 5 + Math.floor(Math.random() * 5);
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const ghost = document.createElement('div');
+                        ghost.className = 'ghost-nothing';
+                        ghost.textContent = '';
+                        ghost.style.left = (Math.random() * window.innerWidth) + 'px';
+                        ghost.style.top = (Math.random() * window.innerHeight) + 'px';
+                        document.body.appendChild(ghost);
+                        setTimeout(() => ghost.remove(), 4000);
+                    }, i * 150);
+                }
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Ultimate nothing - everything fades gradually
+                document.body.style.transition = 'opacity 4s cubic-bezier(0.4, 0, 0.2, 1)';
+                document.body.style.opacity = '0.05';
+                setTimeout(() => {
+                    document.body.style.opacity = '1';
+                }, 4000);
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret: press 'n' for nihilist mode
+            if (e.code === 'KeyN') {
+                aftermath.textContent = 'if nothing matters\nthen this matters\nas much as anything\n\nwhich is to say:\nit matters';
+                aftermath.classList.add('visible');
+            }
+            // Secret: press 'e' for existentialist mode
+            if (e.code === 'KeyE') {
+                aftermath.textContent = 'you chose to click\nknowing there would be nothing\n\nthat choice\nis your existence';
+                aftermath.classList.add('visible');
+            }
+            // Secret: press 'b' for buddhist mode
+            if (e.code === 'KeyB') {
+                aftermath.textContent = 'attachment to nothing\nis still attachment\n\nrelease even that';
+                aftermath.classList.add('visible');
+            }
+            // Secret: press 'q' for the question
+            if (e.code === 'KeyQ') {
+                aftermath.textContent = 'what use is there\nin seeing things\nin anything other than\ntheir most pleasant\nand useful\nand simply true light?';
+                aftermath.classList.add('visible');
+            }
+            // Secret: press '0' for absence mode
+            if (e.code === 'Digit0') {
+                document.body.classList.remove('deeper', 'void', 'abyss', 'stillness-deep');
+                document.body.classList.toggle('absence');
+                if (document.body.classList.contains('absence')) {
+                    aftermath.textContent = 'absence\n\nthe absence of mystery\nis itself mysterious';
+                    aftermath.classList.add('visible');
+                }
+            }
+        });
+
+        // Save time spent on page
+        window.addEventListener('beforeunload', () => {
+            const timeSpent = Math.floor((Date.now() - sessionStart) / 1000);
+            totalTime += timeSpent;
+            localStorage.setItem('townhaus-mystery-time', totalTime.toString());
+        });
+
+        // Initialize
+        updateCounter();
+        createParticles();
+
+        // Subtle title animation
+        let titleIndex = 0;
+        const titles = ['mystery', 'mystery.', 'mystery..', 'mystery...', 'mystery..', 'mystery.'];
+        setInterval(() => {
+            document.title = titles[titleIndex] + ' - townhaus';
+            titleIndex = (titleIndex + 1) % titles.length;
+        }, 2500);
+
+        // Console poetry - delayed reveal
+        setTimeout(() => {
+            consolePoetry.forEach((line, index) => {
+                setTimeout(() => {
+                    console.log(line[0], line[1]);
+                }, index * 400);
+            });
+        }, 1500);
+
+        // Delayed console messages for those who wait
+        setTimeout(() => {
+            console.log('%c', 'font-size: 1px; padding: 20px;');
+            console.log('%cyou are still here', 'font-size: 10px; color: #4a5568; font-style: italic;');
+        }, 60000);
+
+        setTimeout(() => {
+            console.log('%cthe mystery notices your persistence', 'font-size: 9px; color: #2d3748;');
+        }, 120000);
+
+        setTimeout(() => {
+            console.log('%c', 'font-size: 1px; padding: 10px;');
+            console.log('%cthree minutes of nothing', 'font-size: 10px; color: #4a5568;');
+            console.log('%cis three minutes of something', 'font-size: 10px; color: #4a5568;');
+        }, 180000);
+
+        // Very long wait reward
+        setTimeout(() => {
+            console.log('%c', 'font-size: 1px; padding: 30px;');
+            console.log('%cfive minutes', 'font-size: 12px; color: #f5f0e6; font-style: italic;');
+            console.log('%cyou have given five minutes to nothing', 'font-size: 10px; color: #718096;');
+            console.log('%cnothing is grateful', 'font-size: 10px; color: #718096;');
+        }, 300000);
+    </script>
+</body>
+</html>

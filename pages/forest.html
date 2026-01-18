@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>forest - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, #1a2a1a 0%, #0f1a0f 50%, #0a120a 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: filter 2s ease, background 3s ease;
+        }
+
+        body.misty {
+            filter: blur(1px) brightness(0.85) contrast(0.85);
+            background: linear-gradient(180deg, #1a2a2a 0%, #0f1a1a 50%, #0a1212 100%);
+        }
+        body.autumn {
+            filter: sepia(0.3) saturate(1.2) hue-rotate(-20deg);
+            background: linear-gradient(180deg, #2a1a1a 0%, #1a0f0f 50%, #120a0a 100%);
+        }
+        body.twilight {
+            filter: brightness(0.7) saturate(0.8) hue-rotate(30deg);
+            background: linear-gradient(180deg, #1a1a2a 0%, #0f0f1a 50%, #0a0a12 100%);
+        }
+        body.dawn {
+            filter: brightness(1.1) saturate(1.1) hue-rotate(-10deg);
+            background: linear-gradient(180deg, #2a2a1a 0%, #1a1a0f 50%, #12120a 100%);
+        }
+
+        .back-link { color: var(--green-orb); }
+
+        /* Parallax sky layers */
+        .sky-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .stars {
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        body.twilight .stars { opacity: 0.6; }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: twinkle 4s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Fog layers - the lifting, breathing mist */
+        .fog-layer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+            transition: opacity 8s ease;
+        }
+
+        .fog-near {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                transparent 50%,
+                rgba(26, 42, 26, 0.08) 70%,
+                rgba(26, 42, 26, 0.25) 100%);
+            animation: fog-breathe 20s ease-in-out infinite;
+        }
+
+        .fog-far {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                transparent 30%,
+                rgba(15, 26, 15, 0.12) 60%,
+                rgba(15, 26, 15, 0.35) 100%);
+            animation: fog-breathe 30s ease-in-out infinite reverse;
+        }
+
+        .fog-whisper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40vh;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(20, 35, 20, 0.05) 50%,
+                rgba(20, 35, 20, 0.15) 100%);
+            animation: fog-whisper 15s ease-in-out infinite;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        @keyframes fog-breathe {
+            0%, 100% {
+                transform: translateX(-2%) translateY(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translateX(2%) translateY(-5px);
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes fog-whisper {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translateY(-10px);
+                opacity: 0.5;
+            }
+        }
+
+        /* Fog lifting state - patience rewarded */
+        body.fog-lifting .fog-near {
+            opacity: 0.3;
+            transform: translateY(-20vh);
+        }
+        body.fog-lifting .fog-far {
+            opacity: 0.2;
+            transform: translateY(-15vh);
+        }
+        body.fog-lifting .fog-whisper {
+            opacity: 0.1;
+        }
+
+        body.misty .fog-near { opacity: 1.3; }
+        body.misty .fog-far { opacity: 1.3; }
+
+        .forest {
+            position: relative;
+            width: 100%;
+            min-height: 400vh;
+            perspective: 1200px;
+            z-index: 10;
+        }
+
+        .tree-row {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            transition: transform 0.1s ease-out;
+        }
+
+        .tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, filter 0.5s ease;
+            position: relative;
+            animation: tree-breathe 8s ease-in-out infinite;
+        }
+
+        .tree:nth-child(odd) {
+            animation-delay: -2s;
+        }
+
+        .tree:nth-child(3n) {
+            animation-delay: -4s;
+            animation-duration: 10s;
+        }
+
+        .tree:nth-child(5n) {
+            animation-delay: -6s;
+            animation-duration: 12s;
+        }
+
+        @keyframes tree-breathe {
+            0%, 100% { transform: scaleY(1) scaleX(1); }
+            50% { transform: scaleY(1.008) scaleX(0.998); }
+        }
+
+        .tree:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+            animation-play-state: paused;
+        }
+
+        .tree.rustled { animation: rustle 0.6s ease; }
+        .tree.deep-rustle { animation: deep-rustle 1s ease; }
+
+        @keyframes rustle {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-4deg); }
+            40% { transform: rotate(3deg); }
+            60% { transform: rotate(-2deg); }
+            80% { transform: rotate(1deg); }
+        }
+
+        @keyframes deep-rustle {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            15% { transform: rotate(-6deg) scale(1.02); }
+            30% { transform: rotate(5deg) scale(0.98); }
+            45% { transform: rotate(-4deg) scale(1.01); }
+            60% { transform: rotate(3deg) scale(0.99); }
+            75% { transform: rotate(-2deg) scale(1); }
+            90% { transform: rotate(1deg); }
+        }
+
+        .trunk {
+            width: 8px;
+            background: linear-gradient(90deg, #2a1a0a 0%, #4a3a2a 30%, #3a2a1a 70%, #2a1a0a 100%);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .trunk::before {
+            content: '';
+            position: absolute;
+            left: -2px;
+            top: 20%;
+            width: 4px;
+            height: 8px;
+            background: #3a2a1a;
+            border-radius: 2px;
+            opacity: 0.5;
+        }
+
+        .canopy {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 40px solid #1a3a1a;
+            position: relative;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .canopy::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: -15px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 30px solid #1a3a1a;
+        }
+
+        .canopy::after {
+            content: '';
+            position: absolute;
+            top: 28px;
+            left: -12px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 25px solid #1a3a1a;
+        }
+
+        /* The watchers - subtle presences between trees */
+        .watcher {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(180, 200, 160, 0.15);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s ease;
+            filter: blur(1px);
+            z-index: 5;
+        }
+
+        .watcher.watching {
+            opacity: 1;
+            animation: watcher-breathe 4s ease-in-out infinite;
+        }
+
+        .watcher.pair {
+            box-shadow: 12px 0 0 rgba(180, 200, 160, 0.15);
+        }
+
+        @keyframes watcher-breathe {
+            0%, 100% {
+                transform: scale(1);
+                filter: blur(1px);
+            }
+            50% {
+                transform: scale(1.2);
+                filter: blur(2px);
+            }
+        }
+
+        /* Stillness message */
+        .stillness-whisper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: var(--bone);
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            line-height: 2.5;
+            letter-spacing: 0.15em;
+            z-index: 200;
+            transition: opacity 4s ease;
+            text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .stillness-whisper.visible {
+            opacity: 0.5;
+        }
+
+        .stillness-whisper .sub {
+            display: block;
+            font-size: 0.65rem;
+            opacity: 0.6;
+            letter-spacing: 0.25em;
+            margin-top: 0.5rem;
+        }
+
+        /* Bird that appears */
+        .bird {
+            position: fixed;
+            font-size: 1rem;
+            color: var(--slate);
+            pointer-events: none;
+            animation: fly-bird 12s linear forwards;
+            opacity: 0;
+            z-index: 200;
+        }
+
+        .bird.flock {
+            animation: fly-bird-flock 15s ease-in-out forwards;
+        }
+
+        @keyframes fly-bird {
+            0% { transform: translateX(-50px) translateY(0); opacity: 0; }
+            5% { opacity: 0.5; }
+            50% { transform: translateX(50vw) translateY(-20px); }
+            90% { opacity: 0.5; }
+            100% { transform: translateX(calc(100vw + 50px)) translateY(10px); opacity: 0; }
+        }
+
+        @keyframes fly-bird-flock {
+            0% { transform: translateX(-50px) translateY(0); opacity: 0; }
+            5% { opacity: 0.4; }
+            25% { transform: translateX(25vw) translateY(-30px); }
+            50% { transform: translateX(50vw) translateY(-10px); }
+            75% { transform: translateX(75vw) translateY(-25px); }
+            90% { opacity: 0.4; }
+            100% { transform: translateX(calc(100vw + 50px)) translateY(5px); opacity: 0; }
+        }
+
+        .floor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35vh;
+            background: linear-gradient(180deg,
+                transparent 0%, rgba(58, 42, 26, 0.2) 20%, rgba(58, 42, 26, 0.4) 50%, rgba(58, 42, 26, 0.7) 100%);
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .needle {
+            position: absolute;
+            width: 3px;
+            height: 15px;
+            background: linear-gradient(180deg, #4a5a3a 0%, #2a3a1a 100%);
+            border-radius: 50%;
+            transform-origin: bottom center;
+            transition: transform 0.3s ease;
+        }
+
+        .needle.disturbed {
+            animation: needle-fall 0.5s ease forwards;
+        }
+
+        @keyframes needle-fall {
+            0% { transform: rotate(var(--initial-rotation)); }
+            50% { transform: rotate(calc(var(--initial-rotation) + 20deg)); }
+            100% { transform: rotate(var(--initial-rotation)); }
+        }
+
+        /* Cathedral light shaft - the sacred beam */
+        .light-shaft {
+            position: fixed;
+            width: 80px;
+            height: 100vh;
+            background: linear-gradient(180deg,
+                rgba(255, 255, 200, 0.06) 0%,
+                rgba(255, 255, 200, 0.03) 30%,
+                rgba(255, 255, 200, 0.015) 60%,
+                transparent 100%);
+            pointer-events: none;
+            opacity: 0;
+            animation: shaft-appear 6s ease forwards;
+            transform: skewX(-5deg);
+            z-index: 15;
+        }
+
+        .light-shaft::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(180deg,
+                rgba(255, 255, 220, 0.08) 0%,
+                rgba(255, 255, 220, 0.015) 50%,
+                transparent 100%);
+            animation: shaft-breathe 12s ease-in-out infinite;
+        }
+
+        @keyframes shaft-appear { to { opacity: 1; } }
+
+        @keyframes shaft-breathe {
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) scaleX(1); }
+            50% { opacity: 0.8; transform: translateX(-50%) scaleX(1.15); }
+        }
+
+        body.misty .light-shaft { opacity: 0.7; filter: blur(3px); }
+        body.twilight .light-shaft { opacity: 0.2; filter: hue-rotate(30deg); }
+        body.dawn .light-shaft {
+            opacity: 1.2;
+            background: linear-gradient(180deg,
+                rgba(255, 220, 180, 0.1) 0%,
+                rgba(255, 220, 180, 0.05) 30%,
+                rgba(255, 220, 180, 0.015) 60%,
+                transparent 100%);
+        }
+
+        /* Dust motes suspended in light - cathedral quality */
+        .dust-mote {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 200, 0.35);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-mote 20s ease-in-out infinite;
+            z-index: 16;
+        }
+
+        @keyframes float-mote {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% { opacity: 0.5; }
+            30% {
+                transform: translateY(-40px) translateX(10px);
+            }
+            50% {
+                transform: translateY(-80px) translateX(-5px);
+                opacity: 0.4;
+            }
+            70% {
+                transform: translateY(-120px) translateX(15px);
+            }
+            90% { opacity: 0.5; }
+        }
+
+        /* Sound options display */
+        .sound-option {
+            position: fixed;
+            bottom: 4rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--green-orb);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            z-index: 100;
+            letter-spacing: 0.1em;
+        }
+
+        .sound-option.active { opacity: 0.4; }
+
+        .sound-option .mode {
+            display: inline-block;
+            padding: 0.2rem 0.4rem;
+            margin-right: 0.3rem;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .sound-option .mode.selected {
+            border-color: var(--green-orb);
+            opacity: 1;
+        }
+
+        /* Ambient sound visualization */
+        .sound-visualizer {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 2rem;
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            z-index: 100;
+        }
+
+        .sound-visualizer.active { opacity: 0.35; }
+
+        .sound-bar {
+            width: 2px;
+            background: var(--green-orb);
+            border-radius: 1px;
+            transition: height 0.2s ease;
+        }
+
+        .depth {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--green-orb);
+            opacity: 0.35;
+            z-index: 100;
+            transition: all 0.5s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .depth.deep {
+            color: var(--bone);
+            text-shadow: 0 0 10px rgba(255, 255, 200, 0.2);
+        }
+
+        /* Secret compass */
+        .compass {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--green-orb);
+            opacity: 0;
+            transition: opacity 3s ease;
+            letter-spacing: 0.5em;
+            z-index: 100;
+        }
+
+        .compass.visible { opacity: 0.25; }
+
+        .clearing {
+            position: absolute;
+            bottom: 60vh;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 3s ease;
+            z-index: 60;
+        }
+
+        .clearing.visible { opacity: 1; }
+
+        .clearing-text {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0.55;
+            text-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            animation: clearing-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes clearing-breathe {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 0.65; }
+        }
+
+        .clearing-subtext {
+            margin-top: 0.5rem;
+            opacity: 0.3;
+            font-size: 0.9rem;
+            animation-delay: -2s;
+        }
+
+        .clearing-whisper {
+            margin-top: 1.5rem;
+            opacity: 0;
+            font-size: 0.65rem;
+            letter-spacing: 0.35em;
+            transition: opacity 4s ease;
+        }
+
+        .clearing.visible .clearing-whisper {
+            animation: whisper-appear 5s ease 3s forwards;
+        }
+
+        @keyframes whisper-appear {
+            to { opacity: 0.2; }
+        }
+
+        /* Cathedral space at the bottom */
+        .cathedral {
+            position: absolute;
+            bottom: 15vh;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 4s ease;
+            z-index: 60;
+        }
+
+        .cathedral.visible { opacity: 1; }
+
+        .cathedral-text {
+            font-size: 0.85rem;
+            color: var(--bone);
+            opacity: 0.45;
+            letter-spacing: 0.25em;
+            text-shadow: 0 0 40px rgba(255, 255, 200, 0.08);
+        }
+
+        .cathedral-breath {
+            margin-top: 1.5rem;
+            font-style: italic;
+            font-size: 0.75rem;
+            opacity: 0;
+            animation: cathedral-inhale 8s ease-in-out infinite;
+        }
+
+        .cathedral.visible .cathedral-breath {
+            animation: cathedral-inhale 8s ease-in-out 1.5s infinite;
+        }
+
+        @keyframes cathedral-inhale {
+            0%, 100% { opacity: 0; letter-spacing: 0.2em; }
+            40% { opacity: 0.35; letter-spacing: 0.3em; }
+            60% { opacity: 0.35; letter-spacing: 0.3em; }
+        }
+
+        .cathedral-secret {
+            margin-top: 2rem;
+            font-size: 0.45rem;
+            letter-spacing: 0.6em;
+            opacity: 0;
+            transition: opacity 6s ease;
+        }
+
+        /* Hidden entrance hint */
+        .hidden-entrance {
+            position: absolute;
+            bottom: 5vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 60px;
+            opacity: 0;
+            transition: opacity 5s ease;
+            z-index: 61;
+            cursor: pointer;
+        }
+
+        .hidden-entrance::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 50px;
+            background: linear-gradient(180deg,
+                rgba(10, 18, 10, 0.9) 0%,
+                rgba(5, 10, 5, 0.95) 100%);
+            border-radius: 15px 15px 0 0;
+            border: 1px solid rgba(40, 60, 40, 0.3);
+            border-bottom: none;
+        }
+
+        .hidden-entrance.visible {
+            opacity: 0.6;
+            animation: entrance-pulse 6s ease-in-out infinite;
+        }
+
+        @keyframes entrance-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.75; }
+        }
+
+        /* Hidden poem fragments */
+        .poem-fragment {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--green-orb);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 3s ease;
+            z-index: 70;
+            white-space: nowrap;
+            letter-spacing: 0.1em;
+        }
+
+        .poem-fragment.revealed { opacity: 0.25; }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--green-orb);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 2;
+            z-index: 100;
+            letter-spacing: 0.05em;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        /* Firefly easter egg */
+        .firefly {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: rgba(200, 255, 150, 0.7);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 8px 3px rgba(200, 255, 150, 0.3);
+            animation: firefly-glow 3s ease-in-out infinite;
+            z-index: 100;
+        }
+
+        @keyframes firefly-glow {
+            0%, 100% { opacity: 0; transform: scale(0.7); }
+            50% { opacity: 0.9; transform: scale(1.1); }
+        }
+
+        /* Mushroom easter egg */
+        .mushroom {
+            position: absolute;
+            font-size: 0.5rem;
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.8s ease, transform 0.3s ease;
+            z-index: 55;
+        }
+
+        .mushroom:hover {
+            transform: scale(1.3);
+            opacity: 0.9 !important;
+        }
+
+        .mushroom.found {
+            animation: mushroom-pulse 1.2s ease;
+        }
+
+        @keyframes mushroom-pulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.8); }
+        }
+
+        /* Wind effect - more organic sway */
+        .wind-active .tree {
+            animation: wind-sway 4s ease-in-out infinite;
+        }
+
+        .wind-active .tree:nth-child(odd) {
+            animation-delay: 0.7s;
+            animation-duration: 4.5s;
+        }
+
+        .wind-active .tree:nth-child(3n) {
+            animation-delay: 1.4s;
+            animation-duration: 5s;
+        }
+
+        @keyframes wind-sway {
+            0%, 100% { transform: rotate(0deg) translateX(0); }
+            25% { transform: rotate(-2deg) translateX(-2px); }
+            75% { transform: rotate(2deg) translateX(2px); }
+        }
+
+        /* Depth-based color shift */
+        .forest-deep {
+            transition: filter 3s ease;
+        }
+
+        .forest-deep.very-deep {
+            filter: brightness(0.8) saturate(0.85);
+        }
+
+        /* Secret message on triple click */
+        .secret-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-weight: 300;
+            color: var(--bone);
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            line-height: 2.5;
+            letter-spacing: 0.2em;
+            z-index: 200;
+            transition: opacity 3s ease;
+            text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .secret-message.visible {
+            opacity: 0.55;
+        }
+
+        /* Owl easter egg */
+        .owl {
+            position: fixed;
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        .owl:hover {
+            opacity: 0.9 !important;
+        }
+
+        .owl.hooting {
+            animation: owl-hoot 0.4s ease infinite;
+        }
+
+        @keyframes owl-hoot {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* Presence indicator - something watching */
+        .presence-indicator {
+            position: fixed;
+            top: 50%;
+            right: 3rem;
+            transform: translateY(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--green-orb);
+            opacity: 0;
+            transition: opacity 4s ease;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.3em;
+            z-index: 100;
+        }
+
+        .presence-indicator.visible {
+            opacity: 0.2;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <!-- Parallax sky layers -->
+    <div class="sky-layer stars" id="stars"></div>
+    <div class="fog-layer fog-far"></div>
+    <div class="fog-layer fog-near"></div>
+    <div class="fog-whisper"></div>
+
+    <div class="forest forest-deep" id="forest"></div>
+    <div class="floor" id="floor"></div>
+
+    <!-- Sound option display -->
+    <div class="sound-option" id="soundOption">
+        <span class="mode" data-mode="wind">wind</span>
+        <span class="mode" data-mode="rustle">rustling</span>
+        <span class="mode selected" data-mode="silence">silence</span>
+    </div>
+
+    <!-- Sound visualizer -->
+    <div class="sound-visualizer" id="soundViz">
+        <div class="sound-bar" style="height: 6px;"></div>
+        <div class="sound-bar" style="height: 10px;"></div>
+        <div class="sound-bar" style="height: 5px;"></div>
+        <div class="sound-bar" style="height: 12px;"></div>
+        <div class="sound-bar" style="height: 8px;"></div>
+        <div class="sound-bar" style="height: 6px;"></div>
+        <div class="sound-bar" style="height: 14px;"></div>
+        <div class="sound-bar" style="height: 9px;"></div>
+    </div>
+
+    <p class="depth" id="depth">depth: 0m</p>
+    <p class="compass" id="compass">N . E . S . W</p>
+
+    <!-- Stillness whisper -->
+    <div class="stillness-whisper" id="stillnessWhisper">
+        something watches from between the trees
+        <span class="sub">it has always been watching</span>
+    </div>
+
+    <!-- Presence indicator -->
+    <div class="presence-indicator" id="presenceIndicator">
+        not alone
+    </div>
+
+    <div class="clearing" id="clearing">
+        <p class="clearing-text">the trees stand in rows</p>
+        <p class="clearing-text clearing-subtext">as if planted by someone</p>
+        <p class="clearing-text clearing-whisper">who never returned to see them grow</p>
+    </div>
+
+    <div class="cathedral" id="cathedral">
+        <p class="cathedral-text">you have reached the soft floor</p>
+        <p class="cathedral-text cathedral-breath">listen</p>
+        <p class="cathedral-text" style="margin-top: 1rem; font-style: italic; opacity: 0.25;">the silence here has weight</p>
+        <p class="cathedral-text cathedral-secret" id="cathedralSecret">some silences are kept, not broken</p>
+    </div>
+
+    <!-- Hidden entrance at the deepest point -->
+    <div class="hidden-entrance" id="hiddenEntrance" title=""></div>
+
+    <div class="secret-message" id="secretMessage">
+        the forest remembers<br>
+        every footstep<br>
+        every breath<br>
+        <span style="opacity: 0.35; font-size: 0.55rem; display: block; margin-top: 1rem;">it has been waiting</span>
+    </div>
+
+    <div class="key-hint">
+        [m] mist<br>
+        [a] autumn<br>
+        [d] twilight<br>
+        [w] wind<br>
+        [b] bird<br>
+        [f] fireflies<br>
+        [s] sound<br>
+        [t] return to surface<br>
+        [space] rustle<br>
+        right-click: ripple
+    </div>
+
+    <script>
+        const forest = document.getElementById('forest');
+        const floor = document.getElementById('floor');
+        const depthEl = document.getElementById('depth');
+        const clearing = document.getElementById('clearing');
+        const cathedral = document.getElementById('cathedral');
+        const cathedralSecret = document.getElementById('cathedralSecret');
+        const soundViz = document.getElementById('soundViz');
+        const soundOption = document.getElementById('soundOption');
+        const compass = document.getElementById('compass');
+        const secretMessage = document.getElementById('secretMessage');
+        const starsContainer = document.getElementById('stars');
+        const stillnessWhisper = document.getElementById('stillnessWhisper');
+        const presenceIndicator = document.getElementById('presenceIndicator');
+        const hiddenEntrance = document.getElementById('hiddenEntrance');
+
+        const trees = [];
+        const treeRows = [];
+        const watchers = [];
+        let soundMode = 'silence'; // 'wind', 'rustle', 'silence'
+        let soundInterval;
+        let mushroomsFound = 0;
+        const totalMushrooms = 5;
+        let owlVisible = false;
+        let clickCount = 0;
+        let clickTimer;
+
+        // Stillness detection
+        let lastMovement = Date.now();
+        let stillnessTimeout;
+        let isStill = false;
+        let stillnessLevel = 0; // 0-3, increases with longer stillness
+        let watchersActive = false;
+
+        // Arrow key sequence detection
+        let arrowSequence = [];
+        const secretSequence = ['up', 'up', 'down', 'down'];
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Create stars for twilight mode
+        for (let i = 0; i < 60; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 50 + '%';
+            star.style.animationDelay = Math.random() * 4 + 's';
+            star.style.animationDuration = (3 + Math.random() * 3) + 's';
+            star.style.width = (1 + Math.random() * 2) + 'px';
+            star.style.height = star.style.width;
+            starsContainer.appendChild(star);
+        }
+
+        // Create tree rows with enhanced depth - cathedral of trees
+        const rowCount = 40;
+        for (let row = 0; row < rowCount; row++) {
+            const treeRow = document.createElement('div');
+            treeRow.className = 'tree-row';
+            treeRow.style.top = (row * 10) + '%';
+
+            const depth = row / rowCount;
+            const scale = 0.2 + (1 - depth) * 0.8;
+            const opacity = 0.2 + (1 - depth) * 0.8;
+            const treesInRow = 4 + Math.floor(depth * 12);
+            const blur = depth < 0.3 ? (0.3 - depth) * 2 : 0;
+
+            treeRow.style.transform = `scale(${scale})`;
+            treeRow.style.opacity = opacity;
+            treeRow.style.zIndex = rowCount - row + 10;
+            treeRow.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+            treeRow.dataset.depth = depth;
+
+            for (let t = 0; t < treesInRow; t++) {
+                const tree = document.createElement('div');
+                tree.className = 'tree';
+                tree.dataset.row = row;
+
+                const trunk = document.createElement('div');
+                trunk.className = 'trunk';
+                const trunkHeight = 50 + Math.random() * 60;
+                trunk.style.height = trunkHeight + 'px';
+
+                const canopy = document.createElement('div');
+                canopy.className = 'canopy';
+                const hue = 115 + (Math.random() - 0.5) * 25;
+                const saturation = 25 + Math.random() * 15;
+                const lightness = 12 + Math.random() * 12 + (1 - depth) * 5;
+                canopy.style.borderBottomColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
+                // Slightly vary canopy sizes for organic feel
+                const canopyScale = 0.8 + Math.random() * 0.4;
+                canopy.style.transform = `scale(${canopyScale})`;
+
+                // Random breathing delay for more organic movement
+                tree.style.animationDelay = `-${Math.random() * 8}s`;
+
+                tree.appendChild(canopy);
+                tree.appendChild(trunk);
+                treeRow.appendChild(tree);
+                trees.push(tree);
+            }
+
+            forest.appendChild(treeRow);
+            treeRows.push(treeRow);
+
+            // Add watchers between trees (subtle presences)
+            if (row > 5 && row < 35 && Math.random() > 0.7) {
+                const watcher = document.createElement('div');
+                watcher.className = 'watcher' + (Math.random() > 0.6 ? ' pair' : '');
+                watcher.style.left = (10 + Math.random() * 80) + '%';
+                watcher.style.top = (row * 10 + 2 + Math.random() * 6) + '%';
+                forest.appendChild(watcher);
+                watchers.push(watcher);
+            }
+        }
+
+        // Click tree to rustle
+        trees.forEach(tree => {
+            tree.addEventListener('click', (e) => {
+                e.stopPropagation();
+                tree.classList.add('rustled');
+                setTimeout(() => tree.classList.remove('rustled'), 600);
+
+                // Occasionally drop a needle
+                if (Math.random() > 0.6) {
+                    dropNeedle(e.clientX, e.clientY);
+                }
+
+                // Reset stillness
+                recordMovement();
+            });
+        });
+
+        function dropNeedle(x, y) {
+            const needle = document.createElement('div');
+            needle.className = 'needle';
+            needle.style.position = 'fixed';
+            needle.style.left = x + 'px';
+            needle.style.top = y + 'px';
+            needle.style.animation = 'none';
+            needle.style.transition = 'transform 1.2s ease, opacity 1.2s ease';
+            document.body.appendChild(needle);
+
+            setTimeout(() => {
+                needle.style.transform = `translateY(${window.innerHeight - y}px) rotate(${Math.random() * 360}deg)`;
+                needle.style.opacity = '0';
+            }, 50);
+
+            setTimeout(() => needle.remove(), 1500);
+        }
+
+        // Right-click rustles nearby trees with ripple effect
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                trees.forEach(tree => {
+                    const rect = tree.getBoundingClientRect();
+                    const dist = Math.sqrt(Math.pow(e.clientX - rect.left, 2) + Math.pow(e.clientY - rect.top, 2));
+                    if (dist < 250) {
+                        setTimeout(() => {
+                            tree.classList.add('deep-rustle');
+                            setTimeout(() => tree.classList.remove('deep-rustle'), 1000);
+                        }, dist * 1.5);
+                    }
+                });
+                recordMovement();
+            }
+        });
+
+        // Triple click easter egg
+        document.addEventListener('click', () => {
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                if (clickCount >= 3) {
+                    secretMessage.classList.add('visible');
+                    setTimeout(() => secretMessage.classList.remove('visible'), 6000);
+                }
+                clickCount = 0;
+            }, 400);
+        });
+
+        // Enhanced light shafts with dust motes - cathedral light
+        const shaftPositions = [20, 40, 60, 80];
+        shaftPositions.forEach((pos, i) => {
+            const shaft = document.createElement('div');
+            shaft.className = 'light-shaft';
+            shaft.style.left = pos + '%';
+            shaft.style.animationDelay = (i * 1.2) + 's';
+            shaft.style.width = (50 + Math.random() * 50) + 'px';
+            shaft.style.transform = `skewX(${-10 + Math.random() * 8}deg)`;
+            forest.appendChild(shaft);
+
+            // Add dust motes to each shaft - suspended in air
+            for (let m = 0; m < 6; m++) {
+                const mote = document.createElement('div');
+                mote.className = 'dust-mote';
+                mote.style.left = (pos + (Math.random() - 0.5) * 6) + '%';
+                mote.style.top = (15 + Math.random() * 65) + '%';
+                mote.style.animationDelay = (Math.random() * 20) + 's';
+                mote.style.animationDuration = (15 + Math.random() * 10) + 's';
+                document.body.appendChild(mote);
+            }
+        });
+
+        // Pine needles on the floor
+        const needles = [];
+        for (let i = 0; i < 150; i++) {
+            const needle = document.createElement('div');
+            needle.className = 'needle';
+            const rotation = Math.random() * 60 - 30;
+            needle.style.left = Math.random() * 100 + '%';
+            needle.style.bottom = Math.random() * 25 + '%';
+            needle.style.transform = `rotate(${rotation}deg)`;
+            needle.style.setProperty('--initial-rotation', `${rotation}deg`);
+            needle.style.opacity = 0.2 + Math.random() * 0.5;
+            needle.style.height = (10 + Math.random() * 10) + 'px';
+            floor.appendChild(needle);
+            needles.push(needle);
+        }
+
+        // Hidden mushrooms
+        const mushroomPositions = [
+            { left: '15%', bottom: '280vh' },
+            { left: '78%', bottom: '150vh' },
+            { left: '45%', bottom: '320vh' },
+            { left: '8%', bottom: '80vh' },
+            { left: '92%', bottom: '220vh' }
+        ];
+
+        mushroomPositions.forEach((pos, i) => {
+            const mushroom = document.createElement('div');
+            mushroom.className = 'mushroom';
+            mushroom.textContent = '\u{1F344}';
+            mushroom.style.left = pos.left;
+            mushroom.style.bottom = pos.bottom;
+            mushroom.style.opacity = 0.12;
+            mushroom.addEventListener('click', () => {
+                if (!mushroom.classList.contains('found')) {
+                    mushroom.classList.add('found');
+                    mushroomsFound++;
+                    if (mushroomsFound === totalMushrooms) {
+                        cathedralSecret.style.opacity = '0.45';
+                        // Reveal the hidden entrance
+                        hiddenEntrance.classList.add('visible');
+                    }
+                }
+            });
+            forest.appendChild(mushroom);
+        });
+
+        // Hidden poem fragments
+        const poemFragments = [
+            { text: 'between the branches', top: '25%', left: '10%' },
+            { text: 'light learns patience', top: '45%', left: '85%' },
+            { text: 'roots remember rain', top: '65%', left: '5%' },
+            { text: 'time grows upward here', top: '80%', left: '75%' },
+            { text: 'what watches never blinks', top: '55%', left: '15%' }
+        ];
+
+        poemFragments.forEach(frag => {
+            const el = document.createElement('div');
+            el.className = 'poem-fragment';
+            el.textContent = frag.text;
+            el.style.top = frag.top;
+            el.style.left = frag.left;
+            forest.appendChild(el);
+        });
+
+        // Bird creation
+        function createBird(flock = false) {
+            const bird = document.createElement('div');
+            bird.className = 'bird' + (flock ? ' flock' : '');
+            bird.textContent = flock ? '>>  >>' : '>>';
+            bird.style.top = (5 + Math.random() * 25) + '%';
+            document.body.appendChild(bird);
+            setTimeout(() => bird.remove(), flock ? 15000 : 12000);
+        }
+
+        // Firefly creation
+        function createFireflies() {
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const firefly = document.createElement('div');
+                    firefly.className = 'firefly';
+                    firefly.style.left = (10 + Math.random() * 80) + '%';
+                    firefly.style.top = (40 + Math.random() * 50) + '%';
+                    firefly.style.animationDelay = (Math.random() * 3) + 's';
+                    firefly.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+
+                    // Random organic movement
+                    const moveFirefly = () => {
+                        const newX = parseFloat(firefly.style.left) + (Math.random() - 0.5) * 8;
+                        const newY = parseFloat(firefly.style.top) + (Math.random() - 0.5) * 8;
+                        firefly.style.left = Math.max(5, Math.min(95, newX)) + '%';
+                        firefly.style.top = Math.max(30, Math.min(90, newY)) + '%';
+                        firefly.style.transition = 'left 2s ease, top 2s ease';
+                    };
+
+                    const moveInterval = setInterval(moveFirefly, 2500);
+
+                    document.body.appendChild(firefly);
+                    setTimeout(() => {
+                        clearInterval(moveInterval);
+                        firefly.style.opacity = '0';
+                        setTimeout(() => firefly.remove(), 1000);
+                    }, 18000);
+                }, i * 400);
+            }
+        }
+
+        // Owl easter egg (appears in twilight)
+        function createOwl() {
+            if (owlVisible) return;
+            owlVisible = true;
+
+            const owl = document.createElement('div');
+            owl.className = 'owl';
+            owl.textContent = '\u{1F989}';
+            owl.style.right = '15%';
+            owl.style.top = '20%';
+            owl.style.opacity = '0.35';
+
+            owl.addEventListener('click', () => {
+                owl.classList.add('hooting');
+                setTimeout(() => owl.classList.remove('hooting'), 1800);
+            });
+
+            document.body.appendChild(owl);
+
+            setTimeout(() => {
+                owl.style.opacity = '0';
+                setTimeout(() => {
+                    owl.remove();
+                    owlVisible = false;
+                }, 1000);
+            }, 25000);
+        }
+
+        // Sound mode cycling
+        function cycleSound() {
+            const modes = ['wind', 'rustle', 'silence'];
+            const currentIndex = modes.indexOf(soundMode);
+            soundMode = modes[(currentIndex + 1) % modes.length];
+
+            // Update UI
+            document.querySelectorAll('.sound-option .mode').forEach(el => {
+                el.classList.toggle('selected', el.dataset.mode === soundMode);
+            });
+
+            soundOption.classList.add('active');
+            setTimeout(() => soundOption.classList.remove('active'), 4000);
+
+            // Update visualizer
+            if (soundMode === 'silence') {
+                soundViz.classList.remove('active');
+                clearInterval(soundInterval);
+            } else {
+                soundViz.classList.add('active');
+                const bars = soundViz.querySelectorAll('.sound-bar');
+                clearInterval(soundInterval);
+                soundInterval = setInterval(() => {
+                    bars.forEach(bar => {
+                        const baseHeight = soundMode === 'wind' ? 8 : 5;
+                        const variance = soundMode === 'wind' ? 12 : 8;
+                        const height = baseHeight + Math.random() * variance;
+                        bar.style.height = height + 'px';
+                    });
+                }, soundMode === 'wind' ? 180 : 120);
+            }
+        }
+
+        // Stillness detection - what watches from between the trees?
+        function recordMovement() {
+            lastMovement = Date.now();
+            isStill = false;
+            stillnessLevel = 0;
+
+            // Hide stillness-related elements
+            stillnessWhisper.classList.remove('visible');
+            presenceIndicator.classList.remove('visible');
+            document.body.classList.remove('fog-lifting');
+
+            // Deactivate watchers
+            watchers.forEach(w => w.classList.remove('watching'));
+            watchersActive = false;
+
+            // Reset stillness timeout
+            clearTimeout(stillnessTimeout);
+            checkStillness();
+        }
+
+        function checkStillness() {
+            const timeSinceMovement = Date.now() - lastMovement;
+
+            // Level 1: 5 seconds - fog begins to lift
+            if (timeSinceMovement > 5000 && stillnessLevel < 1) {
+                stillnessLevel = 1;
+                document.body.classList.add('fog-lifting');
+            }
+
+            // Level 2: 10 seconds - watchers appear
+            if (timeSinceMovement > 10000 && stillnessLevel < 2) {
+                stillnessLevel = 2;
+                if (!watchersActive) {
+                    watchersActive = true;
+                    watchers.forEach((w, i) => {
+                        setTimeout(() => {
+                            if (stillnessLevel >= 2) {
+                                w.classList.add('watching');
+                            }
+                        }, i * 300 + Math.random() * 500);
+                    });
+                }
+            }
+
+            // Level 3: 15 seconds - presence indicator
+            if (timeSinceMovement > 15000 && stillnessLevel < 3) {
+                stillnessLevel = 3;
+                presenceIndicator.classList.add('visible');
+            }
+
+            // Level 4: 20 seconds - stillness whisper
+            if (timeSinceMovement > 20000 && !isStill) {
+                isStill = true;
+                stillnessWhisper.classList.add('visible');
+            }
+
+            stillnessTimeout = setTimeout(checkStillness, 1000);
+        }
+
+        // Track mouse movement
+        document.addEventListener('mousemove', () => {
+            recordMovement();
+        });
+
+        // Track scroll
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            recordMovement();
+        });
+
+        // Start stillness detection
+        checkStillness();
+
+        // Parallax scroll effect
+        let lastScrollY = 0;
+        let maxDepth = 0;
+
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const scrollPercent = scrollY / (document.body.scrollHeight - window.innerHeight);
+            const depth = Math.round(scrollPercent * 100);
+            const depthMeters = Math.round(scrollPercent * 247);
+
+            depthEl.textContent = `depth: ${depthMeters}m`;
+
+            if (depth > 70) {
+                depthEl.classList.add('deep');
+            } else {
+                depthEl.classList.remove('deep');
+            }
+
+            if (depth > maxDepth) maxDepth = depth;
+
+            // Parallax effect on tree rows
+            const scrollDelta = scrollY - lastScrollY;
+            treeRows.forEach(row => {
+                const rowDepth = parseFloat(row.dataset.depth);
+                const parallaxFactor = 0.3 + rowDepth * 0.7;
+                const currentTransform = row.style.transform;
+                const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/);
+                const scale = scaleMatch ? scaleMatch[1] : 1;
+                const translateY = scrollDelta * parallaxFactor * 0.1;
+                row.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+            });
+            lastScrollY = scrollY;
+
+            // Reveal poem fragments based on scroll
+            document.querySelectorAll('.poem-fragment').forEach(frag => {
+                const fragTop = parseFloat(frag.style.top);
+                if (scrollPercent * 100 > fragTop - 10 && scrollPercent * 100 < fragTop + 20) {
+                    frag.classList.add('revealed');
+                } else {
+                    frag.classList.remove('revealed');
+                }
+            });
+
+            // Show clearing
+            if (depth > 35 && depth < 65) {
+                clearing.classList.add('visible');
+            } else {
+                clearing.classList.remove('visible');
+            }
+
+            // Show cathedral
+            if (depth > 80) {
+                cathedral.classList.add('visible');
+                forest.classList.add('very-deep');
+            } else {
+                cathedral.classList.remove('visible');
+                forest.classList.remove('very-deep');
+            }
+
+            // Show compass at certain depth
+            if (depth > 50 && depth < 80) {
+                compass.classList.add('visible');
+            } else {
+                compass.classList.remove('visible');
+            }
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            recordMovement();
+
+            // Arrow key sequence detection
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                const key = e.code.replace('Arrow', '').toLowerCase();
+                arrowSequence.push(key);
+                if (arrowSequence.length > secretSequence.length) {
+                    arrowSequence.shift();
+                }
+                if (arrowSequence.join(',') === secretSequence.join(',') && mushroomsFound === totalMushrooms) {
+                    // All secrets revealed
+                    cathedralSecret.style.opacity = '0.6';
+                    cathedralSecret.textContent = 'the forest has accepted you';
+                }
+            }
+
+            if (e.code === 'KeyM') {
+                document.body.classList.remove('autumn', 'twilight', 'dawn');
+                document.body.classList.toggle('misty');
+            }
+            if (e.code === 'KeyA') {
+                document.body.classList.remove('misty', 'twilight', 'dawn');
+                document.body.classList.toggle('autumn');
+            }
+            if (e.code === 'KeyD') {
+                document.body.classList.remove('misty', 'autumn', 'dawn');
+                document.body.classList.toggle('twilight');
+                if (document.body.classList.contains('twilight')) {
+                    setTimeout(createOwl, 4000);
+                }
+            }
+            if (e.code === 'KeyB') {
+                if (e.shiftKey) {
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => createBird(true), i * 1000);
+                    }
+                } else {
+                    createBird();
+                }
+            }
+            if (e.code === 'KeyF') {
+                createFireflies();
+            }
+            if (e.code === 'KeyS') {
+                cycleSound();
+            }
+            if (e.code === 'KeyW') {
+                document.body.classList.toggle('wind-active');
+            }
+            if (e.code === 'KeyT') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Wave rustle through all trees
+                trees.forEach((tree, i) => {
+                    const row = parseInt(tree.dataset.row);
+                    setTimeout(() => {
+                        tree.classList.add('deep-rustle');
+                        setTimeout(() => tree.classList.remove('deep-rustle'), 1000);
+                    }, row * 50 + (i % 10) * 20);
+                });
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret dawn mode
+            if (e.code === 'KeyN' && e.shiftKey) {
+                document.body.classList.remove('misty', 'autumn', 'twilight');
+                document.body.classList.toggle('dawn');
+            }
+        });
+
+        // Mouse move parallax for subtle depth
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            const mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+
+            treeRows.forEach(row => {
+                const rowDepth = parseFloat(row.dataset.depth);
+                const moveX = mouseX * (1 - rowDepth) * 5;
+                const moveY = mouseY * (1 - rowDepth) * 3;
+                const currentTransform = row.style.transform;
+                const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/);
+                const scale = scaleMatch ? scaleMatch[1] : 1;
+                row.style.transform = `scale(${scale}) translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        // Console poetry
+        console.log('%c\u{1F332} forest', 'font-size: 18px; color: #4a7c59; font-weight: 300; letter-spacing: 0.3em;');
+        console.log('');
+        console.log('%cbetween the trunks', 'font-size: 11px; color: #2a4a2a; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%csomething older than names', 'font-size: 11px; color: #2a4a2a; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%cstands perfectly still', 'font-size: 11px; color: #2a4a2a; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%cand watches', 'font-size: 11px; color: #2a4a2a; font-style: italic; letter-spacing: 0.1em;');
+        console.log('');
+        console.log('%c...', 'font-size: 10px; color: #3a4a3a;');
+        console.log('');
+        console.log('%cbe still. the fog lifts for the patient.', 'font-size: 9px; color: #3a4a3a; letter-spacing: 0.05em;');
+        console.log('%cfive mushrooms hide in the undergrowth.', 'font-size: 9px; color: #3a4a3a; letter-spacing: 0.05em;');
+        console.log('%csome things watch from between the trees.', 'font-size: 9px; color: #3a4a3a; letter-spacing: 0.05em;');
+
+        // Hidden entrance click
+        hiddenEntrance.addEventListener('click', () => {
+            if (hiddenEntrance.classList.contains('visible')) {
+                // Could link somewhere secret
+                console.log('%c...the entrance opens', 'font-size: 10px; color: #86b398; font-style: italic;');
+                console.log('%cbut what lies beyond', 'font-size: 10px; color: #86b398; font-style: italic;');
+                console.log('%cis a story for another time', 'font-size: 10px; color: #86b398; font-style: italic;');
+            }
+        });
+    </script>
+</body>
+</html>

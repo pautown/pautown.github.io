@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>barn - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, #2a1f1a 0%, #1a1510 50%, #0f0d0a 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            transition: filter 2s ease, background 3s ease;
+        }
+
+        body.night {
+            filter: brightness(0.2) contrast(1.4) saturate(0.7);
+            background: linear-gradient(180deg, #1a1815 0%, #0a0908 100%);
+        }
+        body.golden {
+            filter: sepia(0.5) brightness(1.15) saturate(1.4);
+            background: linear-gradient(180deg, #3a2a1f 0%, #2a1f15 100%);
+        }
+
+        .barn-wall {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .plank {
+            flex: 1;
+            background: linear-gradient(90deg,
+                #3a2a1f 0%, #4a3a2a 15%, #3d2d20 30%, #4a3a2a 45%,
+                #352518 60%, #4a3a2a 75%, #3a2a1f 90%, #4a3a2a 100%);
+            border-bottom: 1px solid #1a1510;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Wood grain texture - aged, weathered */
+        .plank::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(90deg,
+                    transparent, transparent 47px, rgba(0,0,0,0.08) 47px, rgba(0,0,0,0.08) 50px,
+                    transparent 50px, transparent 97px, rgba(0,0,0,0.12) 97px, rgba(0,0,0,0.12) 100px),
+                repeating-linear-gradient(175deg,
+                    transparent, transparent 80px, rgba(60,40,20,0.1) 80px, rgba(60,40,20,0.1) 82px);
+        }
+
+        /* Knots and imperfections - the wood remembers */
+        .plank::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(ellipse 8px 12px at var(--knot-x, 20%) 50%, rgba(30,20,10,0.4) 0%, transparent 70%),
+                radial-gradient(ellipse 5px 8px at var(--knot2-x, 70%) 40%, rgba(30,20,10,0.3) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .plank:nth-child(odd)::after { --knot-x: 25%; --knot2-x: 78%; }
+        .plank:nth-child(even)::after { --knot-x: 65%; --knot2-x: 12%; }
+        .plank:nth-child(3n)::after { --knot-x: 45%; --knot2-x: 85%; }
+        .plank:nth-child(4n+1)::after { --knot-x: 88%; --knot2-x: 35%; }
+
+        /* Weathering variation per plank */
+        .plank:nth-child(odd) { filter: brightness(0.95); }
+        .plank:nth-child(3n) { filter: brightness(1.05) saturate(0.9); }
+        .plank:nth-child(5n) { filter: brightness(0.9) hue-rotate(5deg); }
+
+        .mask {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            cursor: default;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            opacity: 0;
+            animation: maskAppear 3.5s ease forwards;
+            animation-delay: var(--delay, 0s);
+            transform-origin: center center;
+        }
+
+        @keyframes maskAppear {
+            0% { opacity: 0; transform: scale(0.8); }
+            70% { opacity: 0.85; transform: scale(1.02); }
+            100% { opacity: var(--rest-opacity, 0.65); transform: scale(1); }
+        }
+
+        .mask:hover {
+            transform: scale(1.08);
+            filter: drop-shadow(3px 3px 8px rgba(0,0,0,0.6));
+            opacity: 0.9 !important;
+        }
+
+        .mask.looking { animation: maskLook 0.8s ease; }
+        .mask.spooked { animation: maskSpook 0.4s ease; }
+        .mask.curious { animation: maskCurious 1.5s ease; }
+        .mask.sad { animation: maskSad 2.5s ease; }
+        .mask.hidden { opacity: 0.03 !important; transition: opacity 3s ease; }
+        .mask.breathing { animation: maskBreathe 6s ease-in-out infinite; }
+        .mask.tilted { transform: rotate(var(--tilt, 0deg)); }
+        .mask.attending { animation: maskAttend 8s ease-in-out infinite; }
+        .mask.patient-watch { animation: patientWatch 12s ease-in-out infinite; }
+
+        @keyframes maskLook {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-6deg) translateX(-1px); }
+            75% { transform: rotate(6deg) translateX(1px); }
+        }
+
+        @keyframes maskSpook {
+            0%, 100% { transform: scale(1); }
+            35% { transform: scale(1.25) translateY(-3px); }
+            70% { transform: scale(1.1); }
+        }
+
+        @keyframes maskCurious {
+            0%, 100% { transform: rotate(0deg); }
+            30% { transform: rotate(-12deg) translateY(-2px); }
+            60% { transform: rotate(4deg); }
+            80% { transform: rotate(-3deg); }
+        }
+
+        @keyframes maskSad {
+            0%, 100% { transform: rotate(0deg) translateY(0); }
+            50% { transform: rotate(-2deg) translateY(4px); }
+        }
+
+        @keyframes maskBreathe {
+            0%, 100% { transform: scale(1); opacity: var(--rest-opacity, 0.65); }
+            50% { transform: scale(1.02); opacity: calc(var(--rest-opacity, 0.65) + 0.08); }
+        }
+
+        @keyframes maskAttend {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(-2deg) scale(1.01); }
+            50% { transform: rotate(1deg) scale(1.015); }
+            80% { transform: rotate(-1deg) scale(1.005); }
+        }
+
+        @keyframes patientWatch {
+            0%, 100% { transform: rotate(0deg); opacity: var(--rest-opacity, 0.65); }
+            25% { transform: rotate(-1deg); }
+            50% { opacity: calc(var(--rest-opacity, 0.65) + 0.12); }
+            75% { transform: rotate(1deg); }
+        }
+
+        /* The shaft of light - a single beam that matters */
+        .light-shaft {
+            position: fixed;
+            top: -10%;
+            left: 35%;
+            width: 120px;
+            height: 130%;
+            background: linear-gradient(180deg,
+                rgba(255, 235, 190, 0.15) 0%,
+                rgba(255, 230, 180, 0.08) 40%,
+                rgba(255, 230, 180, 0.03) 70%,
+                transparent 100%);
+            opacity: 0.7;
+            pointer-events: none;
+            transform: rotate(2deg) skewX(-3deg);
+            filter: blur(8px);
+            animation: shaftBreathe 20s ease-in-out infinite;
+        }
+
+        @keyframes shaftBreathe {
+            0%, 100% { opacity: 0.6; transform: rotate(2deg) skewX(-3deg); }
+            50% { opacity: 0.75; transform: rotate(2.5deg) skewX(-2deg); }
+        }
+
+        body.night .light-shaft { opacity: 0; }
+        body.golden .light-shaft { opacity: 0.9; filter: blur(12px); }
+
+        /* Secondary light beams - thinner, more subtle */
+        .light-beam {
+            position: fixed;
+            top: -20%;
+            width: var(--beam-width, 3px);
+            height: 140%;
+            background: linear-gradient(180deg,
+                rgba(255, 235, 190, 0.25) 0%,
+                rgba(255, 230, 180, 0.12) 35%,
+                rgba(255, 230, 180, 0.04) 65%,
+                transparent 100%);
+            opacity: var(--beam-opacity, 0.4);
+            pointer-events: none;
+            transition: opacity 2s ease;
+            transform: rotate(var(--beam-angle, 0deg));
+            filter: blur(1px);
+        }
+
+        body.night .light-beam { opacity: 0; }
+        body.golden .light-beam { opacity: 0.6; filter: blur(2px); }
+
+        /* Dust motes suspended in the shaft of light */
+        .dust {
+            position: fixed;
+            width: var(--dust-size, 2px);
+            height: var(--dust-size, 2px);
+            background: radial-gradient(circle, rgba(255, 235, 195, var(--dust-opacity, 0.4)) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-dust var(--dust-duration, 15s) linear infinite;
+            animation-delay: var(--dust-delay, 0s);
+        }
+
+        .dust.in-shaft {
+            background: radial-gradient(circle, rgba(255, 248, 230, 0.85) 0%, rgba(255, 240, 210, 0.4) 50%, transparent 70%);
+            box-shadow: 0 0 8px rgba(255, 235, 195, 0.4);
+        }
+
+        .dust.slow {
+            animation-timing-function: ease-in-out;
+        }
+
+        @keyframes float-dust {
+            0% {
+                transform: translateY(100vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            8% { opacity: var(--dust-max-opacity, 0.4); }
+            50% {
+                transform: translateY(50vh) translateX(var(--dust-drift, 10px)) rotate(180deg);
+            }
+            92% { opacity: var(--dust-max-opacity, 0.4); }
+            100% {
+                transform: translateY(-20vh) translateX(var(--dust-drift-end, 20px)) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Larger motes that drift lazily */
+        .mote {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(255, 240, 200, 0.25) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-mote 25s ease-in-out infinite;
+        }
+
+        @keyframes float-mote {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0.15;
+            }
+            25% { transform: translateY(-25px) translateX(15px); opacity: 0.3; }
+            50% { transform: translateY(-8px) translateX(-12px); opacity: 0.2; }
+            75% { transform: translateY(-35px) translateX(8px); opacity: 0.25; }
+        }
+
+        .watching {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 3s ease;
+            letter-spacing: 0.12em;
+            text-transform: lowercase;
+        }
+
+        .watching.visible { opacity: 0.45; }
+        .watching.pulse { animation: watchingPulse 6s ease-in-out infinite; }
+
+        @keyframes watchingPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.55; }
+        }
+
+        .hidden-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-weight: 300;
+            font-style: italic;
+            color: var(--amber-soft);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            pointer-events: none;
+            letter-spacing: 0.08em;
+            max-width: 70%;
+            line-height: 1.7;
+        }
+
+        .hidden-message.visible { opacity: 0.5; }
+
+        .back-link { color: var(--amber); z-index: 100; opacity: 0.4; }
+        .back-link:hover { opacity: 0.7; }
+
+        /* Secret corner - the quiet place */
+        .secret-corner {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            cursor: default;
+            z-index: 50;
+        }
+
+        /* Cobweb - barely there */
+        .cobweb {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 140px;
+            height: 140px;
+            opacity: 0.03;
+            pointer-events: none;
+            background:
+                linear-gradient(135deg, transparent 49%, rgba(200,180,150,0.4) 49.5%, rgba(200,180,150,0.4) 50%, transparent 50.5%),
+                linear-gradient(115deg, transparent 49%, rgba(200,180,150,0.25) 49.5%, rgba(200,180,150,0.25) 50%, transparent 50.5%),
+                linear-gradient(155deg, transparent 49%, rgba(200,180,150,0.25) 49.5%, rgba(200,180,150,0.25) 50%, transparent 50.5%);
+        }
+
+        body.golden .cobweb { opacity: 0.06; }
+        body.night .cobweb { opacity: 0.015; }
+
+        /* Ambient warmth around cursor - very subtle */
+        .cursor-warmth {
+            position: fixed;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255,235,195,0.015) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.5s ease;
+            z-index: 1;
+        }
+
+        body.night .cursor-warmth { opacity: 0; }
+
+        /* Counter - discovered masks */
+        .mask-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 2s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .mask-counter.visible { opacity: 0.2; }
+
+        /* Stillness indicator - appears when patient */
+        .stillness-glyph {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 5s ease;
+            pointer-events: none;
+        }
+
+        .stillness-glyph.visible { opacity: 0.15; }
+
+        /* Sound toggle - hidden in corner */
+        .sound-toggle {
+            position: fixed;
+            bottom: 8px;
+            left: 8px;
+            width: 20px;
+            height: 20px;
+            opacity: 0;
+            cursor: default;
+            z-index: 100;
+            transition: opacity 3s ease;
+        }
+
+        .sound-toggle:hover { opacity: 0.3; cursor: pointer; }
+        .sound-toggle.found { opacity: 0.15; }
+
+        .sound-toggle::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--amber);
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z'/%3E%3C/svg%3E");
+            mask-size: contain;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z'/%3E%3C/svg%3E");
+            -webkit-mask-size: contain;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="barn-wall" id="wall"></div>
+    <div class="light-shaft"></div>
+    <div class="cobweb"></div>
+    <div class="secret-corner" id="secret-corner"></div>
+    <div class="cursor-warmth" id="cursor-warmth"></div>
+    <div class="sound-toggle" id="sound-toggle"></div>
+
+    <p class="watching" id="watching"></p>
+    <p class="hidden-message" id="message"></p>
+    <p class="mask-counter" id="mask-counter"></p>
+    <div class="stillness-glyph" id="stillness-glyph"></div>
+
+    <script>
+        const wall = document.getElementById('wall');
+        const watchingEl = document.getElementById('watching');
+        const messageEl = document.getElementById('message');
+        const maskCounterEl = document.getElementById('mask-counter');
+        const cursorWarmth = document.getElementById('cursor-warmth');
+        const secretCorner = document.getElementById('secret-corner');
+        const soundToggle = document.getElementById('sound-toggle');
+        const stillnessGlyph = document.getElementById('stillness-glyph');
+
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            // startle ripples outward from click
+            const x = e.clientX;
+            const y = e.clientY;
+            masks.forEach((mask, i) => {
+                const maskRect = mask.getBoundingClientRect();
+                const dx = maskRect.left + maskRect.width/2 - x;
+                const dy = maskRect.top + maskRect.height/2 - y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                const delay = Math.min(distance * 0.8, 400);
+                setTimeout(() => {
+                    mask.classList.add('spooked');
+                    const originalFace = mask.dataset.originalFace;
+                    mask.textContent = 'O_O';
+                    setTimeout(() => {
+                        mask.classList.remove('spooked');
+                        mask.textContent = originalFace;
+                    }, 400);
+                }, delay);
+            });
+        });
+
+        // Create planks - aged wood, each with its own history
+        for (let i = 0; i < 14; i++) {
+            const plank = document.createElement('div');
+            plank.className = 'plank';
+            plank.style.filter = `brightness(${0.88 + Math.random() * 0.24}) saturate(${0.82 + Math.random() * 0.36})`;
+            wall.appendChild(plank);
+        }
+
+        // The masks - each with personality, each watching
+        const maskFaces = [
+            { face: ':)', style: 'color: #f5deb3', personality: 'friendly' },
+            { face: ':|', style: 'color: #deb887', personality: 'neutral' },
+            { face: ':/', style: 'color: #d2b48c', personality: 'skeptical' },
+            { face: ':o', style: 'color: #c4a67c', personality: 'surprised' },
+            { face: ':]', style: 'color: #b8956c', personality: 'sly' },
+            { face: ':(', style: 'color: #e8d4b8', personality: 'melancholy' },
+            { face: ';)', style: 'color: #d4c4a8', personality: 'knowing' },
+            { face: ':3', style: 'color: #c8b498', personality: 'mischievous' },
+            { face: ':D', style: 'color: #bcaa88', personality: 'joyful' },
+            { face: 'o_o', style: 'color: #f0e0c0', personality: 'watchful' },
+            { face: '-_-', style: 'color: #e0d0b0', personality: 'tired' },
+            { face: '^_^', style: 'color: #d0c0a0', personality: 'content' },
+            { face: '._.', style: 'color: #c0b090', personality: 'observant' },
+            { face: 'u_u', style: 'color: #b0a080', personality: 'peaceful' }
+        ];
+
+        // Messages that emerge from stillness
+        const watchingMessages = [
+            'they are watching',
+            'they see',
+            'they remember',
+            'they have always been here',
+            'you are not alone',
+            'the walls know',
+            'something stirs'
+        ];
+
+        const stillnessMessages = [
+            'the dust settles',
+            'they notice your patience',
+            'the wood creaks',
+            'a presence draws near',
+            'something shifts in the corner of your eye',
+            'the barn breathes',
+            'you are being observed',
+            'time moves differently here'
+        ];
+
+        const deepStillnessMessages = [
+            'they have been waiting',
+            'the masks remember others who stood here',
+            'long before the walls, they watched',
+            'in stillness, truth',
+            'the barn accepts you'
+        ];
+
+        const allSeenMessages = [
+            'and now you have seen them all',
+            'they will remember you',
+            'you are part of the barn now',
+            'the watching goes both ways'
+        ];
+
+        const masks = [];
+        let currentWatchingIndex = 0;
+        let lastWatchingChange = Date.now();
+
+        // Place masks on the wall - deliberate, scattered
+        maskFaces.forEach((maskData, i) => {
+            const mask = document.createElement('div');
+            mask.className = 'mask mono';
+            mask.textContent = maskData.face;
+            mask.style.cssText = maskData.style;
+            mask.style.left = (10 + Math.random() * 80) + '%';
+            mask.style.top = (10 + Math.random() * 80) + '%';
+            mask.style.setProperty('--delay', (i * 0.35 + Math.random() * 0.5) + 's');
+            mask.style.setProperty('--rest-opacity', (0.5 + Math.random() * 0.2).toFixed(2));
+            mask.dataset.originalFace = maskData.face;
+            mask.dataset.personality = maskData.personality;
+            mask.dataset.index = i;
+
+            document.body.appendChild(mask);
+            masks.push(mask);
+        });
+
+        // Secondary light beams - thin cracks of light
+        const beamPositions = [15, 62, 85];
+        beamPositions.forEach((pos) => {
+            const beam = document.createElement('div');
+            beam.className = 'light-beam';
+            beam.style.left = pos + '%';
+            beam.style.setProperty('--beam-width', (1.5 + Math.random() * 2.5) + 'px');
+            beam.style.setProperty('--beam-opacity', (0.25 + Math.random() * 0.2).toFixed(2));
+            beam.style.setProperty('--beam-angle', (Math.random() * 2 - 1) + 'deg');
+            document.body.appendChild(beam);
+        });
+
+        // Dust motes - suspended in light
+        function createDust() {
+            const dust = document.createElement('div');
+            dust.className = 'dust';
+            const leftPos = 5 + Math.random() * 90;
+            dust.style.left = leftPos + '%';
+
+            // In the main shaft of light (around 35%)
+            const inShaft = Math.abs(leftPos - 35) < 12;
+            if (inShaft && Math.random() > 0.4) {
+                dust.classList.add('in-shaft');
+            }
+            if (Math.random() > 0.7) {
+                dust.classList.add('slow');
+            }
+
+            const size = 1 + Math.random() * 2;
+            const duration = 12 + Math.random() * 10;
+            const drift = (Math.random() - 0.5) * 25;
+
+            dust.style.setProperty('--dust-size', size + 'px');
+            dust.style.setProperty('--dust-duration', duration + 's');
+            dust.style.setProperty('--dust-delay', (Math.random() * 4) + 's');
+            dust.style.setProperty('--dust-drift', drift + 'px');
+            dust.style.setProperty('--dust-drift-end', (drift + (Math.random() - 0.5) * 15) + 'px');
+            dust.style.setProperty('--dust-opacity', (0.2 + Math.random() * 0.3).toFixed(2));
+            dust.style.setProperty('--dust-max-opacity', (0.3 + Math.random() * 0.35).toFixed(2));
+
+            document.body.appendChild(dust);
+            setTimeout(() => dust.remove(), (duration + 4) * 1000);
+        }
+
+        // Larger motes - barely drifting
+        function createMote() {
+            const mote = document.createElement('div');
+            mote.className = 'mote';
+            mote.style.left = (15 + Math.random() * 70) + '%';
+            mote.style.top = (25 + Math.random() * 50) + '%';
+            mote.style.animationDelay = (Math.random() * 15) + 's';
+            document.body.appendChild(mote);
+        }
+
+        // Initial particles
+        setInterval(createDust, 450);
+        for (let i = 0; i < 20; i++) setTimeout(createDust, i * 150);
+        for (let i = 0; i < 6; i++) createMote();
+
+        // Masks breathe and shift when no one is looking
+        setInterval(() => {
+            if (Math.random() > 0.8) {
+                const randomMask = masks[Math.floor(Math.random() * masks.length)];
+                if (Math.random() > 0.6) {
+                    randomMask.classList.add('looking');
+                    setTimeout(() => randomMask.classList.remove('looking'), 800);
+                } else {
+                    randomMask.classList.add('curious');
+                    setTimeout(() => randomMask.classList.remove('curious'), 1500);
+                }
+            }
+        }, 4000);
+
+        // Watching message cycles slowly
+        setInterval(() => {
+            if (watchingEl.classList.contains('visible') && Date.now() - lastWatchingChange > 12000) {
+                if (Math.random() > 0.6) {
+                    watchingEl.style.opacity = '0';
+                    setTimeout(() => {
+                        currentWatchingIndex = (currentWatchingIndex + 1) % watchingMessages.length;
+                        watchingEl.textContent = watchingMessages[currentWatchingIndex];
+                        watchingEl.style.opacity = '';
+                        lastWatchingChange = Date.now();
+                    }, 2000);
+                }
+            }
+        }, 10000);
+
+        // Track hover
+        let hoveredMasks = new Set();
+        let clickCount = 0;
+        let secretClickCount = 0;
+
+        masks.forEach((mask, i) => {
+            mask.addEventListener('mouseenter', () => {
+                hoveredMasks.add(i);
+                updateMaskCounter();
+
+                // Nearby masks notice - a ripple of awareness
+                masks.forEach((otherMask, j) => {
+                    if (j !== i && Math.random() > 0.75) {
+                        const dx = parseFloat(mask.style.left) - parseFloat(otherMask.style.left);
+                        const dy = parseFloat(mask.style.top) - parseFloat(otherMask.style.top);
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        if (distance < 30) {
+                            setTimeout(() => {
+                                otherMask.classList.add('looking');
+                                setTimeout(() => otherMask.classList.remove('looking'), 500);
+                            }, 100 + Math.random() * 200);
+                        }
+                    }
+                });
+
+                // Progressive revelation
+                if (hoveredMasks.size === 3 && !watchingEl.classList.contains('visible')) {
+                    watchingEl.textContent = watchingMessages[0];
+                    watchingEl.classList.add('visible');
+                    lastWatchingChange = Date.now();
+                }
+
+                if (hoveredMasks.size === 7) {
+                    watchingEl.classList.add('pulse');
+                }
+
+                if (hoveredMasks.size === 10) {
+                    showMessage(stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)]);
+                }
+
+                if (hoveredMasks.size === masks.length) {
+                    showMessage(allSeenMessages[Math.floor(Math.random() * allSeenMessages.length)], 7000);
+                    // All masks acknowledge in a wave
+                    masks.forEach((m, idx) => {
+                        setTimeout(() => {
+                            m.classList.add('attending');
+                        }, idx * 80);
+                    });
+                }
+            });
+
+            // Click - personality-based reactions
+            mask.addEventListener('click', () => {
+                clickCount++;
+                const originalFace = mask.dataset.originalFace;
+                const personality = mask.dataset.personality;
+
+                let reactionFace = ';)';
+                switch(personality) {
+                    case 'friendly': reactionFace = '^_^'; break;
+                    case 'neutral': reactionFace = ':)'; break;
+                    case 'skeptical': reactionFace = '>.>'; break;
+                    case 'surprised': reactionFace = 'O_O'; break;
+                    case 'sly': reactionFace = ';3'; break;
+                    case 'melancholy': reactionFace = ':,)'; break;
+                    case 'knowing': reactionFace = '^_~'; break;
+                    case 'mischievous': reactionFace = 'x3'; break;
+                    case 'joyful': reactionFace = ':D'; break;
+                    case 'watchful': reactionFace = 'O_o'; break;
+                    case 'tired': reactionFace = '-.-'; break;
+                    case 'content': reactionFace = 'uwu'; break;
+                    case 'observant': reactionFace = '...'; break;
+                    case 'peaceful': reactionFace = 'z_z'; break;
+                }
+
+                mask.textContent = reactionFace;
+                setTimeout(() => mask.textContent = originalFace, 800);
+
+                if (clickCount === 20) {
+                    showMessage('they appreciate the attention', 4000);
+                }
+                if (clickCount === 50) {
+                    showMessage('you are persistent. they like that.', 5000);
+                }
+            });
+
+            // Double click - mask speaks
+            mask.addEventListener('dblclick', () => {
+                const personality = mask.dataset.personality;
+                let thought = '';
+                switch(personality) {
+                    case 'friendly': thought = 'welcome'; break;
+                    case 'neutral': thought = '...'; break;
+                    case 'skeptical': thought = 'hmm'; break;
+                    case 'surprised': thought = 'oh'; break;
+                    case 'sly': thought = 'heh'; break;
+                    case 'melancholy': thought = 'sigh'; break;
+                    case 'knowing': thought = 'yes'; break;
+                    case 'mischievous': thought = 'hehe'; break;
+                    case 'joyful': thought = 'joy'; break;
+                    case 'watchful': thought = 'seen'; break;
+                    case 'tired': thought = 'rest'; break;
+                    case 'content': thought = 'peace'; break;
+                    case 'observant': thought = 'noted'; break;
+                    case 'peaceful': thought = 'calm'; break;
+                }
+                showMessage(thought, 2500);
+            });
+        });
+
+        function updateMaskCounter() {
+            if (hoveredMasks.size > 0) {
+                maskCounterEl.textContent = hoveredMasks.size + '/' + masks.length;
+                maskCounterEl.classList.add('visible');
+            }
+        }
+
+        function showMessage(text, duration = 5000) {
+            messageEl.textContent = text;
+            messageEl.classList.add('visible');
+            setTimeout(() => messageEl.classList.remove('visible'), duration);
+        }
+
+        // Secret corner
+        let secretHoverTime = 0;
+        let secretInterval;
+        secretCorner.addEventListener('mouseenter', () => {
+            secretInterval = setInterval(() => {
+                secretHoverTime++;
+                if (secretHoverTime === 40) {
+                    showMessage('you found the quiet corner', 4000);
+                }
+                if (secretHoverTime === 120) {
+                    showMessage('patience is a virtue they respect', 5000);
+                }
+                if (secretHoverTime === 250) {
+                    showMessage('the corner remembers you now', 5000);
+                }
+            }, 100);
+        });
+        secretCorner.addEventListener('mouseleave', () => {
+            clearInterval(secretInterval);
+            secretHoverTime = 0;
+        });
+        secretCorner.addEventListener('click', () => {
+            secretClickCount++;
+            if (secretClickCount === 5) {
+                showMessage('the corner clicks back', 3500);
+            }
+            if (secretClickCount === 13) {
+                showMessage('thirteen is their favorite number', 4500);
+            }
+        });
+
+        // Sound toggle - hidden but findable
+        let soundEnabled = false;
+        let soundFound = false;
+        soundToggle.addEventListener('click', () => {
+            if (!soundFound) {
+                soundFound = true;
+                soundToggle.classList.add('found');
+                showMessage('sound sleeps here', 3000);
+            } else {
+                soundEnabled = !soundEnabled;
+                if (soundEnabled) {
+                    showMessage('the barn hums', 2500);
+                } else {
+                    showMessage('silence returns', 2500);
+                }
+            }
+        });
+
+        // Cursor warmth
+        document.addEventListener('mousemove', (e) => {
+            cursorWarmth.style.left = e.clientX + 'px';
+            cursorWarmth.style.top = e.clientY + 'px';
+        });
+
+        // Keyboard interactions - hidden
+        let breathingActive = false;
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyN') {
+                document.body.classList.remove('golden');
+                document.body.classList.toggle('night');
+                if (document.body.classList.contains('night')) {
+                    showMessage('the night watches differently', 4000);
+                }
+            }
+            if (e.code === 'KeyG') {
+                document.body.classList.remove('night');
+                document.body.classList.toggle('golden');
+                if (document.body.classList.contains('golden')) {
+                    showMessage('golden light reveals golden truths', 4000);
+                }
+            }
+            if (e.code === 'KeyS') {
+                masks.forEach((mask, i) => {
+                    setTimeout(() => {
+                        mask.classList.add('spooked');
+                        setTimeout(() => mask.classList.remove('spooked'), 400);
+                    }, i * 30);
+                });
+            }
+            if (e.code === 'KeyH') {
+                const firstMaskHidden = masks[0].classList.contains('hidden');
+                masks.forEach((mask, i) => {
+                    setTimeout(() => mask.classList.toggle('hidden'), i * 60);
+                });
+                if (!firstMaskHidden) {
+                    setTimeout(() => showMessage('they are still there', 4000), 800);
+                }
+            }
+            if (e.code === 'KeyB') {
+                breathingActive = !breathingActive;
+                masks.forEach(mask => {
+                    if (breathingActive) {
+                        mask.classList.add('breathing');
+                    } else {
+                        mask.classList.remove('breathing');
+                    }
+                });
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                masks.forEach((mask, i) => {
+                    setTimeout(() => {
+                        mask.classList.add('looking');
+                        setTimeout(() => mask.classList.remove('looking'), 800);
+                    }, i * 50);
+                });
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            handleSecretWord(e.key);
+        });
+
+        // Secret word detection
+        let secretBuffer = '';
+        function handleSecretWord(key) {
+            secretBuffer += key.toLowerCase();
+            if (secretBuffer.length > 12) {
+                secretBuffer = secretBuffer.slice(-12);
+            }
+            if (secretBuffer.includes('hello')) {
+                showMessage('hello, watcher', 4000);
+                secretBuffer = '';
+            }
+            if (secretBuffer.includes('bye')) {
+                showMessage('they will remember you', 4000);
+                secretBuffer = '';
+            }
+            if (secretBuffer.includes('barn')) {
+                showMessage('yes, this is a barn', 3500);
+                secretBuffer = '';
+            }
+            if (secretBuffer.includes('wood')) {
+                showMessage('the wood remembers', 4000);
+                secretBuffer = '';
+            }
+            if (secretBuffer.includes('dust')) {
+                showMessage('it settles on everything, eventually', 5000);
+                secretBuffer = '';
+            }
+            if (secretBuffer.includes('mask')) {
+                showMessage('they wear nothing. these are their faces.', 5000);
+                secretBuffer = '';
+            }
+            if (secretBuffer.includes('light')) {
+                showMessage('from somewhere above, always', 4000);
+                secretBuffer = '';
+            }
+        }
+
+        // Stillness detection - the masks respond to patience
+        let stillnessTimer;
+        let stillnessLevel = 0;
+        let isStill = false;
+        const stillnessGlyphs = ['', '.', '..', '...', '\u2063'];
+
+        function onStillness() {
+            stillnessLevel++;
+            isStill = true;
+
+            if (stillnessLevel === 1) {
+                // 5 seconds - masks begin to notice
+                masks.forEach((mask, i) => {
+                    if (Math.random() > 0.6) {
+                        setTimeout(() => {
+                            mask.classList.add('attending');
+                        }, i * 150);
+                    }
+                });
+            }
+
+            if (stillnessLevel === 2) {
+                // 12 seconds - a message emerges
+                showMessage(stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)], 6000);
+            }
+
+            if (stillnessLevel === 3) {
+                // 25 seconds - deeper stillness
+                stillnessGlyph.textContent = stillnessGlyphs[3];
+                stillnessGlyph.classList.add('visible');
+                masks.forEach(mask => {
+                    mask.classList.add('patient-watch');
+                });
+            }
+
+            if (stillnessLevel === 4) {
+                // 45 seconds - deep patience rewarded
+                showMessage(deepStillnessMessages[Math.floor(Math.random() * deepStillnessMessages.length)], 8000);
+            }
+
+            if (stillnessLevel === 5) {
+                // 75 seconds - something happens
+                stillnessGlyph.textContent = '\u221e';
+                setTimeout(() => {
+                    document.body.classList.add('golden');
+                    showMessage('the light finds you', 6000);
+                }, 2000);
+            }
+        }
+
+        function resetStillness() {
+            if (isStill) {
+                isStill = false;
+                stillnessLevel = 0;
+                stillnessGlyph.classList.remove('visible');
+                masks.forEach(mask => {
+                    mask.classList.remove('attending');
+                    mask.classList.remove('patient-watch');
+                });
+            }
+        }
+
+        function startStillnessTimer() {
+            clearTimeout(stillnessTimer);
+            resetStillness();
+
+            // Layered stillness detection
+            stillnessTimer = setTimeout(() => {
+                onStillness(); // level 1 at 5s
+                stillnessTimer = setTimeout(() => {
+                    onStillness(); // level 2 at 12s
+                    stillnessTimer = setTimeout(() => {
+                        onStillness(); // level 3 at 25s
+                        stillnessTimer = setTimeout(() => {
+                            onStillness(); // level 4 at 45s
+                            stillnessTimer = setTimeout(() => {
+                                onStillness(); // level 5 at 75s
+                            }, 30000);
+                        }, 20000);
+                    }, 13000);
+                }, 7000);
+            }, 5000);
+        }
+
+        document.addEventListener('mousemove', startStillnessTimer);
+        document.addEventListener('keydown', startStillnessTimer);
+        startStillnessTimer();
+
+        // Console poetry
+        console.log('%c' + ' '.repeat(20) + 'barn', 'font-size: 24px; color: #d4a056; font-family: Georgia, serif; font-weight: 300; letter-spacing: 0.3em;');
+        console.log('%c' + ' '.repeat(12) + 'they have always been here', 'font-size: 11px; color: #8b7355; font-style: italic;');
+        console.log(' ');
+        console.log('%c' + ' '.repeat(8) + 'the wood remembers', 'font-size: 9px; color: #6b5545;');
+        console.log('%c' + ' '.repeat(8) + 'the dust settles', 'font-size: 9px; color: #6b5545;');
+        console.log('%c' + ' '.repeat(8) + 'the masks watch', 'font-size: 9px; color: #6b5545;');
+        console.log(' ');
+        console.log('%c' + ' '.repeat(4) + 'be still. they will notice.', 'font-size: 10px; color: #5a4535; font-style: italic;');
+    </script>
+</body>
+</html>

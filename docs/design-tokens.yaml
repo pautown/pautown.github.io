@@ -1,0 +1,438 @@
+# townhaus design tokens
+# These values define the visual and temporal language of the experience.
+# They are specifications, but remember: specifications are containers for feeling.
+
+meta:
+  name: townhaus
+  description: "a place that is here because it is"
+  version: 1.0.0
+  philosophy: "breath on glass, fog lifting slowly, stone warming to touch"
+
+# ---------------------
+# COLOR TOKENS
+# ---------------------
+# Colors are not decoration. They are the temperature of a room.
+
+colors:
+  primary:
+    amber:
+      value: "#d4a056"
+      description: "Lamplight through curtains at 4pm in autumn"
+      usage: "Points of light, earned attention, warmth"
+    amber-glow:
+      value: "#e8b86d"
+      description: "The warmth spreading from a touched surface"
+      usage: "Hover states, active presence, breath indicators"
+    amber-soft:
+      value: "#f0c87a"
+      description: "Diffused warmth, gentler than direct light"
+      usage: "Large area accents, subtle warming"
+    amber-deep:
+      value: "#8b6914"
+      description: "Aged brass, tarnished gold, earned patina"
+      usage: "Grounding, density, age, shadows in warm light"
+    amber-dark:
+      value: "#5c4a1f"
+      description: "The edge of lamplight where it meets shadow"
+      usage: "Deep accents, borders, aged elements"
+
+  neutral:
+    slate:
+      value: "#4a5568"
+      description: "The inside of a shell, wet riverbed stone"
+      usage: "Primary text, structure, the container that holds space"
+    slate-deep:
+      value: "#2d3748"
+      description: "Deeper structure, more present"
+      usage: "Emphasis without shouting, title text"
+    slate-blue:
+      value: "#5a6a7a"
+      description: "Slate touched by twilight"
+      usage: "Subtle variation, depth in neutrals"
+    slate-light:
+      value: "#718096"
+      description: "Slate catching light"
+      usage: "Secondary text, hints, quiet presence"
+
+  ground:
+    bone:
+      value: "#f5f0e6"
+      description: "Older than white. Paper that has been touched, set down, returned to."
+      usage: "Primary background, the ground everything rests on"
+    bone-dark:
+      value: "#e8e0d0"
+      description: "Bone in shadow, or bone that remembers touch"
+      usage: "Elevated surfaces that are not quite paper"
+    paper:
+      value: "#faf6ed"
+      description: "Freshest version of bone, closer to new"
+      usage: "Cards, elevated surfaces, lightness"
+    cream:
+      value: "#fffef9"
+      description: "Almost white but knows better"
+      usage: "Rare, for highest elevation or purest light"
+
+  ink:
+    ink:
+      value: "#2d2a24"
+      description: "Not black. The color of words that matter."
+      usage: "Headings, important text, weight"
+    ink-light:
+      value: "#4a4640"
+      description: "Ink that has dried in sunlight"
+      usage: "Body text, lighter emphasis"
+
+  accent:
+    green-orb:
+      value: "#86b398"
+      description: "Moss on circuit boards - nature reclaiming technology"
+      usage: "Strategic accent, life indicators, patience rewarded"
+    green-deep:
+      value: "#4a7c59"
+      description: "Forest floor, the deep growth"
+      usage: "Depth in green contexts, forest pages"
+    green-glow:
+      value: "rgba(134, 179, 152, 0.4)"
+      description: "Green as atmosphere, not object"
+      usage: "Glows, auras around green elements"
+    green-translucent:
+      value: "rgba(134, 179, 152, 0.15)"
+      description: "The faintest suggestion of green"
+      usage: "Backgrounds, subtle presence"
+
+  atmosphere:
+    shadow:
+      value: "rgba(26, 32, 44, 0.25)"
+      description: "The natural shadow of objects at rest"
+      usage: "Box shadows, depth, elevation"
+    shadow-deep:
+      value: "rgba(26, 32, 44, 0.5)"
+      description: "Deeper shadow for more elevation"
+      usage: "Dragging states, high elevation"
+    night:
+      value: "#1a1a2e"
+      description: "Deep night, not void"
+      usage: "Dark mode backgrounds, orb page, mystery"
+    dusk:
+      value: "#2d3748"
+      description: "The moment between day and night"
+      usage: "Transition states, twilight contexts"
+    golden:
+      value: "#f4e4c1"
+      description: "Light as material"
+      usage: "Time page gradients, golden hour"
+
+  strategic:
+    burgundy:
+      value: "#722F37"
+      description: "Deep wine, controlled darkness, the evil tile"
+      usage: "Rare, for deliberate contrast and tension"
+    burgundy-deep:
+      value: "#4A0E0E"
+      description: "Burgundy in shadow"
+      usage: "Evil tile gradients"
+
+# ---------------------
+# TYPOGRAPHY TOKENS
+# ---------------------
+# Words should rest on the page, not stand on it.
+
+typography:
+  families:
+    primary:
+      name: "Cormorant Garamond"
+      fallback: "Georgia, serif"
+      import: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap"
+      description: "Thin strokes allow paper to breathe through letters"
+
+    mono:
+      name: "JetBrains Mono"
+      fallback: "monospace"
+      import: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap"
+      description: "The voice of the house itself - instructions that prefer to be ignored"
+
+  weights:
+    thin: 300      # Primary weight, breathing
+    regular: 400   # Rare emphasis
+    medium: 500    # Very rare, strong emphasis only
+
+  sizes:
+    base: "18px"
+    title:
+      large: "3.5rem"
+      medium: "2rem"
+      small: "1.5rem"
+    body:
+      large: "1rem"
+      regular: "0.9rem"
+      small: "0.85rem"
+    hint:
+      regular: "0.7rem"
+      small: "0.6rem"
+      tiny: "0.55rem"
+    whisper:
+      regular: "0.5rem"
+      tiny: "0.45rem"
+      ghost: "0.4rem"
+
+  lineHeight:
+    body: 1.6
+    heading: 1.3
+    tight: 1.2
+    hint: 1.8    # More breathing room for small text
+
+  letterSpacing:
+    body: "0.02em"
+    heading: "0.1em"
+    title: "0.4em"
+    whisper: "0.15em"
+    hint: "0.1em"
+    dramatic: "0.5em"
+
+# ---------------------
+# ANIMATION TOKENS
+# ---------------------
+# All movement is organic. Nothing snaps. Nothing bounces.
+
+animation:
+  easings:
+    default: "cubic-bezier(0.4, 0, 0.2, 1)"
+    gentle: "ease-in-out"
+    patient: "cubic-bezier(0.4, 0, 0.2, 1)"
+    organic: "ease"
+
+  durations:
+    instant: "0.1s"
+    micro: "0.3s"
+    short: "0.5s"
+    medium: "1.5s"
+    deliberate: "2s"
+    patient: "3s"
+    reveal: "4s"
+    breathing: "6s"
+    ambient: "8s"
+    environmental: "20s"
+
+  patterns:
+    fadeIn:
+      duration: "1.5s"
+      easing: "ease"
+      description: "Standard appearance"
+
+    fadeInSlow:
+      duration: "3s"
+      easing: "ease"
+      description: "For reveals that reward patience"
+
+    fadeInDelayed:
+      duration: "2s"
+      delay: "1s"
+      easing: "ease"
+      description: "For secondary elements"
+
+    breathe:
+      duration: "6s"
+      easing: "ease-in-out"
+      keyframes: "scale 1 -> 1.02 -> 1"
+      description: "Biological, living, present"
+
+    pulse:
+      duration: "4s"
+      easing: "ease-in-out"
+      keyframes: "opacity 0.3 -> 0.6 -> 0.3"
+      description: "Gentle attention without urgency"
+
+    drift:
+      duration: "20s"
+      easing: "ease-in-out"
+      description: "Ambient movement, environmental"
+
+  stillness:
+    # Time before stillness is recognized
+    threshold: "2500ms"     # Movement stopped
+    awareness: "4000ms"     # Presence acknowledged
+    message: "7000ms"       # First message appears
+    deepReveal: "13000ms"   # Progression to next message
+    hiddenReveal: "20000ms" # Deep secrets
+
+# ---------------------
+# SPACING TOKENS
+# ---------------------
+# Whitespace is not empty. It is silence that gives words meaning.
+
+spacing:
+  base: "1rem"   # 18px
+
+  scale:
+    none: "0"
+    xs: "0.25rem"
+    sm: "0.5rem"
+    md: "1rem"
+    lg: "1.5rem"
+    xl: "2rem"
+    2xl: "3rem"
+    3xl: "4rem"
+
+  page:
+    margin: "2rem"        # Minimum breathing room from edges
+    maxWidth: "1200px"    # Content never wider than this
+    centered: true        # Content gravitates toward center
+
+  backLink:
+    top: "2rem"
+    left: "2rem"
+
+  edgeHint:
+    offset: "1rem"
+
+# ---------------------
+# OPACITY TOKENS
+# ---------------------
+# Nothing is fully opaque except strategically.
+
+opacity:
+  invisible: 0
+  whisper: 0.15
+  hint: 0.25
+  subtle: 0.35
+  quiet: 0.4
+  present: 0.5
+  visible: 0.6
+  active: 0.7
+  strong: 0.8
+  full: 1    # Use rarely, with intention
+
+  states:
+    backLink:
+      default: 0.3
+      hover: 0.8
+    edgeHint:
+      default: 0
+      hover: 0.25
+    message:
+      default: 0
+      visible: 0.6
+    counter:
+      default: 0.3
+      active: 0.8
+
+# ---------------------
+# INTERACTION TOKENS
+# ---------------------
+
+interaction:
+  cursor:
+    default: "default"
+    interactive: "pointer"
+    wait: "wait"
+    crosshair: "crosshair"
+    none: "none"
+
+  hover:
+    transition: "0.5s ease"
+    opacityShift: 0.2
+
+  selection:
+    background: "var(--amber-glow)"
+    color: "var(--ink)"
+
+  scrollbar:
+    width: "6px"
+    track: "var(--bone-dark)"
+    thumb: "var(--slate-light)"
+    thumbHover: "var(--slate)"
+    borderRadius: "3px"
+
+# ---------------------
+# BREAKPOINTS
+# ---------------------
+
+breakpoints:
+  mobile:
+    max: "480px"
+    baseFontSize: "14px"
+  tablet:
+    max: "768px"
+    baseFontSize: "16px"
+  desktop:
+    min: "769px"
+    baseFontSize: "18px"
+
+# ---------------------
+# SENSORY REFERENCE
+# ---------------------
+# Not specifications, but touchstones for feeling.
+
+sensory:
+  breathOnGlass:
+    quality: "Temporary, evidence of presence, fading but real"
+    visual: "Opacity 0.3-0.6, fade durations 3-5s"
+
+  fogLiftingSlowly:
+    quality: "Revelation through patience"
+    visual: "Blur transitions, scroll reveals, wait-based content"
+
+  stoneWarmingToTouch:
+    quality: "Environment responds to presence"
+    visual: "Accumulating hover states, temperature metaphors"
+
+  mossOnCircuitBoards:
+    quality: "Nature reclaiming technology"
+    visual: "Organic curves on grids, green in technical contexts"
+
+# ---------------------
+# SPACE ANALOGIES
+# ---------------------
+
+spaces:
+  forestClearing:
+    description: "Cathedral of trees, shaft of light"
+    colors: ["green-deep", "bone", "amber"]
+    pages: ["forest.html"]
+
+  overgrownGreenhouse:
+    description: "Plants claiming glass and metal"
+    colors: ["green-orb", "slate", "paper"]
+    pages: ["orb.html", "jungle.html"]
+
+  norwegianCabin:
+    description: "Warm inside, snowy darkness outside"
+    colors: ["amber", "night", "bone"]
+    pages: ["silence.html (deep mode)"]
+
+# ---------------------
+# ANTI-PATTERNS
+# ---------------------
+# What townhaus is not.
+
+antiPatterns:
+  noUrgency:
+    forbidden: ["countdown timers", "FOMO language", "notifications", "expiration"]
+    why: "Time in townhaus is patient"
+
+  noTutorialization:
+    forbidden: ["onboarding", "tooltips", "click here", "getting started"]
+    why: "Discovery is the only teacher"
+
+  noBrightnessLoudness:
+    forbidden: ["pure white backgrounds", "full opacity defaults", "large bold text", "exclamation enthusiasm"]
+    why: "The house speaks quietly"
+
+  noCompletionClosure:
+    forbidden: ["achievement badges", "progress bars", "you completed X", "100%"]
+    why: "Everything is ongoing"
+
+  butRemember:
+    note: "Rules breathe. The switch uses '!' because it does nothing. Know when you break a rule and why."
+
+# ---------------------
+# DURATION PHILOSOPHY
+# ---------------------
+
+duration:
+  philosophy: "All durations are valid"
+  thirtySeconds: "complete"
+  threeHours: "complete"
+  immediateClose: "complete"
+  returnMonthsLater: "complete"
+  measurement: false    # We do not measure engagement

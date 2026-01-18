@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>oma - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            --oma-amber: #d4a056;
+            --oma-cream: #faf6ed;
+            --oma-lace: rgba(255, 253, 245, 0.4);
+            --oma-sepia: #8b7355;
+            --oma-warmth: #e8c89e;
+            --oma-shadow: rgba(80, 60, 40, 0.15);
+            --oma-honey: #c4956a;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5ebe0 0%, #faf6ed 50%, #f0e6d8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            transition: filter 4s ease, background 8s ease;
+        }
+
+        /* The room grows warmer the longer you stay */
+        body.very-warm {
+            background: linear-gradient(135deg, #f0e2d0 0%, #f8f0e0 50%, #ebe0d0 100%);
+        }
+
+        .back-link {
+            color: var(--oma-sepia);
+        }
+
+        /* Lace doily pattern overlay */
+        .lace-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238b7355' fill-opacity='0.3'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20v2c9.941 0 18 8.059 18 18s-8.059 18-18 18v2c11.046 0 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20v-2c-9.941 0-18-8.059-18-18s8.059-18 18-18v-2c-11.046 0-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: 1;
+        }
+
+        /* Warm amber light glow - like lamplight */
+        .warm-light {
+            position: fixed;
+            top: 20%;
+            right: 15%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(232, 200, 158, 0.25) 0%, transparent 70%);
+            pointer-events: none;
+            animation: lampFlicker 8s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        @keyframes lampFlicker {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            25% { opacity: 0.75; transform: scale(1.02); }
+            50% { opacity: 0.85; transform: scale(0.98); }
+            75% { opacity: 0.7; transform: scale(1.01); }
+        }
+
+        /* The living room */
+        .living-room {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        /* The clock - time moves differently here */
+        .clock {
+            position: fixed;
+            top: 2rem;
+            right: 6rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            color: var(--oma-sepia);
+            opacity: 0.35;
+            letter-spacing: 0.15em;
+            font-style: italic;
+        }
+
+        .clock-tick {
+            display: inline-block;
+            animation: tickTock 2s ease-in-out infinite;
+        }
+
+        @keyframes tickTock {
+            0%, 100% { transform: rotate(-1deg); }
+            50% { transform: rotate(1deg); }
+        }
+
+        .clock::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 3px;
+            background: var(--oma-sepia);
+            border-radius: 50%;
+            animation: pendulum 3s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        /* The clock sometimes shows impossible times */
+        @keyframes pendulum {
+            0%, 100% { transform: translateX(-50%) translateX(-6px); }
+            50% { transform: translateX(-50%) translateX(6px); }
+        }
+
+        /* Old photographs - memories that blur at the edges */
+        .photograph {
+            position: fixed;
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(145deg, #d4c4a8 0%, #c4b498 100%);
+            border: 4px solid #f5f0e6;
+            box-shadow: 2px 3px 12px var(--oma-shadow);
+            opacity: 0;
+            transition: opacity 4s ease, filter 3s ease, transform 5s ease;
+            filter: blur(0.5px) sepia(0.3);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .photograph::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            background: linear-gradient(135deg,
+                rgba(180, 160, 140, 0.6) 0%,
+                rgba(160, 140, 120, 0.4) 50%,
+                rgba(140, 120, 100, 0.6) 100%
+            );
+            filter: blur(3px);
+        }
+
+        .photograph::after {
+            content: attr(data-year);
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--oma-sepia);
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 2s ease 1s;
+        }
+
+        .photograph.visible {
+            opacity: 0.65;
+        }
+
+        .photograph.visible::after {
+            opacity: 0.5;
+        }
+
+        /* Photos drift slightly, like memory */
+        .photograph.visible {
+            animation: memoryDrift 20s ease-in-out infinite;
+        }
+
+        @keyframes memoryDrift {
+            0%, 100% { transform: rotate(var(--base-rotation, 0deg)) translateY(0); }
+            50% { transform: rotate(var(--base-rotation, 0deg)) translateY(-3px); }
+        }
+
+        .photograph:nth-child(1) { top: 15%; left: 8%; --base-rotation: -5deg; }
+        .photograph:nth-child(2) { top: 60%; left: 5%; --base-rotation: 3deg; animation-delay: -7s; }
+        .photograph:nth-child(3) { top: 25%; right: 6%; --base-rotation: 7deg; animation-delay: -13s; }
+
+        /* The wisdom - oma's voice */
+        .wisdom {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--oma-sepia);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 3s ease;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.7;
+            z-index: 20;
+            letter-spacing: 0.02em;
+        }
+
+        .wisdom.visible {
+            opacity: 0.6;
+            animation: wisdomBreathe 6s ease-in-out infinite;
+        }
+
+        @keyframes wisdomBreathe {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        .wisdom.whispered {
+            font-size: 0.85rem;
+            opacity: 0.35;
+        }
+
+        .wisdom.whispered::before {
+            content: '(';
+        }
+        .wisdom.whispered::after {
+            content: ')';
+        }
+
+        /* The chair - remembers when you were small */
+        .chair {
+            position: relative;
+            width: 200px;
+            height: 180px;
+            margin: 2rem 0;
+            cursor: pointer;
+            transition: all 0.8s ease;
+        }
+
+        .chair-back {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 100px;
+            background: linear-gradient(135deg, #8b6914 0%, #5c4a1f 100%);
+            border-radius: 80px 80px 10px 10px;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.2);
+        }
+
+        .chair-cushion {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 80px;
+            background: linear-gradient(135deg, #b8860b 0%, #8b6914 100%);
+            border-radius: 10px;
+            box-shadow:
+                0 5px 15px rgba(0,0,0,0.2),
+                inset 0 2px 10px rgba(255,255,255,0.1);
+            transition: all 0.5s ease;
+        }
+
+        .chair-cushion::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            height: 30px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            border-radius: 5px;
+        }
+
+        .chair:hover .chair-cushion {
+            transform: translateX(-50%) translateY(3px);
+            box-shadow:
+                0 2px 8px rgba(0,0,0,0.15),
+                inset 0 2px 10px rgba(255,255,255,0.1);
+        }
+
+        .chair-memory {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transition: opacity 1s ease;
+            white-space: nowrap;
+        }
+
+        .chair:hover .chair-memory {
+            opacity: 0.5;
+        }
+
+        /* The cookie jar - never empties */
+        .cookie-jar {
+            position: fixed;
+            bottom: 15%;
+            right: 10%;
+            width: 70px;
+            height: 90px;
+            cursor: pointer;
+            z-index: 15;
+            transition: transform 0.5s ease;
+        }
+
+        .cookie-jar:hover {
+            transform: scale(1.03);
+        }
+
+        .cookie-jar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(232, 200, 158, 0.2) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .cookie-jar:hover::after {
+            opacity: 1;
+        }
+
+        .jar-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 70px;
+            background: linear-gradient(135deg, #ddd8ce 0%, #c4bfb5 100%);
+            border-radius: 10px 10px 15px 15px;
+            box-shadow:
+                inset -5px 0 15px rgba(255,255,255,0.3),
+                inset 5px 0 15px rgba(0,0,0,0.1),
+                0 3px 10px rgba(0,0,0,0.15);
+        }
+
+        .jar-lid {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55px;
+            height: 25px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5545 100%);
+            border-radius: 5px 5px 3px 3px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .cookie-jar:hover .jar-lid {
+            transform: translateX(-50%) translateY(-5px) rotate(-10deg);
+        }
+
+        .jar-label {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.5rem;
+            color: var(--oma-sepia);
+            letter-spacing: 0.1em;
+        }
+
+        .cookie-count {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--oma-sepia);
+            opacity: 0.3;
+            letter-spacing: 0.1em;
+        }
+
+        .cookie-float {
+            position: absolute;
+            font-size: 1.1rem;
+            pointer-events: none;
+            animation: cookieFloat 2s ease-out forwards;
+            z-index: 100;
+        }
+
+        @keyframes cookieFloat {
+            0% { opacity: 0.8; transform: translateY(0) scale(1) rotate(0deg); }
+            50% { opacity: 0.6; }
+            100% { opacity: 0; transform: translateY(-50px) scale(0.6) rotate(10deg); }
+        }
+
+        /* Recipe cards */
+        .recipe-card {
+            position: fixed;
+            width: 180px;
+            padding: 15px;
+            background: linear-gradient(135deg, #fffef5 0%, #f5f0e0 100%);
+            border: none;
+            box-shadow: 2px 3px 8px var(--oma-shadow);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.7rem;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transform: rotate(var(--rotation, 0deg));
+            transition: opacity 2s ease, transform 0.5s ease;
+            z-index: 12;
+            line-height: 1.5;
+        }
+
+        .recipe-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                var(--oma-sepia) 2px,
+                var(--oma-sepia) 4px
+            );
+            opacity: 0.3;
+        }
+
+        .recipe-card.visible {
+            opacity: 0.85;
+        }
+
+        .recipe-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed rgba(139, 115, 85, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .recipe-note {
+            font-style: italic;
+            font-size: 0.6rem;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        /* The drawer - has everything you need */
+        .drawer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 30px;
+            background: linear-gradient(180deg, #6b5545 0%, #5c4a1f 100%);
+            border-radius: 3px 3px 0 0;
+            cursor: pointer;
+            z-index: 15;
+            transition: height 0.5s ease;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+        }
+
+        .drawer::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 6px;
+            background: #8b7355;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .drawer.open {
+            height: 120px;
+        }
+
+        .drawer-contents {
+            position: absolute;
+            top: 35px;
+            left: 10px;
+            right: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--oma-cream);
+            opacity: 0;
+            transition: opacity 0.5s ease 0.3s;
+            line-height: 1.8;
+        }
+
+        .drawer.open .drawer-contents {
+            opacity: 0.7;
+        }
+
+        .drawer-item {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .drawer-item:hover {
+            color: var(--oma-amber);
+        }
+
+        /* Music box - a lullaby lives inside */
+        .music-box {
+            position: fixed;
+            bottom: 15%;
+            left: 8%;
+            width: 50px;
+            height: 35px;
+            background: linear-gradient(135deg, #8b6914 0%, #6b5545 100%);
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 15;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .music-box:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+        }
+
+        .music-box::before {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--oma-amber);
+            border-radius: 50%;
+            box-shadow: 0 0 4px var(--oma-amber);
+            opacity: 0.5;
+            transition: opacity 1s ease;
+        }
+
+        .music-box.playing::before {
+            animation: musicGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes musicGlow {
+            0%, 100% { opacity: 0.4; box-shadow: 0 0 4px var(--oma-amber); }
+            50% { opacity: 0.8; box-shadow: 0 0 10px var(--oma-amber); }
+        }
+
+        .music-box-hint {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.5rem;
+            font-style: italic;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transition: opacity 1s ease;
+            white-space: nowrap;
+        }
+
+        .music-box:hover .music-box-hint {
+            opacity: 0.4;
+        }
+
+        .music-note {
+            position: absolute;
+            font-size: 0.7rem;
+            color: var(--oma-amber);
+            pointer-events: none;
+            animation: noteFloat 4s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes noteFloat {
+            0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+            15% { opacity: 0.5; }
+            100% { opacity: 0; transform: translateY(-60px) rotate(15deg) translateX(20px); }
+        }
+
+        /* Blanket hover effect */
+        .blanket-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(232, 200, 158, 0.15) 0%,
+                transparent 30%
+            );
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 3;
+        }
+
+        body:hover .blanket-overlay {
+            opacity: 1;
+        }
+
+        /* Stillness rewards - deeper truths emerge */
+        .stillness-wisdom {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-style: italic;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            max-width: 320px;
+            pointer-events: none;
+            z-index: 50;
+            line-height: 1.8;
+            letter-spacing: 0.03em;
+        }
+
+        .stillness-wisdom.visible {
+            opacity: 0.55;
+            animation: stillnessGlow 8s ease-in-out infinite;
+        }
+
+        @keyframes stillnessGlow {
+            0%, 100% { text-shadow: 0 0 0 transparent; }
+            50% { text-shadow: 0 0 20px rgba(232, 200, 158, 0.15); }
+        }
+
+        /* Deep stillness - the room itself speaks */
+        .deep-stillness-message {
+            position: fixed;
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transition: opacity 5s ease;
+            letter-spacing: 0.2em;
+            text-transform: lowercase;
+        }
+
+        .deep-stillness-message.visible {
+            opacity: 0.25;
+        }
+
+        /* The smell of baking - visual representation */
+        .baking-aroma {
+            position: fixed;
+            bottom: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 150px;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .aroma-wisp {
+            position: absolute;
+            bottom: 0;
+            width: 20px;
+            height: 60px;
+            background: linear-gradient(to top,
+                rgba(232, 200, 158, 0.3) 0%,
+                rgba(232, 200, 158, 0.1) 50%,
+                transparent 100%
+            );
+            border-radius: 50%;
+            animation: aromaRise 4s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .aroma-wisp:nth-child(1) { left: 20%; animation-delay: 0s; }
+        .aroma-wisp:nth-child(2) { left: 45%; animation-delay: 1.3s; }
+        .aroma-wisp:nth-child(3) { left: 70%; animation-delay: 2.6s; }
+
+        @keyframes aromaRise {
+            0% { opacity: 0; transform: translateY(0) scaleX(1); }
+            20% { opacity: 0.6; }
+            80% { opacity: 0.2; }
+            100% { opacity: 0; transform: translateY(-100px) scaleX(1.5) rotate(10deg); }
+        }
+
+        .baking-aroma.active .aroma-wisp {
+            opacity: 1;
+        }
+
+        /* Time moves differently here */
+        .time-different {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.65rem;
+            font-style: italic;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transition: opacity 4s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .time-different.visible {
+            opacity: 0.35;
+        }
+
+        /* Remedy cards */
+        .remedy {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            color: var(--oma-sepia);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+            z-index: 25;
+            max-width: 200px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .remedy.visible {
+            opacity: 0.5;
+        }
+
+        .remedy::before {
+            content: '"';
+        }
+        .remedy::after {
+            content: '"';
+        }
+
+        /* Corner warmth indicators */
+        .warmth-corner {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .warmth-corner.top-left {
+            top: 0;
+            left: 0;
+            background: radial-gradient(circle at 0% 0%, rgba(232, 200, 158, 0.2) 0%, transparent 70%);
+        }
+
+        .warmth-corner.bottom-right {
+            bottom: 0;
+            right: 0;
+            background: radial-gradient(circle at 100% 100%, rgba(232, 200, 158, 0.2) 0%, transparent 70%);
+        }
+
+        .warmth-corner.visible {
+            opacity: 1;
+        }
+
+        /* The teacup - appears after deep stillness */
+        .teacup {
+            position: fixed;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 30px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 5s ease;
+            z-index: 8;
+        }
+
+        .teacup.visible {
+            opacity: 0.7;
+        }
+
+        .teacup-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 22px;
+            background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d5 100%);
+            border-radius: 0 0 50% 50%;
+            box-shadow: inset -2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .teacup-handle {
+            position: absolute;
+            right: -8px;
+            top: 5px;
+            width: 12px;
+            height: 14px;
+            border: 2px solid #e8e0d5;
+            border-radius: 50%;
+            background: transparent;
+        }
+
+        .teacup-steam {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            opacity: 0;
+        }
+
+        .teacup.visible .teacup-steam {
+            animation: steamRise 3s ease-in-out infinite;
+        }
+
+        @keyframes steamRise {
+            0%, 100% { opacity: 0; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.3; transform: translateX(-50%) translateY(-8px); }
+        }
+
+        .teacup-steam::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            width: 3px;
+            height: 12px;
+            background: linear-gradient(to top, rgba(200, 180, 160, 0.3), transparent);
+            border-radius: 50%;
+            animation: steamWiggle 2s ease-in-out infinite;
+        }
+
+        .teacup-steam::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            width: 3px;
+            height: 10px;
+            background: linear-gradient(to top, rgba(200, 180, 160, 0.2), transparent);
+            border-radius: 50%;
+            animation: steamWiggle 2s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes steamWiggle {
+            0%, 100% { transform: translateX(0) scaleY(1); }
+            50% { transform: translateX(2px) scaleY(1.1); }
+        }
+
+        /* The impossible thing - drawer always has what you need */
+        .drawer-impossible {
+            font-style: italic;
+            opacity: 0.5;
+            font-size: 0.45rem;
+            margin-top: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .cookie-jar { right: 5%; bottom: 10%; }
+            .music-box { left: 5%; bottom: 10%; }
+            .photograph { width: 60px; height: 75px; }
+            .recipe-card { width: 150px; font-size: 0.6rem; }
+            .teacup { bottom: 15%; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="lace-overlay"></div>
+    <div class="warm-light"></div>
+    <div class="blanket-overlay" id="blanketOverlay"></div>
+
+    <!-- Photographs - memories that blur at the edges -->
+    <div class="photograph" id="photo1" data-year="1962"></div>
+    <div class="photograph" id="photo2" data-year="that summer"></div>
+    <div class="photograph" id="photo3" data-year="always"></div>
+
+    <!-- The clock -->
+    <div class="clock">
+        <span class="clock-tick" id="clockDisplay">--:--</span>
+    </div>
+
+    <!-- Baking aroma -->
+    <div class="baking-aroma" id="bakingAroma">
+        <div class="aroma-wisp"></div>
+        <div class="aroma-wisp"></div>
+        <div class="aroma-wisp"></div>
+    </div>
+
+    <!-- Warmth corners -->
+    <div class="warmth-corner top-left" id="warmthTopLeft"></div>
+    <div class="warmth-corner bottom-right" id="warmthBottomRight"></div>
+
+    <!-- The living room -->
+    <div class="living-room">
+        <!-- The chair -->
+        <div class="chair" id="chair">
+            <div class="chair-back"></div>
+            <div class="chair-cushion"></div>
+            <div class="chair-memory" id="chairMemory">it remembers when you were small</div>
+        </div>
+    </div>
+
+    <!-- Wisdom container -->
+    <div class="wisdom" id="wisdom"></div>
+    <div class="stillness-wisdom" id="stillnessWisdom"></div>
+
+    <!-- Recipe cards -->
+    <div class="recipe-card" id="recipe1" style="top: 20%; left: 12%; --rotation: -3deg;">
+        <div class="recipe-title">apple cake</div>
+        <div>flour, sugar, apples<br>a little love<br>bake until golden</div>
+        <div class="recipe-note">never measure exactly</div>
+    </div>
+    <div class="recipe-card" id="recipe2" style="bottom: 25%; right: 8%; --rotation: 5deg;">
+        <div class="recipe-title">chicken soup</div>
+        <div>for everything<br>that ails you</div>
+        <div class="recipe-note">the secret is time</div>
+    </div>
+
+    <!-- Cookie jar -->
+    <div class="cookie-jar" id="cookieJar">
+        <div class="jar-lid"></div>
+        <div class="jar-body"></div>
+        <div class="jar-label">cookies</div>
+        <div class="cookie-count" id="cookieCount"></div>
+    </div>
+
+    <!-- Music box - a lullaby lives inside -->
+    <div class="music-box" id="musicBox">
+        <div class="music-box-hint">a lullaby</div>
+    </div>
+
+    <!-- Teacup - appears with deep stillness -->
+    <div class="teacup" id="teacup">
+        <div class="teacup-steam"></div>
+        <div class="teacup-body"></div>
+        <div class="teacup-handle"></div>
+    </div>
+
+    <!-- Deep stillness message -->
+    <div class="deep-stillness-message" id="deepStillnessMessage">she is here with you</div>
+
+    <!-- The drawer - has everything you need -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-contents">
+            <div class="drawer-item" data-item="button">a button (just in case)</div>
+            <div class="drawer-item" data-item="string">some string</div>
+            <div class="drawer-item" data-item="candy">a wrapped candy</div>
+            <div class="drawer-item" data-item="photo">a photo of you</div>
+            <div class="drawer-item" data-item="key">a key to something</div>
+            <div class="drawer-impossible" id="drawerImpossible"></div>
+        </div>
+    </div>
+
+    <!-- Remedies -->
+    <div class="remedy" id="remedy"></div>
+
+    <!-- Time indicator -->
+    <div class="time-different" id="timeDifferent">time moves differently here</div>
+
+    <script>
+        // Oma's wisdom - things she says
+        const wisdoms = [
+            'eat something, you look thin',
+            'take a sweater, it might get cold',
+            'there is always room for dessert',
+            'sit, sit, rest your feet',
+            'let me look at you',
+            'have you eaten?',
+            'you work too hard',
+            'stay a little longer',
+            'i made your favorite',
+            'you look tired, rest here',
+            'the soup will fix everything',
+            'take some home with you',
+            'you never call enough',
+            'the tea is still warm',
+            'i knew you were coming'
+        ];
+
+        // Whispered wisdom - said to everyone, true for each
+        const whispered = [
+            'you were always my favorite',
+            'don\'t tell the others',
+            'you remind me of someone',
+            'i saved this just for you',
+            'i think about you often'
+        ];
+
+        // Stillness wisdom - deeper truths that emerge
+        const stillnessWisdoms = [
+            'love does not count the hours',
+            'home is where you are welcome',
+            'some recipes cannot be written down',
+            'the best things take time',
+            'you carry me with you',
+            'warmth remembers',
+            'presence is the gift',
+            'distance is only geography',
+            'the door is always open'
+        ];
+
+        // Oma's remedies - technically impossible, spiritually true
+        const remedies = [
+            'honey and lemon for everything',
+            'a nap fixes most problems',
+            'fresh air is medicine',
+            'worry less, eat more',
+            'tea solves what words cannot',
+            'sleep on it, decide tomorrow',
+            'love is the best ingredient'
+        ];
+
+        // Impossible drawer items - the drawer always has what you need
+        const impossibleItems = [
+            'exactly what you were looking for',
+            'something you forgot you needed',
+            'a memory you thought you lost',
+            'the answer to tomorrow\'s question',
+            'a remedy that doesn\'t exist yet'
+        ];
+
+        // Deep stillness messages
+        const deepMessages = [
+            'she is here with you',
+            'the room remembers',
+            'time has no meaning here',
+            'you are never alone',
+            'love outlasts everything'
+        ];
+
+        // DOM elements
+        const wisdom = document.getElementById('wisdom');
+        const stillnessWisdom = document.getElementById('stillnessWisdom');
+        const clockDisplay = document.getElementById('clockDisplay');
+        const cookieJar = document.getElementById('cookieJar');
+        const cookieCount = document.getElementById('cookieCount');
+        const musicBox = document.getElementById('musicBox');
+        const drawer = document.getElementById('drawer');
+        const drawerImpossible = document.getElementById('drawerImpossible');
+        const remedy = document.getElementById('remedy');
+        const blanketOverlay = document.getElementById('blanketOverlay');
+        const bakingAroma = document.getElementById('bakingAroma');
+        const timeDifferent = document.getElementById('timeDifferent');
+        const warmthTopLeft = document.getElementById('warmthTopLeft');
+        const warmthBottomRight = document.getElementById('warmthBottomRight');
+        const chair = document.getElementById('chair');
+        const teacup = document.getElementById('teacup');
+        const deepStillnessMessage = document.getElementById('deepStillnessMessage');
+        const photos = [
+            document.getElementById('photo1'),
+            document.getElementById('photo2'),
+            document.getElementById('photo3')
+        ];
+        const recipes = [
+            document.getElementById('recipe1'),
+            document.getElementById('recipe2')
+        ];
+
+        // State
+        let cookiesTaken = 0;
+        let lastActivity = Date.now();
+        let stillnessLevel = 0;
+        let musicPlaying = false;
+        let audioContext = null;
+        let visitDuration = 0;
+        let wisdomIndex = 0;
+        let drawerOpened = 0;
+        let deepestStillness = 0;
+
+        // Clock - time moves differently here, sometimes impossibly
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+
+            // Time moves slower at oma's - minutes crawl
+            minutes = Math.floor(minutes * 0.6);
+
+            // Sometimes the clock shows impossible times
+            if (stillnessLevel > 6 && Math.random() < 0.1) {
+                // Time loops back or shows memory-times
+                const memoryTimes = ['3:42', '4:15', 'tea time', 'always'];
+                clockDisplay.textContent = memoryTimes[Math.floor(Math.random() * memoryTimes.length)];
+                return;
+            }
+
+            const display = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            clockDisplay.textContent = display;
+        }
+        updateClock();
+        setInterval(updateClock, 45000); // Updates slower than real time
+
+        // Blanket warmth follows mouse
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth) * 100;
+            const y = (e.clientY / window.innerHeight) * 100;
+            blanketOverlay.style.setProperty('--mouse-x', x + '%');
+            blanketOverlay.style.setProperty('--mouse-y', y + '%');
+
+            lastActivity = Date.now();
+            stillnessLevel = 0;
+            stillnessWisdom.classList.remove('visible');
+        });
+
+        // Cookie jar - never empties, this is the absurd truth
+        cookieJar.addEventListener('click', () => {
+            cookiesTaken++;
+
+            // Cookie float animation - gentler
+            const cookie = document.createElement('div');
+            cookie.className = 'cookie-float';
+            cookie.textContent = '🍪';
+            cookie.style.left = (40 + Math.random() * 20) + '%';
+            cookie.style.top = '0';
+            cookieJar.appendChild(cookie);
+            setTimeout(() => cookie.remove(), 2000);
+
+            // Update count - but the count doesn't really matter
+            if (cookiesTaken <= 10) {
+                cookieCount.textContent = `${cookiesTaken}`;
+            } else if (cookiesTaken <= 20) {
+                cookieCount.textContent = 'many';
+            } else {
+                cookieCount.textContent = 'always more';
+            }
+
+            // Oma always knows, always encourages
+            if (cookiesTaken === 1) {
+                showWisdom('go on, have another', 35, 72);
+            } else if (cookiesTaken === 3) {
+                showWisdom('i knew you were hungry', 35, 72);
+            } else if (cookiesTaken === 5) {
+                showWisdom('take some home with you', 35, 72);
+            } else if (cookiesTaken === 10) {
+                showWisdom('the jar never empties', 35, 72, true);
+            } else if (cookiesTaken === 15) {
+                showWisdom('there is always more', 35, 72, true);
+            } else if (cookiesTaken === 25) {
+                // The absurd truth
+                showWisdom('love refills what love gives away', 35, 72, true);
+            }
+        });
+
+        // Music box - a gentle lullaby, optional and soft
+        musicBox.addEventListener('click', () => {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            musicPlaying = !musicPlaying;
+            musicBox.classList.toggle('playing', musicPlaying);
+
+            if (musicPlaying) {
+                // A gentle wisdom when music starts
+                setTimeout(() => {
+                    showWisdom('she used to hum this', 25, 72, true);
+                }, 1500);
+                playMusicBox();
+            }
+        });
+
+        function playMusicBox() {
+            if (!musicPlaying || !audioContext) return;
+
+            const now = audioContext.currentTime;
+
+            // A simpler, gentler melody - like a half-remembered lullaby
+            const notes = [392, 440, 494, 440, 392, 349, 392]; // G4, A4, B4, A4, G4, F4, G4
+            const durations = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0];
+
+            let time = now;
+            notes.forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, time);
+
+                // Even softer, more like a music box
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.05, time + 0.08);
+                gain.gain.linearRampToValueAtTime(0, time + durations[i] - 0.1);
+
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start(time);
+                osc.stop(time + durations[i]);
+
+                time += durations[i];
+            });
+
+            // Create floating notes - fewer, gentler
+            createMusicNote();
+            setTimeout(() => createMusicNote(), 600);
+
+            // Repeat melody with longer pause
+            setTimeout(() => {
+                if (musicPlaying) playMusicBox();
+            }, time * 1000 - now * 1000 + 2000);
+        }
+
+        function createMusicNote() {
+            const note = document.createElement('div');
+            note.className = 'music-note';
+            note.textContent = ['♪', '♫'][Math.floor(Math.random() * 2)];
+            note.style.left = (Math.random() * 25 + 12) + 'px';
+            note.style.top = '-8px';
+            musicBox.appendChild(note);
+            setTimeout(() => note.remove(), 4000);
+        }
+
+        // The drawer - always has what you need (this is impossible, but true)
+        drawer.addEventListener('click', () => {
+            drawer.classList.toggle('open');
+            if (drawer.classList.contains('open')) {
+                drawerOpened++;
+
+                // The drawer reveals impossible things the more you open it
+                if (drawerOpened >= 3) {
+                    const impossibleItem = impossibleItems[Math.floor(Math.random() * impossibleItems.length)];
+                    drawerImpossible.textContent = impossibleItem;
+                }
+            }
+        });
+
+        document.querySelectorAll('.drawer-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const itemName = item.dataset.item;
+
+                const messages = {
+                    button: 'she knew you would need this',
+                    string: 'for tying things together',
+                    candy: 'your favorite kind, still',
+                    photo: 'from when you were small',
+                    key: 'it opens something important'
+                };
+
+                showWisdom(messages[itemName], 50, 68, true);
+            });
+        });
+
+        // Show wisdom at position - slower, more dreamlike
+        function showWisdom(text, x, y, whisper = false) {
+            wisdom.textContent = text;
+            wisdom.style.left = x + '%';
+            wisdom.style.top = y + '%';
+            wisdom.classList.toggle('whispered', whisper);
+            wisdom.classList.add('visible');
+
+            // Wisdom lingers longer, fades slowly
+            setTimeout(() => wisdom.classList.remove('visible'), 5000);
+        }
+
+        // Random wisdom appears - less frequent, more meaningful
+        function randomWisdom() {
+            const x = 25 + Math.random() * 50;
+            const y = 25 + Math.random() * 50;
+
+            if (Math.random() < 0.2) {
+                // Whispered secret - said to everyone, true for each
+                const text = whispered[Math.floor(Math.random() * whispered.length)];
+                showWisdom(text, x, y, true);
+            } else {
+                const text = wisdoms[wisdomIndex % wisdoms.length];
+                wisdomIndex++;
+                showWisdom(text, x, y, false);
+            }
+        }
+
+        // Show wisdom periodically - less often, more patient
+        setInterval(() => {
+            if (Math.random() < 0.25 && stillnessLevel < 3) {
+                randomWisdom();
+            }
+        }, 15000);
+
+        // Initial wisdom after arrival - gentle welcome
+        setTimeout(() => {
+            showWisdom('come in, come in', 50, 42);
+        }, 2500);
+
+        setTimeout(() => {
+            showWisdom('sit down, rest', 50, 50);
+        }, 7000);
+
+        // Chair interaction
+        chair.addEventListener('click', () => {
+            showWisdom('you used to fit in my lap', 50, 58, true);
+        });
+
+        // Stillness detection - the room reveals itself to those who stay
+        setInterval(() => {
+            const timeSinceActivity = Date.now() - lastActivity;
+
+            if (timeSinceActivity > 4000) {
+                stillnessLevel++;
+                if (stillnessLevel > deepestStillness) {
+                    deepestStillness = stillnessLevel;
+                }
+
+                // Level 2: Photos emerge from memory
+                if (stillnessLevel === 2) {
+                    photos.forEach((p, i) => {
+                        setTimeout(() => p.classList.add('visible'), i * 1200);
+                    });
+                }
+
+                // Level 3: Warmth grows in corners
+                if (stillnessLevel === 3) {
+                    warmthTopLeft.classList.add('visible');
+                    warmthBottomRight.classList.add('visible');
+                }
+
+                // Level 4: Recipe cards appear
+                if (stillnessLevel === 4) {
+                    recipes.forEach((r, i) => {
+                        setTimeout(() => r.classList.add('visible'), i * 1500);
+                    });
+                }
+
+                // Level 5: Deeper wisdom emerges
+                if (stillnessLevel === 5) {
+                    const text = stillnessWisdoms[Math.floor(Math.random() * stillnessWisdoms.length)];
+                    stillnessWisdom.textContent = text;
+                    stillnessWisdom.classList.add('visible');
+                }
+
+                // Level 6: The smell of baking
+                if (stillnessLevel === 6) {
+                    bakingAroma.classList.add('active');
+                }
+
+                // Level 7: Time announcement
+                if (stillnessLevel === 7) {
+                    timeDifferent.classList.add('visible');
+                }
+
+                // Level 8: A cup of tea appears
+                if (stillnessLevel === 8) {
+                    teacup.classList.add('visible');
+                    showWisdom('i made tea', 50, 55, true);
+                }
+
+                // Level 9: The room itself warms
+                if (stillnessLevel === 9) {
+                    document.body.classList.add('very-warm');
+                }
+
+                // Level 10+: Deep presence, occasional remedies
+                if (stillnessLevel >= 10) {
+                    deepStillnessMessage.textContent = deepMessages[Math.floor(Math.random() * deepMessages.length)];
+                    deepStillnessMessage.classList.add('visible');
+
+                    if (Math.random() < 0.15) {
+                        const text = remedies[Math.floor(Math.random() * remedies.length)];
+                        remedy.textContent = text;
+                        remedy.style.left = (25 + Math.random() * 50) + '%';
+                        remedy.style.top = (30 + Math.random() * 35) + '%';
+                        remedy.classList.add('visible');
+                        setTimeout(() => remedy.classList.remove('visible'), 6000);
+                    }
+                }
+            } else {
+                // Activity - gently reset some things, but not all
+                if (stillnessLevel > 0) {
+                    stillnessWisdom.classList.remove('visible');
+                    deepStillnessMessage.classList.remove('visible');
+                    remedy.classList.remove('visible');
+
+                    // These fade more slowly, they linger
+                    if (stillnessLevel < 3) {
+                        bakingAroma.classList.remove('active');
+                        timeDifferent.classList.remove('visible');
+                    }
+                }
+            }
+        }, 2500);
+
+        // Track visit duration - time moves differently, but she notices
+        setInterval(() => {
+            visitDuration++;
+
+            // The longer you stay, the more she knows you stayed
+            if (visitDuration === 30) {
+                console.log('%cshe is glad you stayed', 'color: #8b7355; font-style: italic;');
+            }
+            if (visitDuration === 60) {
+                showWisdom('you make this place warmer', 50, 48);
+            }
+            if (visitDuration === 120) {
+                showWisdom('stay as long as you need', 50, 48);
+            }
+            if (visitDuration === 180) {
+                showWisdom('this is still your home', 50, 48, true);
+            }
+            if (visitDuration === 300) {
+                // Five minutes - a real visit
+                console.log('%cyou stayed', 'color: #8b7355; font-style: italic; font-size: 12px;');
+                console.log('%cthis is how love works', 'color: #a08060; font-style: italic; font-size: 10px;');
+            }
+        }, 1000);
+
+        // Right-click - gentle mystery, not frustration
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const x = e.clientX / window.innerWidth * 100;
+            const y = e.clientY / window.innerHeight * 100;
+
+            // Different responses in different parts of the room
+            if (y > 80) {
+                showWisdom('the drawer has everything', x, y - 10, true);
+            } else if (x < 30) {
+                showWisdom('that was her favorite spot', x + 10, y, true);
+            } else if (x > 70) {
+                showWisdom('the light was always warm here', x - 15, y, true);
+            } else {
+                showWisdom('looking for something?', x, y);
+                // Gentle drawer hint after a moment
+                setTimeout(() => {
+                    if (!drawer.classList.contains('open')) {
+                        showWisdom('check the drawer', 50, 82, true);
+                    }
+                }, 2500);
+            }
+        });
+
+        // Keyboard - gentle interactions
+        document.addEventListener('keydown', (e) => {
+            lastActivity = Date.now();
+
+            if (e.code === 'Escape') {
+                showWisdom('leaving so soon?', 50, 48);
+                setTimeout(() => {
+                    showWisdom('take something for the road', 50, 52, true);
+                }, 2000);
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 4000);
+            }
+
+            // Secret words - things you might tell her
+            handleSecretWord(e.key);
+        });
+
+        // Secret word detection - she responds to what you share
+        let secretBuffer = '';
+        function handleSecretWord(key) {
+            secretBuffer += key.toLowerCase();
+            if (secretBuffer.length > 12) {
+                secretBuffer = secretBuffer.slice(-12);
+            }
+
+            if (secretBuffer.includes('hungry')) {
+                secretBuffer = '';
+                showWisdom('i knew it', 50, 42);
+                bakingAroma.classList.add('active');
+                setTimeout(() => {
+                    showWisdom('sit, i will make something', 50, 48);
+                }, 2500);
+                setTimeout(() => {
+                    showWisdom('the soup is almost ready', 50, 52, true);
+                }, 5000);
+            }
+
+            if (secretBuffer.includes('tired')) {
+                secretBuffer = '';
+                showWisdom('rest here', 50, 48);
+                document.body.style.filter = 'brightness(0.85) saturate(0.9)';
+                setTimeout(() => {
+                    showWisdom('close your eyes', 50, 52, true);
+                }, 2500);
+                setTimeout(() => {
+                    document.body.style.filter = '';
+                }, 8000);
+            }
+
+            if (secretBuffer.includes('cold')) {
+                secretBuffer = '';
+                showWisdom('i told you to take a sweater', 50, 48);
+                warmthTopLeft.classList.add('visible');
+                warmthBottomRight.classList.add('visible');
+                document.body.classList.add('very-warm');
+            }
+
+            if (secretBuffer.includes('miss')) {
+                secretBuffer = '';
+                showWisdom('i am always here', 50, 48, true);
+                setTimeout(() => {
+                    showWisdom('you carry me with you', 50, 52, true);
+                }, 3000);
+            }
+
+            if (secretBuffer.includes('love')) {
+                secretBuffer = '';
+                showWisdom('i know', 50, 48, true);
+                // Everything warms
+                warmthTopLeft.classList.add('visible');
+                warmthBottomRight.classList.add('visible');
+                teacup.classList.add('visible');
+                document.body.classList.add('very-warm');
+            }
+        }
+
+        // Console poetry - in oma's voice, gentle and warm
+        console.log('%c', 'padding: 30px;');
+        console.log('%coma', 'font-size: 20px; color: #8b7355; font-family: Georgia, serif; font-weight: 300; letter-spacing: 0.4em;');
+        console.log('%c', 'padding: 8px;');
+        console.log('%cshe knew you were coming', 'font-size: 10px; color: #8b7355; font-style: italic;');
+        console.log('%c', 'padding: 12px;');
+        console.log('%cthe soup is on the stove', 'font-size: 9px; color: #a08060; font-style: italic;');
+        console.log('%cthe chair remembers you', 'font-size: 9px; color: #a08060; font-style: italic;');
+        console.log('%ctime moves differently here', 'font-size: 9px; color: #a08060; font-style: italic;');
+        console.log('%c', 'padding: 12px;');
+        console.log('%cbe still and the room will open', 'font-size: 8px; color: #b09070;');
+        console.log('%c', 'padding: 8px;');
+        console.log('%c(you can tell her if you are hungry, tired, cold)', 'font-size: 8px; color: #c0a080;');
+        console.log('%c(or if you miss her, or love her)', 'font-size: 8px; color: #c0a080;');
+        console.log('%c', 'padding: 12px;');
+        console.log('%cshe says you are her favorite', 'font-size: 8px; color: #b09070; font-style: italic;');
+        console.log('%cshe tells everyone that', 'font-size: 7px; color: #c0a080; font-style: italic;');
+        console.log('%cand it is always true', 'font-size: 7px; color: #d0b090; font-style: italic;');
+    </script>
+</body>
+</html>

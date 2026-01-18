@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shadow - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: none;
+            transition: background 3s ease;
+        }
+
+        body.dark-mode {
+            background: #0a0a0f;
+        }
+
+        body.shadow-world {
+            background: var(--slate-deep);
+        }
+
+        body.liminal {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+        }
+
+        body.umbral {
+            background: radial-gradient(ellipse at center, #1a1520 0%, #0a0a0f 100%);
+        }
+
+        /* The sourceless shadow - presence without origin */
+        .shadow {
+            position: fixed;
+            width: 80px;
+            height: 150px;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(45, 55, 72, 0.08) 5%,
+                rgba(45, 55, 72, 0.18) 15%,
+                rgba(45, 55, 72, 0.35) 30%,
+                rgba(45, 55, 72, 0.4) 50%,
+                rgba(45, 55, 72, 0.35) 70%,
+                rgba(45, 55, 72, 0.18) 85%,
+                rgba(45, 55, 72, 0.08) 95%,
+                transparent 100%
+            );
+            border-radius: 40% 40% 45% 45%;
+            filter: blur(15px);
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            animation: shadowBreathe 8s ease-in-out infinite;
+            opacity: 1;
+        }
+
+        @keyframes shadowBreathe {
+            0%, 100% {
+                transform: scale(1) rotate(0deg) translateY(0);
+                filter: blur(15px);
+            }
+            15% {
+                transform: scale(1.015) rotate(0.3deg) translateY(-1px);
+                filter: blur(15.5px);
+            }
+            30% {
+                transform: scale(1.025) rotate(0.5deg) translateY(-2px);
+                filter: blur(16px);
+            }
+            50% {
+                transform: scale(0.98) rotate(-0.5deg) translateY(1px);
+                filter: blur(14px);
+            }
+            70% {
+                transform: scale(1.01) rotate(0.3deg) translateY(-1px);
+                filter: blur(15px);
+            }
+            85% {
+                transform: scale(1.005) rotate(-0.2deg) translateY(0);
+                filter: blur(15.2px);
+            }
+        }
+
+        /* The shadow's inner presence - a darker heart */
+        .shadow::before {
+            content: '';
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            width: 50%;
+            height: 35%;
+            background: radial-gradient(ellipse, rgba(30, 40, 60, 0.2) 0%, transparent 70%);
+            transform: translateX(-50%);
+            filter: blur(12px);
+            animation: innerPresence 12s ease-in-out infinite;
+        }
+
+        @keyframes innerPresence {
+            0%, 100% { opacity: 0.2; transform: translateX(-50%) scale(1); }
+            25% { opacity: 0.4; transform: translateX(-50%) scale(1.05); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.1); }
+            75% { opacity: 0.35; transform: translateX(-50%) scale(0.98); }
+        }
+
+        /* A secondary presence - the shadow's shadow */
+        .shadow::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: 50%;
+            width: 120%;
+            height: 30%;
+            background: radial-gradient(ellipse, rgba(45, 55, 72, 0.15) 0%, transparent 60%);
+            transform: translateX(-50%) scaleY(0.3);
+            filter: blur(25px);
+            animation: groundPresence 10s ease-in-out infinite;
+        }
+
+        @keyframes groundPresence {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.6; }
+        }
+
+        body.dark-mode .shadow {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(180, 180, 200, 0.05) 5%,
+                rgba(180, 180, 200, 0.12) 15%,
+                rgba(180, 180, 200, 0.25) 30%,
+                rgba(180, 180, 200, 0.3) 50%,
+                rgba(180, 180, 200, 0.25) 70%,
+                rgba(180, 180, 200, 0.12) 85%,
+                rgba(180, 180, 200, 0.05) 95%,
+                transparent 100%
+            );
+        }
+
+        body.dark-mode .shadow::before {
+            background: radial-gradient(ellipse, rgba(200, 200, 220, 0.15) 0%, transparent 70%);
+        }
+
+        body.dark-mode .shadow::after {
+            background: radial-gradient(ellipse, rgba(200, 200, 220, 0.1) 0%, transparent 60%);
+        }
+
+        .shadow.following {
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .shadow.frozen {
+            transition: none;
+            animation: frozenWait 6s ease-in-out infinite;
+        }
+
+        @keyframes frozenWait {
+            0%, 85%, 100% { opacity: 1; filter: blur(15px); }
+            88% { opacity: 0.85; filter: blur(17px); }
+            91% { opacity: 1; filter: blur(15px); }
+            94% { opacity: 0.9; filter: blur(16px); }
+        }
+
+        .shadow.aware {
+            animation: shadowAware 4s ease-in-out infinite;
+        }
+
+        @keyframes shadowAware {
+            0%, 100% {
+                transform: scale(1.05) rotate(0deg);
+                filter: blur(13px);
+            }
+            25% {
+                transform: scale(1.08) rotate(1deg);
+                filter: blur(12px);
+            }
+            50% {
+                transform: scale(1.03) rotate(-0.5deg);
+                filter: blur(14px);
+            }
+            75% {
+                transform: scale(1.06) rotate(0.5deg);
+                filter: blur(13px);
+            }
+        }
+
+        .shadow.dissolving {
+            animation: dissolve 6s ease-out forwards;
+        }
+
+        @keyframes dissolve {
+            0% { filter: blur(15px); opacity: 1; }
+            30% { filter: blur(25px); opacity: 0.7; }
+            60% { filter: blur(40px); opacity: 0.4; }
+            100% { filter: blur(60px); opacity: 0; }
+        }
+
+        /* Inverted shadow on right-click - light where there should be dark */
+        .anti-shadow {
+            position: fixed;
+            width: 60px;
+            height: 120px;
+            background: radial-gradient(ellipse,
+                rgba(255,255,255,0.5) 0%,
+                rgba(255,255,255,0.3) 30%,
+                rgba(255,255,255,0.1) 50%,
+                transparent 70%
+            );
+            border-radius: 40% 40% 45% 45%;
+            filter: blur(12px);
+            pointer-events: none;
+            animation: antiShadowRise 5s ease-out forwards;
+        }
+
+        @keyframes antiShadowRise {
+            0% { opacity: 0.8; transform: scale(1) translateY(0); }
+            30% { opacity: 0.6; transform: scale(1.1) translateY(-15px); }
+            60% { opacity: 0.3; transform: scale(1.4) translateY(-35px); }
+            100% { opacity: 0; transform: scale(2) translateY(-60px); }
+        }
+
+        body.dark-mode .anti-shadow {
+            background: radial-gradient(ellipse,
+                rgba(255,255,255,0.4) 0%,
+                rgba(255,255,255,0.2) 30%,
+                rgba(255,255,255,0.08) 50%,
+                transparent 70%
+            );
+        }
+
+        /* The outline of what might cast the shadow - an absence */
+        .absence {
+            position: fixed;
+            width: 60px;
+            height: 120px;
+            border: 1px dashed var(--slate-light);
+            border-radius: 30% 30% 40% 40%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 4s ease;
+            animation: absenceBreath 8s ease-in-out infinite;
+        }
+
+        @keyframes absenceBreath {
+            0%, 100% {
+                border-style: dashed;
+                transform: scale(1);
+            }
+            25% {
+                border-style: dotted;
+                transform: scale(1.02);
+            }
+            50% {
+                border-style: dashed;
+                transform: scale(0.98);
+            }
+            75% {
+                border-style: dotted;
+                transform: scale(1.01);
+            }
+        }
+
+        body.dark-mode .absence { border-color: rgba(255, 255, 255, 0.25); }
+        .absence.visible { opacity: 0.12; }
+
+        /* Phantom light sources - they cast nothing */
+        .light-source {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: var(--amber-glow);
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(4px);
+            pointer-events: none;
+            transition: opacity 3s ease;
+        }
+
+        .light-source::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.15) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            animation: lightAura 5s ease-in-out infinite;
+        }
+
+        @keyframes lightAura {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.3; }
+        }
+
+        .light-source.visible {
+            opacity: 0.25;
+            animation: lightDrift 6s ease-in-out infinite;
+        }
+
+        @keyframes lightDrift {
+            0%, 100% { opacity: 0.25; transform: scale(1); }
+            30% { opacity: 0.35; transform: scale(1.1); }
+            60% { opacity: 0.2; transform: scale(0.95); }
+        }
+
+        /* Custom cursor - presence without form */
+        .cursor-dot {
+            position: fixed;
+            width: 5px;
+            height: 5px;
+            background: var(--slate);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 8px rgba(0,0,0,0.08);
+        }
+
+        .cursor-dot::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--slate-light);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .cursor-dot.still::after {
+            opacity: 0.25;
+            animation: cursorExpand 5s ease-in-out infinite;
+        }
+
+        @keyframes cursorExpand {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.25; }
+            50% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+        }
+
+        body.dark-mode .cursor-dot {
+            background: var(--bone);
+            box-shadow: 0 0 12px rgba(255,255,255,0.15);
+        }
+        body.dark-mode .cursor-dot::after { border-color: rgba(255,255,255,0.25); }
+
+        /* Messages about the nature of absence */
+        .message {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            letter-spacing: 0.03em;
+            max-width: 80%;
+        }
+
+        body.dark-mode .message { color: rgba(255,255,255,0.65); }
+        .message.visible { opacity: 0.45; }
+
+        /* The central question */
+        .question {
+            position: fixed;
+            top: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 5s ease;
+            letter-spacing: 0.18em;
+        }
+
+        body.dark-mode .question { color: rgba(255,255,255,0.55); }
+        .question.visible { opacity: 0.3; }
+
+        /* Shadow counter */
+        .counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            opacity: 0.2;
+            transition: opacity 0.8s ease;
+        }
+
+        .counter:hover { opacity: 0.45; }
+
+        /* Keyboard hints - appear only when needed */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 2;
+            letter-spacing: 0.05em;
+        }
+
+        .key-hint.visible { opacity: 0.2; }
+        body.dark-mode .key-hint { color: rgba(255,255,255,0.45); }
+
+        .back-link { z-index: 100; }
+        body.dark-mode .back-link { color: var(--bone); }
+
+        /* Memory fragments - traces of what was */
+        .memory-fragment {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--slate-light);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: memoryLinger 15s ease-out forwards;
+        }
+
+        @keyframes memoryLinger {
+            0% { opacity: 0; transform: scale(0); }
+            10% { opacity: 0.4; transform: scale(1.2); }
+            30% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        body.dark-mode .memory-fragment {
+            background: rgba(255,255,255,0.45);
+        }
+
+        /* Secret glyph */
+        .secret-glyph {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: transparent;
+            text-shadow: 0 0 25px var(--slate-light);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 6s ease;
+            font-family: serif;
+        }
+
+        .secret-glyph.visible {
+            opacity: 0.12;
+        }
+
+        body.dark-mode .secret-glyph {
+            text-shadow: 0 0 35px rgba(255,255,255,0.25);
+        }
+
+        /* Ambient particles - dust in light that doesn't exist */
+        .particle {
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            background: var(--slate-light);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.dark-mode .particle {
+            background: rgba(255,255,255,0.35);
+        }
+
+        /* Echo shadow - lingers where you were */
+        .echo-shadow {
+            position: fixed;
+            width: 80px;
+            height: 150px;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(45, 55, 72, 0.08) 30%,
+                rgba(45, 55, 72, 0.12) 50%,
+                rgba(45, 55, 72, 0.08) 70%,
+                transparent 100%
+            );
+            border-radius: 40% 40% 45% 45%;
+            filter: blur(25px);
+            pointer-events: none;
+            opacity: 0;
+            animation: echoLinger 3s ease-out forwards;
+        }
+
+        @keyframes echoLinger {
+            0% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.2; transform: scale(1.15); }
+            100% { opacity: 0; transform: scale(1.4); }
+        }
+
+        body.dark-mode .echo-shadow {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(200, 200, 220, 0.06) 30%,
+                rgba(200, 200, 220, 0.1) 50%,
+                rgba(200, 200, 220, 0.06) 70%,
+                transparent 100%
+            );
+        }
+
+        /* Watcher - appears at screen edges during deep stillness */
+        .watcher {
+            position: fixed;
+            width: 40px;
+            height: 80px;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(45, 55, 72, 0.1) 30%,
+                rgba(45, 55, 72, 0.2) 50%,
+                rgba(45, 55, 72, 0.1) 70%,
+                transparent 100%
+            );
+            border-radius: 40% 40% 45% 45%;
+            filter: blur(20px);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 8s ease;
+        }
+
+        .watcher.visible {
+            opacity: 0.3;
+            animation: watcherBreath 10s ease-in-out infinite;
+        }
+
+        @keyframes watcherBreath {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.05) translateY(-5px); }
+        }
+
+        body.dark-mode .watcher {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(200, 200, 220, 0.08) 30%,
+                rgba(200, 200, 220, 0.15) 50%,
+                rgba(200, 200, 220, 0.08) 70%,
+                transparent 100%
+            );
+        }
+
+        /* Whisper text - very faint text that appears at edges */
+        .whisper {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate-light);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 6s ease;
+            letter-spacing: 0.2em;
+        }
+
+        .whisper.visible {
+            opacity: 0.15;
+        }
+
+        body.dark-mode .whisper {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Sound indicator - hidden but findable */
+        .sound-orb {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 6px;
+            height: 6px;
+            background: transparent;
+            border: 1px solid var(--slate-light);
+            border-radius: 50%;
+            opacity: 0;
+            cursor: pointer;
+            pointer-events: none;
+            transition: all 1s ease;
+        }
+
+        .sound-orb.revealed {
+            opacity: 0.2;
+            pointer-events: auto;
+        }
+
+        .sound-orb:hover {
+            opacity: 0.4;
+            transform: scale(1.2);
+        }
+
+        .sound-orb.active {
+            background: var(--slate-light);
+            animation: soundPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes soundPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="shadow" id="shadow"></div>
+    <div class="absence" id="absence"></div>
+    <div class="light-source" id="light1"></div>
+    <div class="light-source" id="light2"></div>
+    <div class="light-source" id="light3"></div>
+    <div class="cursor-dot" id="cursor"></div>
+    <div class="secret-glyph" id="glyph"></div>
+    <div class="watcher" id="watcher1"></div>
+    <div class="watcher" id="watcher2"></div>
+    <div class="sound-orb" id="soundOrb" title=""></div>
+
+    <p class="question" id="question">shadow of what?</p>
+    <p class="message" id="message"></p>
+    <p class="counter" id="counter">shadows: 1</p>
+    <div class="key-hint" id="keyHint">
+        [d] dark<br>
+        [f] freeze<br>
+        [m] multiply<br>
+        [space] world
+    </div>
+
+    <p class="whisper" id="whisper1" style="top: 50%; left: 1rem; writing-mode: vertical-rl;"></p>
+    <p class="whisper" id="whisper2" style="top: 50%; right: 1rem; writing-mode: vertical-rl;"></p>
+
+    <script>
+        const shadow = document.getElementById('shadow');
+        const absence = document.getElementById('absence');
+        const cursor = document.getElementById('cursor');
+        const light1 = document.getElementById('light1');
+        const light2 = document.getElementById('light2');
+        const light3 = document.getElementById('light3');
+        const question = document.getElementById('question');
+        const message = document.getElementById('message');
+        const counter = document.getElementById('counter');
+        const glyph = document.getElementById('glyph');
+        const watcher1 = document.getElementById('watcher1');
+        const watcher2 = document.getElementById('watcher2');
+        const keyHint = document.getElementById('keyHint');
+        const soundOrb = document.getElementById('soundOrb');
+        const whisper1 = document.getElementById('whisper1');
+        const whisper2 = document.getElementById('whisper2');
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let shadowCount = 1;
+        let isFrozen = false;
+        let hasSeenAbsence = false;
+        let lastMove = Date.now();
+        let extraShadows = [];
+        let stillnessLevel = 0;
+        let antiShadowCount = 0;
+        let secretSequence = [];
+        let totalDistanceTraveled = 0;
+        let lastX = mouseX;
+        let lastY = mouseY;
+        let echoReady = false;
+        let hasShownHint = false;
+        let soundEnabled = false;
+        let audioContext = null;
+        let deepStillnessReached = false;
+        let watcherPhase = 0;
+        let shadowAwareness = 0;
+
+        // Messages about the nature of sourceless shadow
+        const messages = [
+            'it follows nothing',
+            'or perhaps nothing follows it',
+            'the shadow came first',
+            'waiting for something to cast it',
+            'in the dark, everything is shadow',
+            'the absence defines the presence',
+            'what casts a shadow that has no source?',
+            'some things exist only in periphery',
+            'the shadow remembers a body that never was',
+            'darkness is not the absence of light',
+            'it is the memory of light',
+            'we are all shadows of something we have not yet become',
+            'stillness reveals what movement hides',
+            'it knows you are here',
+            'it has always known'
+        ];
+        let messageIndex = 0;
+
+        // Whispers that appear at the edges
+        const whispers = [
+            'watching',
+            'waiting',
+            'here',
+            'before you',
+            'after you',
+            'always',
+            'never',
+            'between',
+            'source?',
+            'cast by what?'
+        ];
+
+        // Secret messages
+        const secretMessages = {
+            antiBalance: 'equilibrium: where shadow meets anti-shadow',
+            manyPaths: 'a parliament of shadows deliberates in silence',
+            perfectStillness: 'in perfect stillness, even shadows hold their breath',
+            liminalSpace: 'between light and dark: the threshold',
+            wanderer: 'you have traveled far in search of nothing',
+            aware: 'it sees you seeing it',
+            soundFound: 'some things are felt, not heard'
+        };
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Position phantom lights - they cast nothing
+        light1.style.top = '18%';
+        light1.style.right = '28%';
+        light2.style.top = '22%';
+        light2.style.left = '22%';
+        light3.style.top = '75%';
+        light3.style.left = '50%';
+
+        // Position watchers at edges
+        watcher1.style.left = '-15px';
+        watcher1.style.top = '40%';
+        watcher2.style.right = '-15px';
+        watcher2.style.top = '55%';
+
+        // Create ambient particles - dust in phantom light
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.top = Math.random() * window.innerHeight + 'px';
+            document.body.appendChild(particle);
+
+            const duration = 8000 + Math.random() * 12000;
+            const drift = {
+                x: (Math.random() - 0.5) * 40,
+                y: -15 - Math.random() * 25
+            };
+
+            particle.animate([
+                { opacity: 0, transform: 'translate(0, 0) scale(0.5)' },
+                { opacity: 0.25, transform: `translate(${drift.x * 0.2}px, ${drift.y * 0.2}px) scale(1)` },
+                { opacity: 0.15, transform: `translate(${drift.x * 0.6}px, ${drift.y * 0.6}px) scale(0.8)` },
+                { opacity: 0, transform: `translate(${drift.x}px, ${drift.y}px) scale(0.3)` }
+            ], { duration, easing: 'ease-in-out' });
+
+            setTimeout(() => particle.remove(), duration);
+        }
+
+        // Spawn particles slowly
+        setInterval(() => {
+            if (Math.random() < 0.25) createParticle();
+        }, 2500);
+
+        // Mouse movement - shadow follows but offset wrong
+        document.addEventListener('mousemove', (e) => {
+            const prevX = mouseX;
+            const prevY = mouseY;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            // Track distance
+            const dist = Math.sqrt(Math.pow(mouseX - lastX, 2) + Math.pow(mouseY - lastY, 2));
+            totalDistanceTraveled += dist;
+            lastX = mouseX;
+            lastY = mouseY;
+
+            // Show hint after some movement
+            if (totalDistanceTraveled > 500 && !hasShownHint) {
+                hasShownHint = true;
+                setTimeout(() => keyHint.classList.add('visible'), 3000);
+                setTimeout(() => keyHint.classList.remove('visible'), 12000);
+            }
+
+            // Wanderer discovery
+            if (totalDistanceTraveled > 50000 && !document.querySelector('.wanderer-unlocked')) {
+                showSecretMessage(secretMessages.wanderer);
+                document.body.classList.add('wanderer-unlocked');
+            }
+
+            cursor.style.left = mouseX + 'px';
+            cursor.style.top = mouseY + 'px';
+            cursor.classList.remove('still');
+
+            // Create echo after stillness
+            const timeSinceMove = Date.now() - lastMove;
+            if (timeSinceMove > 4000 && echoReady) {
+                createEchoShadow(shadow.style.left, shadow.style.top);
+                echoReady = false;
+            }
+
+            lastMove = Date.now();
+            stillnessLevel = 0;
+            echoReady = true;
+
+            // Reset deep stillness effects
+            if (deepStillnessReached) {
+                deepStillnessReached = false;
+                watcher1.classList.remove('visible');
+                watcher2.classList.remove('visible');
+                shadow.classList.remove('aware');
+                shadowAwareness = 0;
+            }
+
+            if (!isFrozen) {
+                // Shadow follows but the offset is wrong - no visible source
+                const offsetX = (mouseX - window.innerWidth / 2) * 0.35;
+                const offsetY = (mouseY - window.innerHeight / 2) * 0.35;
+
+                // Organic wave motion - the shadow breathes independently
+                const time = Date.now() / 1000;
+                const waveX = Math.sin(time * 0.4) * 4 + Math.sin(time * 0.7) * 2;
+                const waveY = Math.cos(time * 0.5) * 3 + Math.cos(time * 0.9) * 1.5;
+
+                // Slight delay creates uncanny following
+                shadow.style.left = (mouseX + offsetX - 40 + waveX) + 'px';
+                shadow.style.top = (mouseY + offsetY + 60 + waveY) + 'px';
+                shadow.classList.add('following');
+            }
+
+            // Absence follows more closely - searching for its source
+            absence.style.left = (mouseX - 30) + 'px';
+            absence.style.top = (mouseY - 140) + 'px';
+
+            // Play subtle movement sound if enabled
+            if (soundEnabled && dist > 5) {
+                playMovementSound(dist);
+            }
+        });
+
+        // Create echo shadow
+        function createEchoShadow(left, top) {
+            const echo = document.createElement('div');
+            echo.className = 'echo-shadow';
+            echo.style.left = left;
+            echo.style.top = top;
+            document.body.appendChild(echo);
+            setTimeout(() => echo.remove(), 3000);
+        }
+
+        // Create memory fragment
+        function createMemoryFragment(x, y) {
+            const fragment = document.createElement('div');
+            fragment.className = 'memory-fragment';
+            fragment.style.left = x + 'px';
+            fragment.style.top = y + 'px';
+            document.body.appendChild(fragment);
+            setTimeout(() => fragment.remove(), 15000);
+        }
+
+        // Show secret message
+        function showSecretMessage(msg) {
+            const secretMsg = document.createElement('p');
+            secretMsg.className = 'message';
+            secretMsg.textContent = msg;
+            secretMsg.style.bottom = '5rem';
+            secretMsg.style.fontSize = '0.75rem';
+            document.body.appendChild(secretMsg);
+
+            setTimeout(() => secretMsg.classList.add('visible'), 100);
+            setTimeout(() => {
+                secretMsg.classList.remove('visible');
+                setTimeout(() => secretMsg.remove(), 4000);
+            }, 6000);
+        }
+
+        // Right-click creates anti-shadow
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                const antiShadow = document.createElement('div');
+                antiShadow.className = 'anti-shadow';
+                antiShadow.style.left = (e.clientX - 30) + 'px';
+                antiShadow.style.top = (e.clientY - 60) + 'px';
+                document.body.appendChild(antiShadow);
+
+                antiShadowCount++;
+                secretSequence.push('anti');
+
+                // Easter egg: balance achieved
+                if (antiShadowCount === 5 && shadowCount >= 5) {
+                    showSecretMessage(secretMessages.antiBalance);
+                }
+
+                setTimeout(() => antiShadow.remove(), 5000);
+                createMemoryFragment(e.clientX, e.clientY);
+
+                if (soundEnabled) playAntiSound();
+            }
+        });
+
+        // Left click creates more shadows
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('back-link')) return;
+            if (e.target === soundOrb) return;
+
+            shadowCount++;
+            counter.textContent = `shadows: ${shadowCount}`;
+            secretSequence.push('shadow');
+
+            if (shadowCount === 13) {
+                showSecretMessage(secretMessages.manyPaths);
+            }
+
+            const newShadow = document.createElement('div');
+            newShadow.className = 'shadow';
+
+            // Spawn in organic pattern
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 40 + Math.random() * 80;
+            const spawnX = e.clientX + Math.cos(angle) * distance;
+            const spawnY = e.clientY + Math.sin(angle) * distance + 50;
+
+            newShadow.style.left = spawnX + 'px';
+            newShadow.style.top = spawnY + 'px';
+            newShadow.style.opacity = 0.15 + Math.random() * 0.25;
+            newShadow.style.transform = `scale(${0.35 + Math.random() * 0.35}) rotate(${(Math.random() - 0.5) * 8}deg)`;
+            document.body.appendChild(newShadow);
+            extraShadows.push(newShadow);
+
+            // Organic drift - shadows wander
+            let driftAngle = Math.random() * Math.PI * 2;
+            let driftSpeed = 0.3 + Math.random() * 0.7;
+            let life = 1;
+            let breathPhase = Math.random() * Math.PI * 2;
+
+            const driftInterval = setInterval(() => {
+                driftAngle += (Math.random() - 0.5) * 0.08;
+                breathPhase += 0.02;
+
+                const left = parseFloat(newShadow.style.left);
+                const top = parseFloat(newShadow.style.top);
+                const breathOffset = Math.sin(breathPhase) * 2;
+
+                newShadow.style.left = (left + Math.cos(driftAngle) * driftSpeed) + 'px';
+                newShadow.style.top = (top + Math.sin(driftAngle) * driftSpeed + breathOffset * 0.1) + 'px';
+
+                life -= 0.0015;
+                newShadow.style.opacity = life * 0.35;
+                const currentScale = 0.35 + life * 0.35;
+                newShadow.style.transform = `scale(${currentScale}) rotate(${(1 - life) * 15}deg)`;
+
+                if (life <= 0) {
+                    clearInterval(driftInterval);
+                    createMemoryFragment(
+                        parseFloat(newShadow.style.left) + 40,
+                        parseFloat(newShadow.style.top) + 75
+                    );
+                    newShadow.remove();
+                    extraShadows = extraShadows.filter(s => s !== newShadow);
+                    shadowCount--;
+                    counter.textContent = `shadows: ${shadowCount}`;
+                }
+            }, 50);
+
+            messageIndex = (messageIndex + 1) % messages.length;
+            if (soundEnabled) playClickSound();
+        });
+
+        // Keyboard interactions
+        document.addEventListener('keydown', (e) => {
+            secretSequence.push(e.code);
+            if (secretSequence.length > 20) {
+                secretSequence = secretSequence.slice(-12);
+            }
+
+            if (e.code === 'KeyD') {
+                document.body.classList.toggle('dark-mode');
+            }
+            if (e.code === 'KeyF') {
+                isFrozen = !isFrozen;
+                shadow.classList.toggle('frozen', isFrozen);
+
+                if (isFrozen) {
+                    setTimeout(() => {
+                        if (isFrozen) {
+                            question.textContent = 'frozen in time, or frozen in space?';
+                        }
+                    }, 6000);
+                } else {
+                    question.textContent = 'shadow of what?';
+                }
+            }
+            if (e.code === 'KeyM') {
+                const patterns = ['circle', 'line', 'scatter', 'spiral'];
+                const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+
+                for (let i = 0; i < 5; i++) {
+                    let offsetX, offsetY;
+
+                    if (pattern === 'circle') {
+                        const angle = (i / 5) * Math.PI * 2;
+                        offsetX = Math.cos(angle) * 100;
+                        offsetY = Math.sin(angle) * 100;
+                    } else if (pattern === 'line') {
+                        offsetX = (i - 2) * 60;
+                        offsetY = 0;
+                    } else if (pattern === 'spiral') {
+                        const angle = (i / 5) * Math.PI * 3;
+                        const dist = 50 + i * 20;
+                        offsetX = Math.cos(angle) * dist;
+                        offsetY = Math.sin(angle) * dist;
+                    } else {
+                        offsetX = (Math.random() - 0.5) * 200;
+                        offsetY = (Math.random() - 0.5) * 200;
+                    }
+
+                    setTimeout(() => {
+                        const fakeClick = new MouseEvent('click', {
+                            clientX: mouseX + offsetX,
+                            clientY: mouseY + offsetY
+                        });
+                        document.dispatchEvent(fakeClick);
+                    }, i * 100);
+                }
+            }
+            if (e.code === 'KeyC') {
+                extraShadows.forEach((s, i) => {
+                    setTimeout(() => {
+                        s.classList.add('dissolving');
+                        setTimeout(() => s.remove(), 6000);
+                    }, i * 80);
+                });
+                extraShadows = [];
+                shadowCount = 1;
+                counter.textContent = 'shadows: 1';
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                document.body.classList.toggle('shadow-world');
+            }
+            if (e.code === 'KeyL') {
+                document.body.classList.toggle('liminal');
+                if (document.body.classList.contains('liminal')) {
+                    showSecretMessage(secretMessages.liminalSpace);
+                }
+            }
+            if (e.code === 'KeyU') {
+                // Hidden: umbral mode
+                document.body.classList.toggle('umbral');
+            }
+            if (e.code === 'KeyS') {
+                // Hidden: reveal sound orb
+                soundOrb.classList.add('revealed');
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+
+            // Secret: Konami-like sequence
+            const last4 = secretSequence.slice(-4).join(',');
+            if (last4 === 'ArrowUp,ArrowUp,ArrowDown,ArrowDown') {
+                glyph.textContent = '\u221E';
+                glyph.classList.add('visible');
+                setTimeout(() => glyph.classList.remove('visible'), 10000);
+            }
+
+            // Secret: typing "void"
+            const lastKeys = secretSequence.slice(-4).filter(k => k.startsWith('Key')).map(k => k.slice(3).toLowerCase()).join('');
+            if (lastKeys === 'void') {
+                document.body.style.transition = 'background 4s ease';
+                document.body.style.background = '#000';
+                shadow.style.opacity = '0';
+                question.textContent = '';
+                setTimeout(() => {
+                    document.body.style.background = '';
+                    shadow.style.opacity = '';
+                    question.textContent = 'shadow of what?';
+                }, 6000);
+            }
+
+            // Secret: typing "here"
+            if (lastKeys === 'here') {
+                showSecretMessage('you were always here');
+            }
+
+            // Secret: typing "watch"
+            if (lastKeys.endsWith('watch')) {
+                showSecretMessage(secretMessages.aware);
+                shadow.classList.add('aware');
+                setTimeout(() => shadow.classList.remove('aware'), 8000);
+            }
+        });
+
+        // Double-click to flip shadow
+        document.addEventListener('dblclick', (e) => {
+            if (e.target.classList.contains('back-link')) return;
+
+            shadow.style.transform = 'scaleY(-1)';
+            question.textContent = 'shadow above?';
+
+            setTimeout(() => {
+                shadow.style.transform = '';
+                question.textContent = 'shadow of what?';
+            }, 4000);
+        });
+
+        // Sound orb click
+        soundOrb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            soundEnabled = !soundEnabled;
+            soundOrb.classList.toggle('active', soundEnabled);
+
+            if (soundEnabled && !audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                showSecretMessage(secretMessages.soundFound);
+            }
+        });
+
+        // Subtle sound functions
+        function playMovementSound(intensity) {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = 80 + Math.min(intensity, 30);
+            osc.type = 'sine';
+            gain.gain.value = 0.02;
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.1);
+        }
+
+        function playClickSound() {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = 120;
+            osc.type = 'triangle';
+            gain.gain.value = 0.03;
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.2);
+        }
+
+        function playAntiSound() {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = 200;
+            osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+            osc.type = 'sine';
+            gain.gain.value = 0.025;
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.3);
+        }
+
+        // Stillness reveals deeper truths
+        setInterval(() => {
+            const timeSinceMove = Date.now() - lastMove;
+
+            if (timeSinceMove > 2000) {
+                stillnessLevel = Math.min(12, Math.floor((timeSinceMove - 2000) / 1000));
+                cursor.classList.add('still');
+
+                if (timeSinceMove > 3000) {
+                    absence.classList.add('visible');
+                    light1.classList.add('visible');
+                    light2.classList.add('visible');
+                }
+
+                if (timeSinceMove > 5000) {
+                    question.classList.add('visible');
+                    light3.classList.add('visible');
+                }
+
+                if (timeSinceMove > 7000 && !hasSeenAbsence) {
+                    hasSeenAbsence = true;
+                    message.textContent = messages[messageIndex];
+                    message.classList.add('visible');
+                }
+
+                // Cycle messages during stillness
+                if (timeSinceMove > 12000 && stillnessLevel > 5) {
+                    messageIndex = (messageIndex + 1) % messages.length;
+                    message.textContent = messages[messageIndex];
+                }
+
+                // Deep stillness - watchers appear
+                if (timeSinceMove > 20000 && !deepStillnessReached) {
+                    deepStillnessReached = true;
+                    watcher1.classList.add('visible');
+                    setTimeout(() => watcher2.classList.add('visible'), 3000);
+                }
+
+                // Shadow becomes aware
+                if (timeSinceMove > 25000 && shadowAwareness < 1) {
+                    shadowAwareness = 1;
+                    shadow.classList.add('aware');
+                    question.textContent = 'it sees you';
+                }
+
+                // Perfect stillness
+                if (timeSinceMove > 45000 && !document.querySelector('.perfect-stillness')) {
+                    showSecretMessage(secretMessages.perfectStillness);
+                    document.body.classList.add('perfect-stillness');
+                    shadow.style.opacity = '0.25';
+
+                    // Whispers appear
+                    whisper1.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+                    whisper2.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+                    whisper1.classList.add('visible');
+                    whisper2.classList.add('visible');
+                }
+
+            } else if (timeSinceMove < 1000) {
+                absence.classList.remove('visible');
+                light1.classList.remove('visible');
+                light2.classList.remove('visible');
+                light3.classList.remove('visible');
+                message.classList.remove('visible');
+                whisper1.classList.remove('visible');
+                whisper2.classList.remove('visible');
+                shadow.style.opacity = '';
+                question.textContent = 'shadow of what?';
+
+                if (hasSeenAbsence && stillnessLevel > 4) {
+                    messageIndex = (messageIndex + 1) % messages.length;
+                }
+            }
+        }, 500);
+
+        // Initial position - shadow appears before anything else
+        shadow.style.left = (window.innerWidth / 2 - 40) + 'px';
+        shadow.style.top = (window.innerHeight / 2 + 60) + 'px';
+
+        // Console poetry
+        console.log('%c', 'font-size: 1px; padding: 20px 0;');
+        console.log('%c\u2591\u2592\u2593 shadow \u2593\u2592\u2591', 'font-size: 18px; color: #2d3748; font-weight: 100; letter-spacing: 0.3em;');
+        console.log('%c', 'font-size: 1px; padding: 10px 0;');
+        console.log('%ca shadow without a source', 'font-size: 11px; color: #718096; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%cwaits for something to cast it', 'font-size: 11px; color: #718096; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%c', 'font-size: 1px; padding: 15px 0;');
+        console.log('%c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', 'color: #a0aec0; font-size: 8px;');
+        console.log('%c', 'font-size: 1px; padding: 8px 0;');
+        console.log('%cstillness reveals', 'font-size: 9px; color: #a0aec0; font-style: italic;');
+        console.log('%cwhat movement hides', 'font-size: 9px; color: #a0aec0; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 8px 0;');
+        console.log('%cit knows you are here', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+        console.log('%cit has always known', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 15px 0;');
+        console.log('%c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', 'color: #a0aec0; font-size: 8px;');
+
+        // Hidden console functions
+        window.umbra = () => {
+            document.querySelectorAll('.shadow').forEach(s => {
+                s.style.transition = 'all 3s ease';
+                s.style.background = 'radial-gradient(ellipse, rgba(75,0,130,0.35) 0%, transparent 70%)';
+            });
+            console.log('%cthe shadow reveals its true nature', 'color: #4b0082; font-style: italic;');
+            setTimeout(() => {
+                document.querySelectorAll('.shadow').forEach(s => {
+                    s.style.background = '';
+                });
+            }, 12000);
+        };
+
+        window.penumbra = () => {
+            console.log('%cin the penumbra', 'color: #718096; font-style: italic;');
+            console.log('%cneither fully light', 'color: #718096; font-style: italic;');
+            console.log('%cnor fully dark', 'color: #718096; font-style: italic;');
+            console.log('%c', 'font-size: 1px; padding: 5px 0;');
+            console.log('%cthe threshold between', 'color: #a0aec0; font-style: italic;');
+        };
+
+        window.source = () => {
+            console.log('%c?', 'font-size: 40px; color: #2d3748;');
+        };
+    </script>
+</body>
+</html>

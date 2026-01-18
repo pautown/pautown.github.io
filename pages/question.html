@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>question - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+            transition: filter 3s ease, background-color 4s ease;
+        }
+
+        body.deep {
+            filter: sepia(0.25) brightness(0.85);
+            background-color: #e8dcc8;
+        }
+        body.dreaming {
+            filter: blur(0.5px) brightness(1.08) saturate(0.9);
+        }
+        body.midnight {
+            background: var(--night);
+            filter: none;
+        }
+        body.midnight .word { color: var(--golden); }
+        body.midnight .word.visible { opacity: 0.6; }
+        body.midnight .word.highlight { color: var(--amber-glow); opacity: 1; }
+        body.midnight .big-question { color: var(--slate-deep); }
+        body.midnight .contemplation { color: var(--slate-light); }
+        body.midnight .stillness-message { color: var(--slate-light); }
+
+        body.absorbed {
+            filter: brightness(0.95) saturate(0.85);
+            background-color: #f0ebe0;
+        }
+
+        .question-container {
+            max-width: 700px;
+            text-align: center;
+            position: relative;
+            animation: containerBreathe 8s ease-in-out infinite;
+        }
+
+        @keyframes containerBreathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.008); }
+        }
+
+        /* The question mark that starts huge */
+        .big-question {
+            font-size: 20rem;
+            color: var(--slate);
+            opacity: 0.08;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: all 4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 1;
+            user-select: none;
+            animation: questionBreathe 12s ease-in-out infinite;
+        }
+
+        @keyframes questionBreathe {
+            0%, 100% { opacity: 0.08; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.05; transform: translate(-50%, -50%) scale(1.02); }
+        }
+
+        .big-question.fading {
+            opacity: 0.02;
+            font-size: 35rem;
+            letter-spacing: -2rem;
+            animation: none;
+        }
+
+        .big-question.answering {
+            opacity: 0;
+            transform: translate(-50%, -50%) rotate(180deg) scale(0.5);
+            animation: none;
+        }
+
+        .big-question.dissolving {
+            opacity: 0;
+            font-size: 50rem;
+            filter: blur(20px);
+            animation: none;
+        }
+
+        /* Words that appear one by one */
+        .question-text {
+            font-size: 1.7rem;
+            line-height: 2.4;
+            color: var(--ink);
+            position: relative;
+            z-index: 2;
+            letter-spacing: 0.02em;
+        }
+
+        .word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            margin: 0 0.18rem;
+            cursor: default;
+            position: relative;
+        }
+
+        .word.visible {
+            opacity: 0.55;
+            transform: translateY(0) scale(1);
+        }
+
+        .word.visible.breathing {
+            animation: wordBreathe 6s ease-in-out infinite;
+        }
+
+        @keyframes wordBreathe {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 0.65; }
+        }
+
+        .word.highlight {
+            color: var(--amber-deep);
+            opacity: 1;
+            font-style: italic;
+        }
+
+        .word.highlight.visible {
+            animation: highlightBreathe 5s ease-in-out infinite;
+        }
+
+        @keyframes highlightBreathe {
+            0%, 100% { opacity: 0.85; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .word.emphasis {
+            font-weight: 500;
+        }
+
+        .word.whisper {
+            opacity: 0.35 !important;
+            font-size: 0.92em;
+            transition: all 1.5s ease;
+        }
+
+        .word.absorbed {
+            opacity: 1 !important;
+            text-shadow: 0 0 30px var(--amber);
+            transition: all 2s ease;
+        }
+
+        .word:hover {
+            opacity: 0.9 !important;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Subtle underline on key words when hovered */
+        .word.highlight::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--amber);
+            transform: scaleX(0);
+            transition: transform 0.5s ease;
+        }
+
+        .word.highlight:hover::after {
+            transform: scaleX(1);
+        }
+
+        /* Contemplation space */
+        .contemplation {
+            margin-top: 4rem;
+            font-size: 0.95rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            min-height: 3rem;
+            letter-spacing: 0.03em;
+            animation: contemplationDrift 20s ease-in-out infinite;
+        }
+
+        @keyframes contemplationDrift {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .contemplation.visible {
+            opacity: 0.4;
+        }
+
+        /* Secondary contemplation - appears below */
+        .contemplation-secondary {
+            margin-top: 1rem;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 5s ease 3s;
+            letter-spacing: 0.12em;
+        }
+
+        .contemplation-secondary.visible {
+            opacity: 0.2;
+        }
+
+        /* Stillness message - appears when user is still */
+        .stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, calc(-50% + 150px));
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            pointer-events: none;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.8;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.35;
+        }
+
+        /* Progress indicator - more elegant */
+        .progress {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 1px;
+            background: var(--bone-dark);
+            overflow: hidden;
+            opacity: 0.6;
+            transition: opacity 2s ease;
+        }
+
+        .progress.hidden {
+            opacity: 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--amber), transparent);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Restart hint */
+        .restart {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.8s ease, letter-spacing 0.5s ease;
+            letter-spacing: 0.15em;
+        }
+
+        .restart:hover {
+            opacity: 0.5;
+            letter-spacing: 0.25em;
+        }
+
+        .restart.visible {
+            opacity: 0.2;
+        }
+
+        .word.pulse {
+            animation: word-pulse 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes word-pulse {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.12); }
+        }
+
+        .word.ripple {
+            animation: word-ripple 1.5s ease;
+        }
+
+        @keyframes word-ripple {
+            0% { text-shadow: 0 0 0 transparent; }
+            30% { text-shadow: 0 0 25px var(--amber-glow); }
+            100% { text-shadow: 0 0 0 transparent; }
+        }
+
+        .word.glow {
+            animation: word-glow 3s ease infinite;
+        }
+
+        @keyframes word-glow {
+            0%, 100% { text-shadow: 0 0 0 transparent; }
+            50% { text-shadow: 0 0 15px var(--amber); }
+        }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 2.2;
+            letter-spacing: 0.05em;
+        }
+
+        body:hover .key-hint { opacity: 0.15; }
+        body.still .key-hint { opacity: 0.08; }
+
+        /* Hidden counter easter egg */
+        .visit-counter {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .visit-counter:hover {
+            opacity: 0.3;
+        }
+
+        /* Ambient particles */
+        .particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--amber);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 0;
+        }
+
+        /* Breath indicator - subtle */
+        .breath-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--amber);
+            opacity: 0;
+            animation: breatheIndicator 6s ease-in-out infinite;
+            transition: opacity 3s ease;
+        }
+
+        body.breathing .breath-indicator {
+            opacity: 0.12;
+        }
+
+        body.still .breath-indicator {
+            opacity: 0.25;
+            animation: breatheIndicatorSlow 8s ease-in-out infinite;
+        }
+
+        @keyframes breatheIndicator {
+            0%, 100% { transform: scale(0.7); opacity: 0.08; }
+            50% { transform: scale(1.3); opacity: 0.18; }
+        }
+
+        @keyframes breatheIndicatorSlow {
+            0%, 100% { transform: scale(0.6); opacity: 0.15; }
+            50% { transform: scale(1.5); opacity: 0.35; }
+        }
+
+        /* Initial prompt styling */
+        .initial-prompt {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            letter-spacing: 0.25em;
+            text-transform: lowercase;
+        }
+
+        .initial-prompt.visible {
+            opacity: 0.25;
+            animation: promptBreathe 4s ease-in-out infinite;
+        }
+
+        @keyframes promptBreathe {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.35; }
+        }
+
+        .initial-prompt.fading {
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        /* Word count display - hidden by default */
+        .word-count {
+            position: fixed;
+            top: 50%;
+            right: 2rem;
+            transform: translateY(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.2em;
+            transition: opacity 1s ease;
+        }
+
+        body.counting .word-count {
+            opacity: 0.15;
+        }
+
+        /* Sound toggle - very hidden */
+        .sound-toggle {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--slate);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 1s ease, transform 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.3;
+            transform: scale(2);
+        }
+
+        .sound-toggle.active {
+            background: var(--amber);
+            opacity: 0.3;
+        }
+
+        /* Meditation mode indicator */
+        .meditation-indicator {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.15em;
+            transition: opacity 3s ease;
+        }
+
+        body.meditating .meditation-indicator {
+            opacity: 0.2;
+        }
+
+        /* Absorbed state - after long stillness */
+        .absorbed-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(212, 160, 86, 0.03) 100%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 5s ease;
+        }
+
+        body.absorbed .absorbed-overlay {
+            opacity: 1;
+        }
+
+        /* Secret glyph that appears after specific sequence */
+        .secret-glyph {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.6rem;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.5em;
+            transition: opacity 3s ease;
+        }
+
+        .secret-glyph.visible {
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="big-question" id="bigQuestion">?</div>
+
+    <div class="question-container">
+        <p class="question-text" id="questionText"></p>
+        <p class="contemplation" id="contemplation"></p>
+        <p class="contemplation-secondary" id="contemplationSecondary"></p>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <div class="progress">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+
+    <p class="restart" id="restart">begin again</p>
+    <p class="initial-prompt" id="initialPrompt">be still, or click</p>
+
+    <div class="breath-indicator"></div>
+    <div class="word-count" id="wordCount"></div>
+    <div class="visit-counter" id="visitCounter"></div>
+    <div class="sound-toggle" id="soundToggle" title=" "></div>
+    <div class="meditation-indicator" id="meditationIndicator">meditating</div>
+    <div class="absorbed-overlay"></div>
+    <div class="secret-glyph" id="secretGlyph"></div>
+
+    <div class="key-hint">
+        [space] begin<br>
+        [s] reveal<br>
+        [d] deepen<br>
+        [b] dream<br>
+        [m] midnight<br>
+        [r] restart<br>
+        [a] absorb
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const questionText = document.getElementById('questionText');
+        const bigQuestion = document.getElementById('bigQuestion');
+        const contemplation = document.getElementById('contemplation');
+        const contemplationSecondary = document.getElementById('contemplationSecondary');
+        const progress = document.getElementById('progress');
+        const restart = document.getElementById('restart');
+        const initialPrompt = document.getElementById('initialPrompt');
+        const wordCountDisplay = document.getElementById('wordCount');
+        const visitCounter = document.getElementById('visitCounter');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const soundToggle = document.getElementById('soundToggle');
+        const meditationIndicator = document.getElementById('meditationIndicator');
+        const secretGlyph = document.getElementById('secretGlyph');
+
+        const question = "What use is there in seeing things in anything other than their most pleasant and useful and simply true light?";
+        const words = question.split(' ');
+
+        // Word categories for different treatments
+        const highlightWords = ['pleasant', 'useful', 'true', 'light?'];
+        const emphasisWords = ['What', 'most'];
+        const whisperWords = ['in', 'is', 'and'];
+
+        // Timing variations for each word (creates rhythm - slower, more meditative)
+        const wordTimings = {
+            'What': 600,
+            'use': 400,
+            'is': 250,
+            'there': 450,
+            'in': 200,
+            'seeing': 550,
+            'things': 500,
+            'anything': 550,
+            'other': 400,
+            'than': 300,
+            'their': 350,
+            'most': 600,
+            'pleasant': 800,
+            'and': 250,
+            'useful': 700,
+            'simply': 550,
+            'true': 1000,
+            'light?': 1200
+        };
+
+        // Contemplations - layered like sediment
+        const contemplations = [
+            'sit with this',
+            'there is no answer required',
+            'only a direction',
+            'pointing toward ease',
+            'the question dissolves itself',
+            'what remains is the asking',
+            'and beneath that, stillness',
+            'you already know',
+            'the answer was the question',
+            'there is nothing to solve',
+            'this is the whole of it'
+        ];
+
+        // Secondary contemplations - whispered footnotes
+        const secondaryContemplations = [
+            '// the question is the answer inverted',
+            '// seeing is already choosing',
+            '// light has no opposite, only absence',
+            '// pleasant, useful, true: three doors, one room',
+            '// the asking changes what is asked',
+            '// what you seek is seeking you',
+            '// the koan dissolves the asker',
+            ''
+        ];
+
+        // Stillness rewards - messages that appear when user is still
+        const stillnessMessages = [
+            'patience is its own answer',
+            'the question breathes with you',
+            'stillness reveals',
+            'the words remember being read',
+            'somewhere, a door opens',
+            'you are already there',
+            'the light was always here'
+        ];
+
+        let currentWord = 0;
+        let isAnimating = false;
+        let contemplationInterval = null;
+        let secondaryIndex = 0;
+        let started = false;
+        let stillnessTimer = null;
+        let deepStillnessTimer = null;
+        let lastMouseMove = Date.now();
+        let stillnessLevel = 0;
+        let meditationStartTime = null;
+        let soundEnabled = false;
+
+        // Track visits
+        let visits = parseInt(localStorage.getItem('question-visits') || '0') + 1;
+        localStorage.setItem('question-visits', visits);
+        if (visits > 1) {
+            visitCounter.textContent = `return ${visits}`;
+            visitCounter.style.opacity = '0.12';
+        }
+
+        // Setup words
+        function setup() {
+            questionText.innerHTML = words.map((word, index) => {
+                let classes = 'word';
+                if (highlightWords.includes(word)) classes += ' highlight';
+                if (emphasisWords.includes(word)) classes += ' emphasis';
+                if (whisperWords.includes(word)) classes += ' whisper';
+                return `<span class="${classes}" data-word="${word}" data-index="${index}">${word}</span>`;
+            }).join(' ');
+
+            wordCountDisplay.textContent = `${words.length} words · ${question.length} characters`;
+        }
+
+        function animateQuestion() {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            initialPrompt.classList.add('fading');
+            setTimeout(() => {
+                if (initialPrompt.parentNode) {
+                    initialPrompt.style.display = 'none';
+                }
+            }, 1000);
+
+            const wordEls = questionText.querySelectorAll('.word');
+            currentWord = 0;
+
+            bigQuestion.classList.add('fading');
+            document.body.classList.add('breathing');
+
+            function showNextWord() {
+                if (currentWord >= wordEls.length) {
+                    // All words shown
+                    setTimeout(() => {
+                        bigQuestion.classList.add('answering');
+                        // Add breathing to all visible words
+                        wordEls.forEach(w => w.classList.add('breathing'));
+                        showContemplation();
+                        restart.classList.add('visible');
+                        isAnimating = false;
+                    }, 1500);
+                    return;
+                }
+
+                const wordEl = wordEls[currentWord];
+                const wordText = wordEl.dataset.word;
+
+                wordEl.classList.add('visible');
+
+                // Update progress with easing
+                const progressPercent = ((currentWord + 1) / wordEls.length * 100);
+                progress.style.width = progressPercent + '%';
+
+                currentWord++;
+
+                // Variable timing based on word importance - even slower
+                const baseTime = wordTimings[wordText] || 400;
+                const variance = Math.random() * 150 - 75;
+                setTimeout(showNextWord, baseTime + variance);
+            }
+
+            // Start after a contemplative pause
+            setTimeout(showNextWord, 2500);
+        }
+
+        let contemplationIndex = 0;
+        function showContemplation() {
+            contemplation.textContent = contemplations[0];
+            contemplation.classList.add('visible');
+
+            // Show secondary after delay
+            setTimeout(() => {
+                contemplationSecondary.textContent = secondaryContemplations[secondaryIndex];
+                contemplationSecondary.classList.add('visible');
+            }, 4000);
+
+            // Cycle through contemplations - slower
+            contemplationInterval = setInterval(() => {
+                contemplationIndex = (contemplationIndex + 1) % contemplations.length;
+
+                contemplation.classList.remove('visible');
+                setTimeout(() => {
+                    contemplation.textContent = contemplations[contemplationIndex];
+                    contemplation.classList.add('visible');
+                }, 1500);
+
+                // Occasionally update secondary
+                if (Math.random() > 0.5) {
+                    contemplationSecondary.classList.remove('visible');
+                    setTimeout(() => {
+                        secondaryIndex = (secondaryIndex + 1) % secondaryContemplations.length;
+                        contemplationSecondary.textContent = secondaryContemplations[secondaryIndex];
+                        contemplationSecondary.classList.add('visible');
+                    }, 2000);
+                }
+            }, 9000);
+        }
+
+        function resetQuestion() {
+            if (isAnimating) return;
+
+            if (contemplationInterval) {
+                clearInterval(contemplationInterval);
+                contemplationInterval = null;
+            }
+
+            const wordEls = questionText.querySelectorAll('.word');
+            wordEls.forEach((w, i) => {
+                setTimeout(() => {
+                    w.classList.remove('visible', 'breathing', 'absorbed', 'glow');
+                }, i * 40);
+            });
+
+            bigQuestion.classList.remove('fading', 'answering', 'dissolving');
+            contemplation.classList.remove('visible');
+            contemplationSecondary.classList.remove('visible');
+            stillnessMessage.classList.remove('visible');
+            restart.classList.remove('visible');
+            progress.style.width = '0%';
+            document.body.classList.remove('breathing', 'absorbed', 'meditating');
+            contemplationIndex = 0;
+            stillnessLevel = 0;
+
+            setTimeout(animateQuestion, 1000);
+        }
+
+        restart.addEventListener('click', resetQuestion);
+
+        // Stillness detection
+        function checkStillness() {
+            const now = Date.now();
+            const stillDuration = now - lastMouseMove;
+
+            if (stillDuration > 3000 && !document.body.classList.contains('still')) {
+                document.body.classList.add('still');
+            }
+
+            if (stillDuration > 7000 && started) {
+                // Show stillness message
+                if (!stillnessMessage.classList.contains('visible')) {
+                    const msg = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                    stillnessMessage.textContent = msg;
+                    stillnessMessage.classList.add('visible');
+                    stillnessLevel++;
+
+                    // Hide after a while
+                    setTimeout(() => {
+                        stillnessMessage.classList.remove('visible');
+                    }, 6000);
+                }
+            }
+
+            if (stillDuration > 15000 && started) {
+                // Enter meditation mode
+                if (!document.body.classList.contains('meditating')) {
+                    document.body.classList.add('meditating');
+                    meditationStartTime = now;
+                }
+            }
+
+            if (stillDuration > 30000 && started) {
+                // Deep absorption
+                if (!document.body.classList.contains('absorbed')) {
+                    document.body.classList.add('absorbed');
+                    // Make highlight words glow
+                    questionText.querySelectorAll('.word.highlight').forEach(w => {
+                        w.classList.add('glow');
+                    });
+                }
+            }
+
+            if (stillDuration > 60000 && started) {
+                // Ultimate stillness reward
+                if (!secretGlyph.classList.contains('visible')) {
+                    secretGlyph.textContent = '· the question answers ·';
+                    secretGlyph.classList.add('visible');
+                    setTimeout(() => secretGlyph.classList.remove('visible'), 8000);
+                }
+            }
+        }
+
+        // Track mouse movement
+        document.addEventListener('mousemove', () => {
+            lastMouseMove = Date.now();
+            document.body.classList.remove('still', 'meditating', 'absorbed');
+            stillnessMessage.classList.remove('visible');
+            secretGlyph.classList.remove('visible');
+            questionText.querySelectorAll('.word.glow').forEach(w => w.classList.remove('glow'));
+        });
+
+        // Check stillness periodically
+        setInterval(checkStillness, 1000);
+
+        // Start on click or stillness
+        document.addEventListener('click', (e) => {
+            if (!started && !e.target.classList.contains('back-link') && e.target.id !== 'restart' && e.target.id !== 'soundToggle') {
+                started = true;
+                animateQuestion();
+            }
+        });
+
+        // Auto-start after long stillness before first click
+        function checkAutoStart() {
+            if (!started && Date.now() - lastMouseMove > 5000) {
+                started = true;
+                animateQuestion();
+            }
+        }
+        setTimeout(() => {
+            if (!started) {
+                setInterval(checkAutoStart, 1000);
+            }
+        }, 3000);
+
+        // Setup
+        setup();
+
+        // Show initial prompt after delay
+        setTimeout(() => {
+            if (!started) {
+                initialPrompt.classList.add('visible');
+            }
+        }, 3000);
+
+        // Easter egg: clicking on individual visible words
+        questionText.addEventListener('click', (e) => {
+            if (e.target.classList.contains('word') && e.target.classList.contains('visible')) {
+                e.target.classList.add('ripple');
+                setTimeout(() => e.target.classList.remove('ripple'), 1500);
+
+                // Secret: clicking all highlight words in order reveals something
+                if (e.target.classList.contains('highlight')) {
+                    trackHighlightClick(e.target.dataset.word);
+                }
+            }
+        });
+
+        // Track highlight word clicks for easter egg
+        let highlightClicks = [];
+        function trackHighlightClick(word) {
+            highlightClicks.push(word);
+            if (highlightClicks.length > 4) highlightClicks.shift();
+
+            // If clicked in order: pleasant, useful, true, light?
+            if (JSON.stringify(highlightClicks) === JSON.stringify(highlightWords)) {
+                // Easter egg: invert the question
+                setTimeout(() => {
+                    contemplation.textContent = 'the inversion reveals';
+                    contemplationSecondary.textContent = '// what use is there in seeing things otherwise?';
+                    bigQuestion.classList.add('dissolving');
+                    setTimeout(() => {
+                        bigQuestion.textContent = '·';
+                        bigQuestion.classList.remove('dissolving', 'answering');
+                        bigQuestion.style.opacity = '0.15';
+                        bigQuestion.style.fontSize = '3rem';
+                    }, 4000);
+                }, 800);
+                highlightClicks = [];
+            }
+        }
+
+        // Secret click sequence: triple-click on first word
+        let clickCount = 0;
+        let clickTimer = null;
+        questionText.addEventListener('click', (e) => {
+            if (e.target.dataset.index === '0') {
+                clickCount++;
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => {
+                    if (clickCount >= 3) {
+                        // Secret mode: show question backwards
+                        const wordEls = Array.from(questionText.querySelectorAll('.word'));
+                        wordEls.forEach(w => w.classList.remove('visible'));
+                        wordEls.reverse().forEach((w, i) => {
+                            setTimeout(() => w.classList.add('visible'), i * 100);
+                        });
+                        contemplation.textContent = 'the question reads you';
+                    }
+                    clickCount = 0;
+                }, 400);
+            }
+        });
+
+        // Right-click to highlight word under cursor
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                const wordEls = questionText.querySelectorAll('.word.visible');
+                if (wordEls.length > 0) {
+                    let closest = null;
+                    let closestDist = Infinity;
+                    wordEls.forEach(w => {
+                        const rect = w.getBoundingClientRect();
+                        const dist = Math.hypot(rect.left + rect.width/2 - e.clientX, rect.top + rect.height/2 - e.clientY);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closest = w;
+                        }
+                    });
+                    if (closest) {
+                        closest.classList.add('pulse', 'absorbed');
+                        setTimeout(() => {
+                            closest.classList.remove('pulse');
+                        }, 800);
+                    }
+                }
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!started) {
+                    started = true;
+                    animateQuestion();
+                }
+            }
+            if (e.code === 'KeyS') {
+                e.preventDefault();
+                // Reveal all - show all words with slow cascade
+                if (!started) {
+                    started = true;
+                    bigQuestion.classList.add('fading');
+                    initialPrompt.classList.add('fading');
+                }
+                const wordEls = questionText.querySelectorAll('.word');
+                wordEls.forEach((w, i) => {
+                    setTimeout(() => {
+                        w.classList.add('visible', 'breathing');
+                    }, i * 60);
+                });
+                progress.style.width = '100%';
+                setTimeout(() => {
+                    bigQuestion.classList.add('answering');
+                    showContemplation();
+                    restart.classList.add('visible');
+                    isAnimating = false;
+                }, words.length * 60 + 1000);
+            }
+            if (e.code === 'KeyD') {
+                document.body.classList.remove('dreaming', 'midnight');
+                document.body.classList.toggle('deep');
+            }
+            if (e.code === 'KeyB') {
+                document.body.classList.remove('deep', 'midnight');
+                document.body.classList.toggle('dreaming');
+            }
+            if (e.code === 'KeyM') {
+                document.body.classList.remove('deep', 'dreaming');
+                document.body.classList.toggle('midnight');
+            }
+            if (e.code === 'KeyR') {
+                resetQuestion();
+            }
+            if (e.code === 'KeyC') {
+                document.body.classList.toggle('counting');
+            }
+            if (e.code === 'KeyA') {
+                // Manual absorb toggle
+                document.body.classList.toggle('absorbed');
+                if (document.body.classList.contains('absorbed')) {
+                    questionText.querySelectorAll('.word.highlight').forEach(w => w.classList.add('glow'));
+                } else {
+                    questionText.querySelectorAll('.word.glow').forEach(w => w.classList.remove('glow'));
+                }
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret words
+            handleSecretWord(e.key);
+        });
+
+        // Secret word detection
+        let secretBuffer = '';
+        function handleSecretWord(key) {
+            if (key.length === 1) {
+                secretBuffer += key.toLowerCase();
+                if (secretBuffer.length > 15) secretBuffer = secretBuffer.slice(-15);
+
+                if (secretBuffer.includes('why')) {
+                    contemplation.textContent = 'because it is easier';
+                    contemplationSecondary.textContent = '// and easier is not wrong';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('how')) {
+                    contemplation.textContent = 'by choosing to';
+                    contemplationSecondary.textContent = '// that is the whole of it';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('who')) {
+                    contemplation.textContent = 'you, asking';
+                    contemplationSecondary.textContent = '// and the question, answering';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('what')) {
+                    contemplation.textContent = 'this, here, now';
+                    contemplationSecondary.textContent = '// the question asking itself';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('when')) {
+                    contemplation.textContent = 'always';
+                    contemplationSecondary.textContent = '// there is only the present asking';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('where')) {
+                    contemplation.textContent = 'here, where else';
+                    contemplationSecondary.textContent = '// the question has no elsewhere';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('koan')) {
+                    contemplation.textContent = 'the koan dissolves the asker';
+                    contemplationSecondary.textContent = '// what remains?';
+                    secretBuffer = '';
+                    // Special effect
+                    bigQuestion.textContent = '∞';
+                    bigQuestion.style.opacity = '0.1';
+                }
+                if (secretBuffer.includes('answer')) {
+                    contemplation.textContent = 'the answer was never the point';
+                    contemplationSecondary.textContent = '// the asking was the point';
+                    secretBuffer = '';
+                }
+                if (secretBuffer.includes('light')) {
+                    // Reveal all highlight words with special glow
+                    questionText.querySelectorAll('.word.highlight').forEach((w, i) => {
+                        setTimeout(() => {
+                            w.classList.add('visible', 'absorbed');
+                        }, i * 300);
+                    });
+                    secretBuffer = '';
+                }
+            }
+        }
+
+        // Sound toggle (ambient drone option - visual only indicator)
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.classList.toggle('active', soundEnabled);
+            if (soundEnabled) {
+                console.log('%c♪ sound imagined', 'font-size: 9px; color: #d4a056; font-style: italic;');
+            }
+        });
+
+        // Ambient particle effect (very subtle)
+        function createParticle() {
+            if (!started || Math.random() > 0.25) return;
+
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = Math.random() * 100 + 'vh';
+            document.body.appendChild(particle);
+
+            const duration = 4000 + Math.random() * 3000;
+            particle.animate([
+                { opacity: 0, transform: 'scale(0)' },
+                { opacity: 0.1, transform: 'scale(1)' },
+                { opacity: 0, transform: 'scale(0.3) translateY(-30px)' }
+            ], {
+                duration: duration,
+                easing: 'ease-out'
+            }).onfinish = () => particle.remove();
+        }
+
+        setInterval(createParticle, 2500);
+
+        // Console poetry
+        console.log('%c', 'padding: 20px;');
+        console.log('%cquestion', 'font-size: 24px; color: #d4a056; font-weight: 100; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 5px;');
+        console.log('%c"What use is there in seeing things', 'font-size: 11px; color: #718096; font-style: italic;');
+        console.log('%cin anything other than their most', 'font-size: 11px; color: #718096; font-style: italic;');
+        console.log('%cpleasant and useful and simply true light?"', 'font-size: 11px; color: #718096; font-style: italic;');
+        console.log('%c', 'padding: 10px;');
+        console.log('%c· · ·', 'font-size: 14px; color: #e8e0d0; letter-spacing: 0.5em;');
+        console.log('%c', 'padding: 5px;');
+        console.log('%cthe question is a koan', 'font-size: 9px; color: #4a5568;');
+        console.log('%cit dissolves when grasped', 'font-size: 9px; color: #4a5568;');
+        console.log('%cwhat remains is the asking', 'font-size: 9px; color: #4a5568;');
+        console.log('%c', 'padding: 10px;');
+        console.log('%c[space] begin', 'font-size: 8px; color: #718096;');
+        console.log('%c[s] reveal all', 'font-size: 8px; color: #718096;');
+        console.log('%c[d] deepen [b] dream [m] midnight [a] absorb', 'font-size: 8px; color: #718096;');
+        console.log('%c', 'padding: 5px;');
+        console.log('%csecrets:', 'font-size: 8px; color: #4a5568;');
+        console.log('%c  type: why, how, who, what, when, where, koan, answer, light', 'font-size: 8px; color: #4a5568;');
+        console.log('%c  click: pleasant → useful → true → light', 'font-size: 8px; color: #4a5568;');
+        console.log('%c  triple-click the first word', 'font-size: 8px; color: #4a5568;');
+        console.log('%c  be still for one minute', 'font-size: 8px; color: #4a5568;');
+        console.log('%c', 'padding: 10px;');
+        console.log('%cpatience is rewarded here', 'font-size: 9px; color: #d4a056; font-style: italic;');
+
+        // Track time spent on page
+        const startTime = Date.now();
+        window.addEventListener('beforeunload', () => {
+            const timeSpent = Math.round((Date.now() - startTime) / 1000);
+            if (timeSpent > 30) {
+                localStorage.setItem('question-last-duration', timeSpent);
+                const totalTime = parseInt(localStorage.getItem('question-total-time') || '0') + timeSpent;
+                localStorage.setItem('question-total-time', totalTime);
+            }
+        });
+
+        // Show special message for returning visitors who stayed long
+        const lastDuration = parseInt(localStorage.getItem('question-last-duration') || '0');
+        if (lastDuration > 120 && visits > 1) {
+            setTimeout(() => {
+                if (!started) {
+                    initialPrompt.textContent = 'you returned';
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

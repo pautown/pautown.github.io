@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jungle - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            --jungle-deep: #0a1f0a;
+            --jungle-mid: #1a3520;
+            --jungle-light: #2d5a3d;
+            --bioluminescent: #4fffb0;
+            --bioluminescent-dim: rgba(79, 255, 176, 0.3);
+            --bioluminescent-pulse: rgba(79, 255, 176, 0.15);
+            --moss: #5a8f5a;
+            --fern: #3d7a4a;
+            --orchid-pink: #ff6b9d;
+            --orchid-purple: #9b59b6;
+            --firefly: #f0e68c;
+            --circuit-glow: rgba(134, 179, 152, 0.4);
+            --decay: #4a3b2a;
+            --breath-duration: 8s;
+        }
+
+        body {
+            background: linear-gradient(180deg,
+                #0d1f12 0%,
+                #0a1a0d 30%,
+                #081408 70%,
+                #050d05 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: filter 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.overgrown {
+            filter: saturate(1.6) brightness(0.75) hue-rotate(-5deg);
+        }
+
+        body.withered {
+            filter: saturate(0.2) sepia(0.4) brightness(0.9);
+        }
+
+        body.nocturnal {
+            filter: brightness(0.5) contrast(1.2) saturate(1.8);
+        }
+
+        body.stillness-growing {
+            /* subtle pulse when jungle grows in stillness */
+        }
+
+        .back-link {
+            color: var(--green-orb);
+            opacity: 0.4;
+            transition: opacity 1.5s ease;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .jungle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Breathing ambient layer */
+        .breath-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, var(--bioluminescent-pulse) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            animation: jungle-breathe var(--breath-duration) ease-in-out infinite;
+        }
+
+        @keyframes jungle-breathe {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.02); }
+        }
+
+        /* Ambient fog layer */
+        .fog-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 80%, rgba(79, 255, 176, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 70% 60%, rgba(134, 179, 152, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 2;
+            animation: fog-drift 80s linear infinite;
+        }
+
+        @keyframes fog-drift {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Edge vines - nature creeping in from borders */
+        .edge-growth {
+            position: fixed;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .edge-growth.left {
+            left: 0;
+            top: 0;
+            width: 60px;
+            height: 100%;
+            background: linear-gradient(90deg,
+                rgba(45, 90, 61, 0.15) 0%,
+                transparent 100%);
+            animation: edge-pulse-left 12s ease-in-out infinite;
+        }
+
+        .edge-growth.right {
+            right: 0;
+            top: 0;
+            width: 60px;
+            height: 100%;
+            background: linear-gradient(-90deg,
+                rgba(45, 90, 61, 0.15) 0%,
+                transparent 100%);
+            animation: edge-pulse-right 12s ease-in-out infinite 3s;
+        }
+
+        .edge-growth.bottom {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(0deg,
+                rgba(45, 90, 61, 0.2) 0%,
+                transparent 100%);
+            animation: edge-pulse-bottom 10s ease-in-out infinite 1.5s;
+        }
+
+        @keyframes edge-pulse-left {
+            0%, 100% { width: 60px; opacity: 0.8; }
+            50% { width: 90px; opacity: 1; }
+        }
+
+        @keyframes edge-pulse-right {
+            0%, 100% { width: 60px; opacity: 0.8; }
+            50% { width: 80px; opacity: 1; }
+        }
+
+        @keyframes edge-pulse-bottom {
+            0%, 100% { height: 80px; opacity: 0.8; }
+            50% { height: 120px; opacity: 1; }
+        }
+
+        /* Enhanced vine with organic curves */
+        .vine {
+            position: absolute;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--fern) 20%,
+                var(--moss) 50%,
+                var(--fern) 80%,
+                transparent 100%);
+            height: 2px;
+            transform-origin: left center;
+            opacity: 0;
+            animation: grow-vine 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            filter: drop-shadow(0 0 2px var(--bioluminescent-dim));
+        }
+
+        .vine.thick {
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--jungle-light) 20%,
+                var(--moss) 50%,
+                var(--jungle-light) 80%,
+                transparent 100%);
+        }
+
+        .vine.tendril {
+            height: 1px;
+            opacity: 0.3;
+        }
+
+        .vine.stillness-born {
+            filter: drop-shadow(0 0 6px var(--bioluminescent));
+            animation: grow-vine-glow 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes grow-vine {
+            0% { width: 0; opacity: 0; }
+            10% { opacity: 0.7; }
+            100% { width: var(--vine-length, 100px); opacity: var(--vine-opacity, 0.5); }
+        }
+
+        @keyframes grow-vine-glow {
+            0% { width: 0; opacity: 0; filter: drop-shadow(0 0 12px var(--bioluminescent)); }
+            10% { opacity: 0.9; }
+            50% { filter: drop-shadow(0 0 8px var(--bioluminescent)); }
+            100% { width: var(--vine-length, 100px); opacity: var(--vine-opacity, 0.6); filter: drop-shadow(0 0 4px var(--bioluminescent)); }
+        }
+
+        /* Enhanced leaf with variety */
+        .leaf {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--green-orb);
+            border-radius: 50% 0 50% 50%;
+            opacity: 0;
+            animation: bloom 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: var(--bloom-delay, 0s);
+            filter: drop-shadow(0 0 3px var(--bioluminescent-dim));
+        }
+
+        .leaf.large {
+            width: 14px;
+            height: 14px;
+            background: linear-gradient(135deg, var(--moss) 0%, var(--fern) 100%);
+        }
+
+        .leaf.tiny {
+            width: 5px;
+            height: 5px;
+            background: var(--bioluminescent);
+            filter: drop-shadow(0 0 4px var(--bioluminescent));
+        }
+
+        .leaf.fern {
+            width: 3px;
+            height: 12px;
+            border-radius: 50% 50% 0 0;
+            background: linear-gradient(180deg, var(--fern), transparent);
+        }
+
+        .leaf.breathing {
+            animation: bloom 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                       leaf-breathe 6s ease-in-out infinite 1.5s;
+        }
+
+        @keyframes bloom {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            60% { opacity: 0.8; }
+            100% { transform: scale(1) rotate(var(--leaf-rotation, 45deg)); opacity: var(--leaf-opacity, 0.6); }
+        }
+
+        @keyframes leaf-breathe {
+            0%, 100% { transform: scale(1) rotate(var(--leaf-rotation, 45deg)); }
+            50% { transform: scale(1.08) rotate(calc(var(--leaf-rotation, 45deg) + 3deg)); }
+        }
+
+        /* Flower varieties */
+        .flower {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0;
+            animation: flower-bloom 3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            pointer-events: none;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .flower.orchid {
+            color: var(--orchid-pink);
+            text-shadow: 0 0 10px var(--orchid-pink);
+        }
+
+        .flower.breathing {
+            animation: flower-bloom 3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                       flower-breathe 8s ease-in-out infinite 3s;
+        }
+
+        @keyframes flower-bloom {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            40% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+            70% { transform: scale(0.9) rotate(300deg); opacity: 0.9; }
+            100% { transform: scale(1) rotate(360deg); opacity: 0.85; }
+        }
+
+        @keyframes flower-breathe {
+            0%, 100% { transform: scale(1) rotate(360deg); filter: drop-shadow(0 0 8px currentColor); }
+            50% { transform: scale(1.05) rotate(365deg); filter: drop-shadow(0 0 15px currentColor); }
+        }
+
+        /* Spore/particle system */
+        .spore {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--bioluminescent);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: spore-float var(--spore-duration, 10s) ease-in-out infinite;
+            filter: blur(0.5px);
+        }
+
+        @keyframes spore-float {
+            0% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 0;
+            }
+            20% { opacity: 0.6; }
+            50% {
+                transform: translate(var(--spore-x, 30px), var(--spore-y, -50px)) scale(1);
+                opacity: 0.4;
+            }
+            80% { opacity: 0.2; }
+            100% {
+                transform: translate(calc(var(--spore-x, 30px) * 2), calc(var(--spore-y, -50px) * 2)) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        /* Firefly particles */
+        .firefly {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--firefly);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: firefly-glow var(--firefly-duration, 5s) ease-in-out infinite;
+            filter: blur(1px);
+            box-shadow: 0 0 6px var(--firefly), 0 0 12px var(--firefly);
+        }
+
+        @keyframes firefly-glow {
+            0%, 100% { opacity: 0; transform: translate(0, 0); }
+            25% { opacity: 0.8; }
+            50% { opacity: 0.3; transform: translate(var(--firefly-x, 20px), var(--firefly-y, -30px)); }
+            75% { opacity: 0.9; }
+        }
+
+        /* Circuit with pulse effect */
+        .circuit {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--circuit-glow), transparent);
+            opacity: 0.3;
+            animation: circuit-pulse 4s ease-in-out infinite;
+        }
+
+        .circuit::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -2px;
+            width: 5px;
+            height: 5px;
+            background: var(--bioluminescent);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: node-pulse 3s ease-in-out infinite;
+        }
+
+        .circuit.reclaimed {
+            background: linear-gradient(90deg, transparent, var(--moss), transparent);
+        }
+
+        .circuit.reclaimed::after {
+            background: var(--moss);
+            box-shadow: 0 0 8px var(--bioluminescent);
+        }
+
+        @keyframes circuit-pulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes node-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+        }
+
+        /* Sound wave visualization - jungle sounds in visual form */
+        .sound-wave {
+            position: absolute;
+            border: 1px solid var(--bioluminescent);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: sound-ripple 4s ease-out forwards;
+        }
+
+        .sound-wave.deep {
+            border-color: var(--moss);
+            animation-duration: 6s;
+        }
+
+        @keyframes sound-ripple {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.6;
+                border-width: 2px;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+                border-width: 0.5px;
+                margin-left: -100px;
+                margin-top: -100px;
+            }
+        }
+
+        /* Whisper text - sounds appearing as words */
+        .whisper {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-weight: 300;
+            color: var(--bioluminescent);
+            opacity: 0;
+            pointer-events: none;
+            animation: whisper-fade 8s ease-in-out forwards;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 10px var(--bioluminescent-dim);
+        }
+
+        @keyframes whisper-fade {
+            0% { opacity: 0; transform: translateY(10px); }
+            20% { opacity: 0.5; }
+            80% { opacity: 0.4; transform: translateY(-20px); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        /* Glitch effect */
+        .glitch-line {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--amber) 20%,
+                var(--bioluminescent) 50%,
+                var(--amber) 80%,
+                transparent 100%);
+            opacity: 0;
+            animation: glitch 0.15s ease;
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes glitch {
+            0%, 100% { opacity: 0; transform: scaleY(1); }
+            25% { opacity: 1; transform: scaleY(2); }
+            50% { opacity: 0.5; transform: scaleY(0.5); }
+            75% { opacity: 0.8; transform: scaleY(1.5); }
+        }
+
+        /* Depth layers */
+        .grime {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(ellipse at 15% 25%, rgba(0, 0, 0, 0.35) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 75%, rgba(0, 0, 0, 0.25) 0%, transparent 35%),
+                radial-gradient(ellipse at 50% 95%, rgba(0, 0, 0, 0.45) 0%, transparent 25%),
+                radial-gradient(ellipse at 30% 60%, rgba(10, 31, 10, 0.2) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(134, 179, 152, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(134, 179, 152, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 1;
+            animation: grid-breathe 15s ease-in-out infinite;
+        }
+
+        @keyframes grid-breathe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Vignette */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        .growth-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--green-orb);
+            opacity: 0.3;
+            z-index: 20;
+            transition: all 0.5s ease;
+        }
+
+        .growth-counter:hover {
+            opacity: 0.7;
+            text-shadow: 0 0 10px var(--bioluminescent);
+        }
+
+        /* Hidden ecosystem stats */
+        .ecosystem-stats {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--moss);
+            opacity: 0;
+            z-index: 20;
+            line-height: 1.8;
+            transition: opacity 1s ease;
+        }
+
+        body:hover .ecosystem-stats.revealed {
+            opacity: 0.4;
+        }
+
+        /* Stillness indicator */
+        .stillness-indicator {
+            position: fixed;
+            bottom: 4rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--bioluminescent);
+            opacity: 0;
+            z-index: 20;
+            transition: opacity 2s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .stillness-indicator.visible {
+            opacity: 0.5;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9rem;
+            color: var(--bioluminescent);
+            opacity: 0;
+            transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            z-index: 20;
+            pointer-events: none;
+            text-shadow: 0 0 20px var(--bioluminescent-dim);
+            letter-spacing: 0.12em;
+            line-height: 1.8;
+        }
+
+        .message.visible { opacity: 0.7; }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--green-orb);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 2;
+            z-index: 20;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        /* Easter egg: Konami code activation */
+        .secret-mode .jungle-canvas {
+            filter: hue-rotate(180deg);
+        }
+
+        .secret-mode .firefly {
+            background: var(--orchid-pink);
+            box-shadow: 0 0 6px var(--orchid-pink), 0 0 12px var(--orchid-pink);
+        }
+
+        /* Rain effect */
+        .rain-drop {
+            position: absolute;
+            width: 1px;
+            height: 15px;
+            background: linear-gradient(180deg, transparent, var(--bioluminescent-dim));
+            opacity: 0;
+            pointer-events: none;
+            animation: rain-fall var(--rain-duration, 1s) linear forwards;
+        }
+
+        @keyframes rain-fall {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.3; }
+            100% { opacity: 0; transform: translateY(var(--rain-distance, 100vh)); }
+        }
+
+        /* Mushroom growth */
+        .mushroom {
+            position: absolute;
+            font-size: 1rem;
+            opacity: 0;
+            animation: mushroom-grow 4s ease-out forwards;
+            pointer-events: none;
+            filter: drop-shadow(0 0 5px var(--bioluminescent));
+        }
+
+        .mushroom.breathing {
+            animation: mushroom-grow 4s ease-out forwards,
+                       mushroom-breathe 7s ease-in-out infinite 4s;
+        }
+
+        @keyframes mushroom-grow {
+            0% { transform: scale(0) translateY(10px); opacity: 0; }
+            50% { transform: scale(1.2) translateY(-5px); opacity: 0.9; }
+            100% { transform: scale(1) translateY(0); opacity: 0.7; }
+        }
+
+        @keyframes mushroom-breathe {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.06) translateY(-2px); }
+        }
+
+        /* Dew drops on leaves */
+        .dew {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle at 30% 30%, white, var(--bioluminescent));
+            border-radius: 50%;
+            opacity: 0;
+            animation: dew-sparkle 5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes dew-sparkle {
+            0%, 100% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* Bioluminescent pulse overlay for stillness */
+        .bioluminescent-pulse {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--bioluminescent-dim) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: all 3s ease-out;
+        }
+
+        .bioluminescent-pulse.active {
+            width: 100vmax;
+            height: 100vmax;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="grid"></div>
+    <div class="breath-layer"></div>
+    <div class="fog-layer"></div>
+    <div class="edge-growth left"></div>
+    <div class="edge-growth right"></div>
+    <div class="edge-growth bottom"></div>
+    <div class="jungle-canvas" id="canvas"></div>
+    <div class="bioluminescent-pulse" id="bioPulse"></div>
+    <div class="grime"></div>
+    <div class="vignette"></div>
+
+    <div class="growth-counter" id="counter">growth: 0</div>
+    <div class="stillness-indicator" id="stillnessIndicator">listening...</div>
+    <div class="ecosystem-stats" id="ecosystem">
+        biomass: 0<br>
+        diversity: 0%<br>
+        cycles: 0
+    </div>
+    <div class="message" id="message"></div>
+    <div class="key-hint">
+        [g] glitch<br>
+        [o] overgrow<br>
+        [w] wither<br>
+        [n] nocturnal<br>
+        [r] rain<br>
+        [s] sounds<br>
+        [c] clear<br>
+        right-click: flower<br>
+        <span style="opacity: 0.4">be still...</span>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const counter = document.getElementById('counter');
+        const messageEl = document.getElementById('message');
+        const ecosystemEl = document.getElementById('ecosystem');
+        const stillnessIndicator = document.getElementById('stillnessIndicator');
+        const bioPulse = document.getElementById('bioPulse');
+
+        let growthCount = 0;
+        let biomass = 0;
+        let diversity = 0;
+        let cycles = 0;
+        let lastGrowth = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        let isRaining = false;
+        let secretMode = false;
+        let konamiIndex = 0;
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+
+        // Stillness detection
+        let lastMovement = Date.now();
+        let stillnessLevel = 0;
+        let stillnessGrowthActive = false;
+        let stillnessGrowthInterval = null;
+
+        // Sound visualization mode
+        let soundMode = false;
+
+        // Jungle sounds as words
+        const jungleSounds = [
+            'drip',
+            'rustle',
+            'chirp',
+            'creak',
+            'hum',
+            'whisper',
+            'sigh',
+            'breath',
+            'grow',
+            'pulse',
+            'unfurl',
+            'reach',
+            'bloom'
+        ];
+
+        // Extended flower set with rarities
+        const flowers = [
+            { symbol: '蓮', rarity: 'common' },
+            { symbol: '春', rarity: 'common' },
+            { symbol: '森', rarity: 'common' },
+            { symbol: '葉', rarity: 'common' },
+            { symbol: '花', rarity: 'uncommon' },
+            { symbol: '竹', rarity: 'uncommon' },
+            { symbol: '蘭', rarity: 'rare' },
+            { symbol: '桜', rarity: 'rare' },
+            { symbol: '藤', rarity: 'epic' },
+            { symbol: '龍', rarity: 'legendary' }
+        ];
+
+        const mushrooms = ['🍄', '🌿', '☘', '🌱', '🌾'];
+
+        const messages = [
+            'it grows where you look',
+            'the future is overgrown',
+            'chrome beneath the leaves',
+            'the machine dreams of forests',
+            'nature reclaims what was taken',
+            'grime and green intertwine',
+            'silicon becomes soil',
+            'data decomposes into life',
+            'the network breathes',
+            'roots find their way through concrete'
+        ];
+
+        const stillnessMessages = [
+            'the jungle notices your stillness',
+            'growth happens in the quiet',
+            'roots spread where attention rests',
+            'the forest grows when no one watches',
+            'stillness is a kind of permission',
+            'something unfurls in the waiting',
+            'your patience blooms...'
+        ];
+
+        const secretMessages = [
+            'you found the hidden garden',
+            'the algorithm awakens',
+            'bioluminescence activates',
+            'the forest knows your name'
+        ];
+
+        // Track species for diversity
+        let speciesCount = {
+            vines: 0,
+            leaves: 0,
+            flowers: 0,
+            circuits: 0,
+            spores: 0,
+            mushrooms: 0
+        };
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        function updateEcosystem() {
+            const total = Object.values(speciesCount).reduce((a, b) => a + b, 0);
+            const nonZeroSpecies = Object.values(speciesCount).filter(v => v > 0).length;
+            diversity = Math.round((nonZeroSpecies / Object.keys(speciesCount).length) * 100);
+            biomass = Math.round(total * 0.7);
+
+            ecosystemEl.innerHTML = `biomass: ${biomass}<br>diversity: ${diversity}%<br>cycles: ${cycles}`;
+
+            // Reveal ecosystem stats after reaching certain growth
+            if (growthCount > 50) {
+                ecosystemEl.classList.add('revealed');
+            }
+        }
+
+        function createWhisper(x, y) {
+            const whisper = document.createElement('div');
+            whisper.className = 'whisper';
+            whisper.textContent = jungleSounds[Math.floor(Math.random() * jungleSounds.length)];
+            whisper.style.left = x + 'px';
+            whisper.style.top = y + 'px';
+            canvas.appendChild(whisper);
+
+            setTimeout(() => whisper.remove(), 8000);
+        }
+
+        function createVine(x, y, angle, length, type = 'normal', fromStillness = false) {
+            const vine = document.createElement('div');
+            vine.className = 'vine' + (type === 'thick' ? ' thick' : type === 'tendril' ? ' tendril' : '');
+            if (fromStillness) vine.classList.add('stillness-born');
+
+            vine.style.left = x + 'px';
+            vine.style.top = y + 'px';
+
+            // Add subtle curve by using transform with skew
+            const skew = (Math.random() - 0.5) * 10;
+            vine.style.transform = `rotate(${angle}deg) skewY(${skew}deg)`;
+            vine.style.setProperty('--vine-length', length + 'px');
+            vine.style.setProperty('--vine-opacity', (0.3 + Math.random() * 0.4).toFixed(2));
+            canvas.appendChild(vine);
+
+            speciesCount.vines++;
+            updateEcosystem();
+
+            // Create leaves along the vine with more organic spacing
+            const leafCount = Math.floor(length / 25);
+            for (let i = 0; i < leafCount; i++) {
+                setTimeout(() => {
+                    const progress = (i + 1) / leafCount;
+                    const leafDist = progress * length * (0.8 + Math.random() * 0.4);
+                    const leafX = x + Math.cos(angle * Math.PI / 180) * leafDist;
+                    const leafY = y + Math.sin(angle * Math.PI / 180) * leafDist;
+
+                    // Vary leaf types
+                    const leafType = Math.random();
+                    if (leafType < 0.2) {
+                        createLeaf(leafX, leafY, 'large', fromStillness);
+                    } else if (leafType < 0.4) {
+                        createLeaf(leafX, leafY, 'tiny', fromStillness);
+                    } else if (leafType < 0.55) {
+                        createLeaf(leafX, leafY, 'fern', fromStillness);
+                    } else {
+                        createLeaf(leafX, leafY, 'normal', fromStillness);
+                    }
+
+                    // Occasionally add spores
+                    if (Math.random() > 0.85) {
+                        createSpore(leafX, leafY);
+                    }
+
+                    // Rare dew drops
+                    if (Math.random() > 0.92) {
+                        createDew(leafX, leafY);
+                    }
+
+                    // Sound visualization
+                    if (soundMode && Math.random() > 0.9) {
+                        createWhisper(leafX, leafY);
+                    }
+                }, 500 + i * 200);
+            }
+
+            // Create branching tendrils
+            if (type === 'normal' && length > 80 && Math.random() > 0.6) {
+                setTimeout(() => {
+                    const branchX = x + Math.cos(angle * Math.PI / 180) * (length * 0.6);
+                    const branchY = y + Math.sin(angle * Math.PI / 180) * (length * 0.6);
+                    const branchAngle = angle + (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random() * 30);
+                    createVine(branchX, branchY, branchAngle, length * 0.5, 'tendril', fromStillness);
+                }, 1200);
+            }
+
+            setTimeout(() => {
+                vine.remove();
+                speciesCount.vines--;
+            }, 40000);
+        }
+
+        function createLeaf(x, y, type = 'normal', breathing = false) {
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf' + (type !== 'normal' ? ` ${type}` : '');
+            if (breathing && Math.random() > 0.5) leaf.classList.add('breathing');
+
+            leaf.style.left = x + 'px';
+            leaf.style.top = y + 'px';
+            leaf.style.setProperty('--leaf-rotation', (Math.random() * 360) + 'deg');
+            leaf.style.setProperty('--bloom-delay', (Math.random() * 0.8) + 's');
+            leaf.style.setProperty('--leaf-opacity', (0.4 + Math.random() * 0.3).toFixed(2));
+            canvas.appendChild(leaf);
+
+            growthCount++;
+            speciesCount.leaves++;
+            counter.textContent = `growth: ${growthCount}`;
+            updateEcosystem();
+
+            setTimeout(() => {
+                leaf.remove();
+                speciesCount.leaves--;
+            }, 40000);
+        }
+
+        function createSpore(x, y) {
+            const spore = document.createElement('div');
+            spore.className = 'spore';
+            spore.style.left = x + 'px';
+            spore.style.top = y + 'px';
+            spore.style.setProperty('--spore-x', (Math.random() - 0.5) * 80 + 'px');
+            spore.style.setProperty('--spore-y', -30 - Math.random() * 60 + 'px');
+            spore.style.setProperty('--spore-duration', (8 + Math.random() * 6) + 's');
+            spore.style.animationDelay = Math.random() * 2 + 's';
+            canvas.appendChild(spore);
+
+            speciesCount.spores++;
+            updateEcosystem();
+
+            setTimeout(() => {
+                spore.remove();
+                speciesCount.spores--;
+            }, 18000);
+        }
+
+        function createDew(x, y) {
+            const dew = document.createElement('div');
+            dew.className = 'dew';
+            dew.style.left = (x + Math.random() * 6 - 3) + 'px';
+            dew.style.top = (y + Math.random() * 6 - 3) + 'px';
+            dew.style.animationDelay = Math.random() * 2 + 's';
+            canvas.appendChild(dew);
+
+            setTimeout(() => dew.remove(), 25000);
+        }
+
+        function createFirefly() {
+            const firefly = document.createElement('div');
+            firefly.className = 'firefly';
+            firefly.style.left = Math.random() * window.innerWidth + 'px';
+            firefly.style.top = Math.random() * window.innerHeight + 'px';
+            firefly.style.setProperty('--firefly-x', (Math.random() - 0.5) * 60 + 'px');
+            firefly.style.setProperty('--firefly-y', (Math.random() - 0.5) * 60 + 'px');
+            firefly.style.setProperty('--firefly-duration', (4 + Math.random() * 4) + 's');
+            firefly.style.animationDelay = Math.random() * 3 + 's';
+            canvas.appendChild(firefly);
+
+            setTimeout(() => firefly.remove(), 15000);
+        }
+
+        function createFlower(x, y) {
+            const flower = document.createElement('div');
+            flower.className = 'flower';
+
+            // Weighted random selection based on rarity
+            const roll = Math.random();
+            let selectedFlower;
+            if (roll < 0.5) {
+                selectedFlower = flowers.filter(f => f.rarity === 'common')[Math.floor(Math.random() * 4)];
+            } else if (roll < 0.8) {
+                selectedFlower = flowers.filter(f => f.rarity === 'uncommon')[Math.floor(Math.random() * 2)];
+            } else if (roll < 0.95) {
+                selectedFlower = flowers.filter(f => f.rarity === 'rare')[Math.floor(Math.random() * 2)];
+                flower.classList.add('orchid');
+            } else if (roll < 0.99) {
+                selectedFlower = flowers.find(f => f.rarity === 'epic');
+                flower.style.color = 'var(--orchid-purple)';
+                flower.style.textShadow = '0 0 15px var(--orchid-purple)';
+            } else {
+                selectedFlower = flowers.find(f => f.rarity === 'legendary');
+                flower.style.color = 'gold';
+                flower.style.textShadow = '0 0 20px gold';
+                flower.style.fontSize = '2rem';
+                showMessage('a legendary bloom appears...');
+            }
+
+            if (Math.random() > 0.6) flower.classList.add('breathing');
+
+            flower.textContent = selectedFlower.symbol;
+            flower.style.left = x + 'px';
+            flower.style.top = y + 'px';
+            canvas.appendChild(flower);
+
+            growthCount += selectedFlower.rarity === 'legendary' ? 50 :
+                          selectedFlower.rarity === 'epic' ? 20 :
+                          selectedFlower.rarity === 'rare' ? 10 : 5;
+            speciesCount.flowers++;
+            counter.textContent = `growth: ${growthCount}`;
+            updateEcosystem();
+
+            // Create sound wave visual
+            createSoundWave(x, y);
+
+            // Sound visualization
+            if (soundMode) {
+                createWhisper(x + 20, y - 10);
+            }
+
+            setTimeout(() => {
+                flower.remove();
+                speciesCount.flowers--;
+            }, 50000);
+        }
+
+        function createMushroom(x, y) {
+            const mushroom = document.createElement('div');
+            mushroom.className = 'mushroom';
+            if (Math.random() > 0.5) mushroom.classList.add('breathing');
+            mushroom.textContent = mushrooms[Math.floor(Math.random() * mushrooms.length)];
+            mushroom.style.left = x + 'px';
+            mushroom.style.top = y + 'px';
+            canvas.appendChild(mushroom);
+
+            speciesCount.mushrooms++;
+            growthCount += 3;
+            counter.textContent = `growth: ${growthCount}`;
+            updateEcosystem();
+
+            setTimeout(() => {
+                mushroom.remove();
+                speciesCount.mushrooms--;
+            }, 45000);
+        }
+
+        function createSoundWave(x, y, deep = false) {
+            const wave = document.createElement('div');
+            wave.className = 'sound-wave' + (deep ? ' deep' : '');
+            wave.style.left = x + 'px';
+            wave.style.top = y + 'px';
+            canvas.appendChild(wave);
+
+            setTimeout(() => wave.remove(), deep ? 6000 : 4000);
+        }
+
+        function createCircuit(x, y, reclaimed = false) {
+            const circuit = document.createElement('div');
+            circuit.className = 'circuit' + (reclaimed || Math.random() > 0.6 ? ' reclaimed' : '');
+            circuit.style.left = x + 'px';
+            circuit.style.top = y + 'px';
+            circuit.style.width = (Math.random() * 120 + 40) + 'px';
+            circuit.style.transform = `rotate(${Math.random() > 0.5 ? 0 : 90}deg)`;
+            canvas.appendChild(circuit);
+
+            speciesCount.circuits++;
+            updateEcosystem();
+
+            setTimeout(() => {
+                circuit.remove();
+                speciesCount.circuits--;
+            }, 30000);
+        }
+
+        function createRainDrop() {
+            const drop = document.createElement('div');
+            drop.className = 'rain-drop';
+            drop.style.left = Math.random() * window.innerWidth + 'px';
+            drop.style.top = '-20px';
+            drop.style.setProperty('--rain-duration', (0.8 + Math.random() * 0.5) + 's');
+            drop.style.setProperty('--rain-distance', window.innerHeight + 50 + 'px');
+            canvas.appendChild(drop);
+
+            setTimeout(() => drop.remove(), 1500);
+        }
+
+        function startRain() {
+            if (isRaining) return;
+            isRaining = true;
+
+            const rainInterval = setInterval(() => {
+                if (!isRaining) {
+                    clearInterval(rainInterval);
+                    return;
+                }
+                for (let i = 0; i < 3; i++) {
+                    createRainDrop();
+                }
+                // Rain creates growth
+                if (Math.random() > 0.95) {
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight;
+                    createVine(x, y, Math.random() * 360, 50 + Math.random() * 50);
+                }
+            }, 50);
+
+            // Auto-stop after 12 seconds
+            setTimeout(() => {
+                isRaining = false;
+            }, 12000);
+        }
+
+        function glitch() {
+            for (let i = 0; i < 7; i++) {
+                const line = document.createElement('div');
+                line.className = 'glitch-line';
+                line.style.top = (Math.random() * 100) + '%';
+                line.style.animationDelay = (i * 0.03) + 's';
+                document.body.appendChild(line);
+                setTimeout(() => line.remove(), 250);
+            }
+
+            // Chance to spawn circuit on glitch
+            if (Math.random() > 0.5) {
+                createCircuit(
+                    Math.random() * window.innerWidth,
+                    Math.random() * window.innerHeight
+                );
+            }
+        }
+
+        function showMessage(text) {
+            messageEl.textContent = text;
+            messageEl.classList.add('visible');
+            setTimeout(() => messageEl.classList.remove('visible'), 5000);
+        }
+
+        function activateSecretMode() {
+            if (secretMode) return;
+            secretMode = true;
+            document.body.classList.add('secret-mode');
+            showMessage(secretMessages[Math.floor(Math.random() * secretMessages.length)]);
+
+            // Spawn many fireflies
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => createFirefly(), i * 100);
+            }
+
+            // Spawn rare flowers
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    createFlower(
+                        Math.random() * window.innerWidth,
+                        Math.random() * window.innerHeight
+                    );
+                }, i * 300);
+            }
+        }
+
+        // Stillness detection and growth
+        let lotusBlossomed = false;
+        function checkStillness() {
+            const timeSinceMovement = Date.now() - lastMovement;
+
+            if (timeSinceMovement > 3000) {
+                stillnessLevel = Math.min(5, Math.floor((timeSinceMovement - 3000) / 2000));
+
+                if (!stillnessGrowthActive && stillnessLevel >= 1) {
+                    stillnessGrowthActive = true;
+                    stillnessIndicator.classList.add('visible');
+                    bioPulse.classList.add('active');
+
+                    // Start stillness growth
+                    stillnessGrowthInterval = setInterval(() => {
+                        if (stillnessGrowthActive) {
+                            // Grow from random edges
+                            const edge = Math.floor(Math.random() * 4);
+                            let x, y, angle;
+
+                            switch(edge) {
+                                case 0: // left
+                                    x = 0;
+                                    y = Math.random() * window.innerHeight;
+                                    angle = Math.random() * 60 - 30;
+                                    break;
+                                case 1: // right
+                                    x = window.innerWidth;
+                                    y = Math.random() * window.innerHeight;
+                                    angle = 180 + Math.random() * 60 - 30;
+                                    break;
+                                case 2: // top
+                                    x = Math.random() * window.innerWidth;
+                                    y = 0;
+                                    angle = 90 + Math.random() * 60 - 30;
+                                    break;
+                                case 3: // bottom
+                                    x = Math.random() * window.innerWidth;
+                                    y = window.innerHeight;
+                                    angle = -90 + Math.random() * 60 - 30;
+                                    break;
+                            }
+
+                            createVine(x, y, angle, 80 + Math.random() * 80, 'thick', true);
+
+                            // Extra growth at higher stillness levels
+                            if (stillnessLevel >= 3 && Math.random() > 0.5) {
+                                createFlower(
+                                    Math.random() * window.innerWidth,
+                                    Math.random() * window.innerHeight
+                                );
+                            }
+
+                            if (stillnessLevel >= 4 && Math.random() > 0.7) {
+                                createMushroom(
+                                    Math.random() * window.innerWidth,
+                                    Math.random() * window.innerHeight
+                                );
+                            }
+                        }
+                    }, 2500 - (stillnessLevel * 300));
+                }
+
+                // Show stillness message occasionally
+                if (stillnessLevel >= 2 && Math.random() > 0.98) {
+                    showMessage(stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)]);
+                }
+
+                // Special reward: lotus blooms after 20 seconds of stillness
+                if (timeSinceMovement > 20000 && !lotusBlossomed) {
+                    lotusBlossomed = true;
+                    const flower = document.createElement('div');
+                    flower.className = 'flower breathing';
+                    flower.textContent = '蓮';
+                    flower.style.left = (window.innerWidth / 2) + 'px';
+                    flower.style.top = (window.innerHeight / 2) + 'px';
+                    flower.style.color = '#4fffb0';
+                    flower.style.textShadow = '0 0 25px #4fffb0, 0 0 50px rgba(79, 255, 176, 0.5)';
+                    flower.style.fontSize = '4rem';
+                    flower.style.zIndex = '15';
+                    canvas.appendChild(flower);
+                    showMessage('the lotus remembers your stillness');
+                    growthCount += 100;
+                    counter.textContent = `growth: ${growthCount}`;
+                    updateEcosystem();
+                    setTimeout(() => flower.remove(), 60000);
+                }
+            }
+        }
+
+        function resetStillness() {
+            lastMovement = Date.now();
+            lotusBlossomed = false;
+
+            if (stillnessGrowthActive) {
+                stillnessGrowthActive = false;
+                stillnessLevel = 0;
+                stillnessIndicator.classList.remove('visible');
+                bioPulse.classList.remove('active');
+
+                if (stillnessGrowthInterval) {
+                    clearInterval(stillnessGrowthInterval);
+                    stillnessGrowthInterval = null;
+                }
+            }
+        }
+
+        // Mouse movement with organic growth
+        document.addEventListener('mousemove', (e) => {
+            resetStillness();
+
+            const distance = Math.sqrt(
+                Math.pow(e.clientX - lastGrowth.x, 2) +
+                Math.pow(e.clientY - lastGrowth.y, 2)
+            );
+
+            if (distance > 45) {
+                const angle = Math.atan2(e.clientY - lastGrowth.y, e.clientX - lastGrowth.x) * 180 / Math.PI;
+                const length = Math.min(distance * 1.2, 160);
+
+                // Determine vine type based on movement speed
+                const speed = distance / 16; // rough ms estimate
+                const type = speed > 8 ? 'tendril' : speed > 5 ? 'normal' : 'thick';
+
+                createVine(lastGrowth.x, lastGrowth.y, angle, length, type);
+
+                if (Math.random() > 0.75) {
+                    createCircuit(e.clientX, e.clientY);
+                }
+
+                // Occasional firefly spawn
+                if (Math.random() > 0.95) {
+                    createFirefly();
+                }
+
+                lastGrowth = { x: e.clientX, y: e.clientY };
+            }
+        });
+
+        // Left click to plant burst
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A') return;
+            resetStillness();
+
+            const vineCount = 5 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < vineCount; i++) {
+                const angle = (360 / vineCount) * i + (Math.random() - 0.5) * 40;
+                const length = 70 + Math.random() * 80;
+                setTimeout(() => createVine(e.clientX, e.clientY, angle, length), i * 100);
+            }
+            createCircuit(e.clientX - 25, e.clientY, true);
+
+            // Sound wave on click
+            createSoundWave(e.clientX, e.clientY);
+
+            // Sound visualization
+            if (soundMode) {
+                createWhisper(e.clientX + 30, e.clientY - 20);
+            }
+
+            // Small chance for mushroom
+            if (Math.random() > 0.85) {
+                setTimeout(() => createMushroom(e.clientX + (Math.random() - 0.5) * 40, e.clientY + 20), 600);
+            }
+        });
+
+        // Right click for flower
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                resetStillness();
+                createFlower(e.clientX, e.clientY);
+            }
+        });
+
+        // Double click easter egg - create a small garden
+        document.addEventListener('dblclick', (e) => {
+            if (e.target.tagName === 'A') return;
+            resetStillness();
+
+            showMessage('planting a garden...');
+
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * 150;
+                    const offsetY = (Math.random() - 0.5) * 150;
+
+                    if (Math.random() > 0.6) {
+                        createFlower(e.clientX + offsetX, e.clientY + offsetY);
+                    } else if (Math.random() > 0.5) {
+                        createMushroom(e.clientX + offsetX, e.clientY + offsetY);
+                    } else {
+                        createVine(
+                            e.clientX + offsetX,
+                            e.clientY + offsetY,
+                            Math.random() * 360,
+                            60 + Math.random() * 60
+                        );
+                    }
+                }, i * 180);
+            }
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            resetStillness();
+
+            // Konami code detection
+            if (e.code === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    activateSecretMode();
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+
+            if (e.code === 'KeyG') {
+                glitch();
+            }
+            if (e.code === 'KeyO') {
+                document.body.classList.remove('withered', 'nocturnal');
+                document.body.classList.toggle('overgrown');
+            }
+            if (e.code === 'KeyW') {
+                document.body.classList.remove('overgrown', 'nocturnal');
+                document.body.classList.toggle('withered');
+            }
+            if (e.code === 'KeyN') {
+                document.body.classList.remove('overgrown', 'withered');
+                document.body.classList.toggle('nocturnal');
+                if (document.body.classList.contains('nocturnal')) {
+                    for (let i = 0; i < 15; i++) {
+                        setTimeout(() => createFirefly(), i * 200);
+                    }
+                }
+            }
+            if (e.code === 'KeyR') {
+                startRain();
+            }
+            if (e.code === 'KeyS') {
+                // Toggle sound visualization mode
+                soundMode = !soundMode;
+                if (soundMode) {
+                    showMessage('listening to the jungle...');
+                    // Create ambient sound whispers
+                    for (let i = 0; i < 8; i++) {
+                        setTimeout(() => {
+                            createWhisper(
+                                Math.random() * window.innerWidth,
+                                Math.random() * window.innerHeight
+                            );
+                            createSoundWave(
+                                Math.random() * window.innerWidth,
+                                Math.random() * window.innerHeight,
+                                true
+                            );
+                        }, i * 400);
+                    }
+                }
+            }
+            if (e.code === 'KeyC') {
+                canvas.innerHTML = '';
+                growthCount = 0;
+                speciesCount = { vines: 0, leaves: 0, flowers: 0, circuits: 0, spores: 0, mushrooms: 0 };
+                counter.textContent = 'growth: 0';
+                updateEcosystem();
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Burst growth
+                for (let i = 0; i < 10; i++) {
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight;
+                    createVine(x, y, Math.random() * 360, 90 + Math.random() * 110);
+                }
+            }
+            if (e.code === 'KeyF') {
+                // Hidden: spawn fireflies
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => createFirefly(), i * 100);
+                }
+            }
+            if (e.code === 'KeyM') {
+                // Hidden: spawn mushroom cluster
+                const cx = Math.random() * window.innerWidth;
+                const cy = Math.random() * window.innerHeight;
+                for (let i = 0; i < 5; i++) {
+                    createMushroom(cx + (Math.random() - 0.5) * 60, cy + (Math.random() - 0.5) * 60);
+                }
+            }
+            if (e.code === 'KeyB') {
+                // Hidden: bioluminescent burst
+                bioPulse.classList.add('active');
+                setTimeout(() => bioPulse.classList.remove('active'), 3000);
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => {
+                        const x = window.innerWidth / 2 + (Math.random() - 0.5) * 300;
+                        const y = window.innerHeight / 2 + (Math.random() - 0.5) * 300;
+                        createSoundWave(x, y, true);
+                        createSpore(x, y);
+                    }, i * 200);
+                }
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Messages at milestones
+        let messageShown = Array(10).fill(false);
+        setInterval(() => {
+            const thresholds = [10, 50, 100, 200, 350, 500, 750, 1000, 1500, 2000];
+            thresholds.forEach((threshold, i) => {
+                if (growthCount >= threshold && !messageShown[i]) {
+                    messageShown[i] = true;
+                    messageEl.textContent = messages[i % messages.length];
+                    messageEl.classList.add('visible');
+                    setTimeout(() => messageEl.classList.remove('visible'), 5000);
+                }
+            });
+            cycles++;
+            updateEcosystem();
+            checkStillness();
+        }, 1000);
+
+        // Ambient firefly spawning
+        setInterval(() => {
+            if (Math.random() > 0.7 && document.querySelectorAll('.firefly').length < 10) {
+                createFirefly();
+            }
+        }, 4000);
+
+        // Ambient spore release
+        setInterval(() => {
+            if (growthCount > 30 && Math.random() > 0.6) {
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                createSpore(x, y);
+            }
+        }, 2500);
+
+        // Ambient sound visualization when in sound mode
+        setInterval(() => {
+            if (soundMode && Math.random() > 0.7) {
+                createWhisper(
+                    Math.random() * window.innerWidth,
+                    Math.random() * window.innerHeight
+                );
+            }
+        }, 3000);
+
+        // Initial growth from edges
+        setTimeout(() => {
+            // Bottom edge growth
+            createVine(window.innerWidth / 2, window.innerHeight, -90, 120, 'thick');
+            createVine(window.innerWidth / 2 - 30, window.innerHeight, -80, 100);
+            createVine(window.innerWidth / 2 + 30, window.innerHeight, -100, 100);
+
+            // Side growth
+            setTimeout(() => {
+                createVine(0, window.innerHeight * 0.6, 15, 90);
+                createVine(window.innerWidth, window.innerHeight * 0.4, 165, 80);
+            }, 1500);
+        }, 1000);
+
+        // Welcome message
+        setTimeout(() => {
+            showMessage('welcome to the jungle');
+        }, 2500);
+
+        // Console poetry
+        console.log('%c' + `
+        ╭─────────────────────────────╮
+        │                             │
+        │    the jungle grows         │
+        │    where attention          │
+        │    does not.                │
+        │                             │
+        │    be still.                │
+        │    watch nothing.           │
+        │    something unfurls.       │
+        │                             │
+        ╰─────────────────────────────╯
+        `, 'color: #4fffb0; font-family: monospace; font-size: 11px;');
+
+        console.log('%cjungle', 'font-size: 24px; color: #4fffb0; background: #0a1f0a; padding: 12px 20px; border-radius: 4px; font-weight: 300; letter-spacing: 0.3em;');
+        console.log('%cmoss on circuit boards', 'font-size: 11px; color: #5a8f5a; font-style: italic; letter-spacing: 0.1em;');
+        console.log('');
+        console.log('%c[g] glitch  [o] overgrow  [w] wither  [n] nocturnal  [r] rain  [s] sounds  [c] clear', 'font-size: 9px; color: #3d7a4a;');
+        console.log('%c[space] burst  [f] fireflies  [m] mushrooms  [b] bioluminescence', 'font-size: 9px; color: #3d7a4a;');
+        console.log('%cright-click: flower  double-click: garden', 'font-size: 9px; color: #3d7a4a;');
+        console.log('');
+        console.log('%cbe still. the jungle grows when no one is watching.', 'font-size: 10px; color: #2d5a3d; font-style: italic;');
+        console.log('%c...try the konami code', 'font-size: 8px; color: #1a3520;');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>states - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: background 4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.gravity-off {
+            background: linear-gradient(180deg, var(--bone) 0%, #e8f0f5 50%, var(--bone) 100%);
+        }
+
+        body.held-breath {
+            background: #f0f5f8;
+        }
+
+        body.in-transition {
+            background: linear-gradient(135deg, var(--bone) 0%, #edf2f7 50%, #f0f5f8 100%);
+        }
+
+        /* Grain texture */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* The container for all water states */
+        .states-field {
+            position: fixed;
+            inset: 0;
+        }
+
+        /* Steam - remembering being ice, dreaming of cloud */
+        .steam-container {
+            position: fixed;
+            bottom: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            pointer-events: none;
+        }
+
+        .steam-particle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(200, 210, 220, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(8px);
+            animation: steam-rise var(--dur, 8s) ease-out infinite;
+            animation-delay: var(--del, 0s);
+            left: var(--x, 50%);
+        }
+
+        /* Steam that remembers crystalline structure */
+        .steam-particle.remembering-ice {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            filter: blur(4px);
+            opacity: 0.2;
+        }
+
+        @keyframes steam-rise {
+            0% {
+                transform: translateY(0) scale(0.5);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.4;
+            }
+            80% {
+                opacity: 0.15;
+            }
+            100% {
+                transform: translateY(-250px) translateX(var(--drift, 0px)) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* The transition zone - where states blur */
+        .transition-zone {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                rgba(200, 220, 235, 0.1) 0%,
+                rgba(180, 200, 220, 0.05) 50%,
+                transparent 70%);
+            pointer-events: none;
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+
+        body.in-transition .transition-zone {
+            width: 400px;
+            height: 400px;
+            opacity: 1;
+        }
+
+        .transition-zone::before {
+            content: '';
+            position: absolute;
+            inset: 20%;
+            border: 1px dashed rgba(74, 85, 104, 0.1);
+            border-radius: 50%;
+            animation: transition-spin 30s linear infinite;
+        }
+
+        @keyframes transition-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .transition-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.4em;
+            white-space: nowrap;
+            transition: opacity 2s ease;
+        }
+
+        body.in-transition .transition-text {
+            opacity: 0.4;
+        }
+
+        /* Still pond at midnight - holding memory */
+        .pond {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 80px;
+            background: linear-gradient(180deg,
+                rgba(74, 85, 104, 0.1) 0%,
+                rgba(74, 85, 104, 0.2) 50%,
+                rgba(74, 85, 104, 0.05) 100%);
+            border-radius: 50%;
+            opacity: 0.6;
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 60px 20px rgba(74, 85, 104, 0.05);
+        }
+
+        .pond.disturbed {
+            animation: pond-ripple 3s ease-out;
+        }
+
+        .pond.remembering {
+            box-shadow: 0 0 80px 30px rgba(74, 85, 104, 0.08);
+        }
+
+        @keyframes pond-ripple {
+            0%, 100% { transform: translateX(-50%) scaleY(1); }
+            25% { transform: translateX(-50%) scaleY(1.05); }
+            50% { transform: translateX(-50%) scaleY(0.97); }
+            75% { transform: translateX(-50%) scaleY(1.02); }
+        }
+
+        .pond-reflection {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.1) 30%,
+                rgba(255, 255, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.1) 70%,
+                transparent 100%);
+            border-radius: 50%;
+            animation: reflection-shimmer 12s ease-in-out infinite;
+        }
+
+        @keyframes reflection-shimmer {
+            0%, 100% { opacity: 0.3; transform: translateX(-10px); }
+            50% { opacity: 0.6; transform: translateX(10px); }
+        }
+
+        /* Memory traces in the pond */
+        .pond-memory {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 4s ease;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .pond.remembering .pond-memory {
+            opacity: 0.3;
+        }
+
+        .memory-trace {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(74, 85, 104, 0.2), transparent);
+            animation: memory-drift 8s ease-in-out infinite;
+        }
+
+        @keyframes memory-drift {
+            0%, 100% { transform: translateY(0) scaleX(0.8); opacity: 0.3; }
+            50% { transform: translateY(10px) scaleX(1); opacity: 0.6; }
+        }
+
+        .pond-surface-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scaleY(-1);
+            font-size: 0.6rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            letter-spacing: 0.3em;
+            white-space: nowrap;
+            filter: blur(1px);
+        }
+
+        body.held-breath .pond-surface-text {
+            opacity: 0.3;
+        }
+
+        /* First drop before a storm - contains ocean memory */
+        .first-drop {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 12px;
+            background: radial-gradient(ellipse at 30% 30%,
+                rgba(200, 220, 235, 0.8) 0%,
+                rgba(120, 150, 180, 0.4) 50%,
+                rgba(74, 85, 104, 0.2) 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0;
+            transition: all 0.5s ease;
+            filter: blur(0.5px);
+            box-shadow: 0 0 10px 2px rgba(120, 150, 180, 0.2);
+        }
+
+        /* The drop's inner ocean memory */
+        .drop-memory {
+            position: absolute;
+            inset: 2px;
+            border-radius: inherit;
+            background: radial-gradient(circle at 60% 60%,
+                transparent 0%,
+                rgba(74, 85, 104, 0.1) 100%);
+            opacity: 0;
+            animation: drop-memory-pulse 4s ease-in-out infinite;
+        }
+
+        .first-drop.forming .drop-memory {
+            opacity: 1;
+        }
+
+        @keyframes drop-memory-pulse {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1); opacity: 1; }
+        }
+
+        .first-drop.forming {
+            opacity: 0.8;
+            animation: drop-form 4s ease-in-out infinite;
+        }
+
+        .first-drop.falling {
+            animation: drop-fall 1.5s ease-in forwards;
+        }
+
+        @keyframes drop-form {
+            0%, 100% {
+                transform: translateX(-50%) scale(1);
+                height: 12px;
+            }
+            50% {
+                transform: translateX(-50%) scale(1.1);
+                height: 14px;
+            }
+        }
+
+        @keyframes drop-fall {
+            0% {
+                top: 20%;
+                opacity: 0.8;
+                transform: translateX(-50%) scale(1);
+            }
+            80% {
+                opacity: 0.6;
+            }
+            100% {
+                top: calc(85% - 40px);
+                opacity: 0;
+                transform: translateX(-50%) scale(0.5);
+            }
+        }
+
+        /* Impact ripple when drop hits pond */
+        .impact-ripple {
+            position: fixed;
+            bottom: calc(15% + 40px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border: 1px solid rgba(74, 85, 104, 0.3);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .impact-ripple.active {
+            animation: impact-expand 2s ease-out forwards;
+        }
+
+        @keyframes impact-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.5;
+            }
+            100% {
+                width: 120px;
+                height: 40px;
+                opacity: 0;
+            }
+        }
+
+        /* Ice dreaming of being cloud */
+        .ice {
+            position: fixed;
+            right: 15%;
+            top: 40%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg,
+                rgba(220, 235, 245, 0.6) 0%,
+                rgba(180, 210, 230, 0.4) 50%,
+                rgba(200, 225, 240, 0.3) 100%);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            opacity: 0.7;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                inset 0 0 20px rgba(255, 255, 255, 0.4),
+                0 0 30px rgba(180, 210, 230, 0.2);
+        }
+
+        .ice::before {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            background: linear-gradient(45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 70%);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        }
+
+        /* Ice's dream of being cloud */
+        .ice-dream {
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            filter: blur(10px);
+            transition: opacity 3s ease;
+        }
+
+        .ice:hover .ice-dream {
+            opacity: 1;
+            animation: ice-dreaming 6s ease-in-out infinite;
+        }
+
+        @keyframes ice-dreaming {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.2) translateY(-10px); }
+        }
+
+        .ice.warming {
+            background: linear-gradient(135deg,
+                rgba(200, 220, 235, 0.4) 0%,
+                rgba(160, 195, 220, 0.3) 50%,
+                rgba(180, 210, 230, 0.2) 100%);
+            transform: scale(0.95);
+        }
+
+        .ice.melting {
+            opacity: 0.4;
+            transform: scale(0.7);
+            border-radius: 30%;
+            clip-path: none;
+        }
+
+        .ice-droplet {
+            position: absolute;
+            width: 4px;
+            height: 6px;
+            background: rgba(180, 210, 230, 0.6);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .ice-droplet.falling {
+            animation: melt-drip 2s ease-in forwards;
+        }
+
+        @keyframes melt-drip {
+            0% { opacity: 0.6; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(100px); }
+        }
+
+        /* Things heavy by nature, not physics */
+        .heavy-thing {
+            position: fixed;
+            pointer-events: none;
+            transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1), opacity 2s ease;
+            opacity: 0;
+        }
+
+        .heavy-thing.visible {
+            opacity: 0.3;
+        }
+
+        .heavy-thing.stays-down {
+            transform: translateY(0) !important;
+        }
+
+        /* Regret stays grounded */
+        .regret {
+            bottom: 25%;
+            left: 20%;
+            font-size: 0.4rem;
+            color: var(--slate);
+            letter-spacing: 0.3em;
+        }
+
+        /* Memory has weight */
+        .memory-weight {
+            bottom: 30%;
+            right: 25%;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(74, 85, 104, 0.2) 0%, transparent 70%);
+        }
+
+        /* Patience is heavy by choice */
+        .patience {
+            bottom: 20%;
+            left: 35%;
+            font-size: 0.35rem;
+            color: var(--slate);
+            letter-spacing: 0.4em;
+        }
+
+        /* Floating elements - gravity optional */
+        .floater {
+            position: fixed;
+            pointer-events: none;
+            transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .floater.rising {
+            animation: float-up 8s ease-in-out infinite;
+        }
+
+        @keyframes float-up {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        /* Thought bubbles that rise when gravity is off */
+        .thought {
+            position: fixed;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            letter-spacing: 0.2em;
+            transition: all 1s ease;
+        }
+
+        .thought.rising {
+            animation: thought-rise 12s ease-out forwards;
+        }
+
+        @keyframes thought-rise {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.8);
+                filter: blur(2px);
+            }
+            15% {
+                opacity: 0.4;
+                filter: blur(0);
+            }
+            85% {
+                opacity: 0.2;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-300px) scale(1.1);
+                filter: blur(1px);
+            }
+        }
+
+        /* The space between notes - silence as canvas */
+        .silence-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        body.hearing-silence .silence-canvas {
+            opacity: 1;
+        }
+
+        .note-gap {
+            position: fixed;
+            width: 2px;
+            height: 0;
+            background: var(--amber);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .note-gap.sounding {
+            height: 20px;
+            opacity: 0.3;
+        }
+
+        .note-gap.silent {
+            height: 40px;
+            opacity: 0.15;
+            background: var(--slate);
+        }
+
+        /* The gap where meaning lives */
+        .meaning-gap {
+            position: fixed;
+            width: 60px;
+            height: 2px;
+            background: transparent;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .meaning-gap::before,
+        .meaning-gap::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--amber);
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+
+        .meaning-gap::before { left: 0; top: -1px; }
+        .meaning-gap::after { right: 0; top: -1px; }
+
+        .meaning-gap.visible {
+            opacity: 1;
+        }
+
+        .meaning-gap .gap-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .meaning-gap .gap-content::before {
+            content: '';
+            width: 0;
+            height: 1px;
+            background: rgba(212, 160, 86, 0.2);
+            transition: width 2s ease;
+        }
+
+        .meaning-gap.visible .gap-content::before {
+            width: 100%;
+        }
+
+        /* The space between - where meaning lives */
+        .between-space {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 2px;
+            background: transparent;
+            opacity: 0;
+            transition: all 2s ease;
+        }
+
+        .between-space::before,
+        .between-space::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--amber);
+            border-radius: 50%;
+            opacity: 0.4;
+            transition: all 1s ease;
+        }
+
+        .between-space::before {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .between-space::after {
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        body.held-breath .between-space {
+            opacity: 1;
+            width: 200px;
+        }
+
+        body.held-breath .between-space::before,
+        body.held-breath .between-space::after {
+            opacity: 0.6;
+        }
+
+        .between-meaning {
+            position: fixed;
+            top: calc(50% + 2rem);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.3em;
+            transition: opacity 3s ease;
+            text-align: center;
+        }
+
+        body.held-breath .between-meaning {
+            opacity: 0.4;
+        }
+
+        /* Temperature of attention - condensation from stillness */
+        .attention-condensation {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle, rgba(200, 210, 220, 0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .attention-condensation.forming {
+            opacity: 0.6;
+            animation: condensation-form 3s ease-in-out infinite;
+        }
+
+        @keyframes condensation-form {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+        }
+
+        /* Gaze warmth indicator */
+        .gaze-warmth {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.5s ease, width 0.3s ease, height 0.3s ease;
+            opacity: 0;
+        }
+
+        .gaze-warmth.active {
+            opacity: 1;
+        }
+
+        .gaze-warmth.focused {
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.1) 0%, transparent 70%);
+        }
+
+        .gaze-warmth.peripheral {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(180, 200, 220, 0.05) 0%, transparent 70%);
+        }
+
+        /* Breath indicator */
+        .breath-indicator {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            border: 1px solid var(--slate);
+            border-radius: 50%;
+            opacity: 0.1;
+            transition: all 2s ease;
+        }
+
+        .breath-indicator::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border: 1px solid var(--slate);
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+
+        body.held-breath .breath-indicator {
+            opacity: 0.4;
+            transform: translateX(-50%) scale(1.2);
+            border-color: var(--amber);
+        }
+
+        body.held-breath .breath-indicator::before {
+            border-color: var(--amber);
+            animation: breath-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes breath-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(0.8); opacity: 0.8; }
+        }
+
+        /* State transition messages */
+        .state-message {
+            position: fixed;
+            font-size: 0.75rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 3s ease;
+            letter-spacing: 0.15em;
+        }
+
+        .state-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Instruction hint */
+        .instruction {
+            position: fixed;
+            bottom: 5.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            animation: instruction-appear 4s ease 3s forwards;
+            letter-spacing: 0.12em;
+            text-align: center;
+            line-height: 2;
+        }
+
+        @keyframes instruction-appear {
+            to { opacity: 0.3; }
+        }
+
+        .instruction.hidden {
+            opacity: 0 !important;
+            transition: opacity 2s ease;
+        }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 2.2;
+        }
+
+        body:hover .key-hint {
+            opacity: 0.15;
+        }
+
+        /* Water state labels - appear on hover */
+        .state-label {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            letter-spacing: 0.2em;
+            transition: opacity 1s ease;
+        }
+
+        /* Edge whispers */
+        .edge-whisper {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.2em;
+            transition: opacity 3s ease;
+        }
+
+        .edge-whisper.left {
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .edge-whisper.right {
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        .edge-whisper.visible {
+            opacity: 0.2;
+        }
+
+        /* Stillness reveals */
+        .stillness-reveal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.9rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            letter-spacing: 0.1em;
+            line-height: 2;
+            transition: opacity 4s ease;
+        }
+
+        .stillness-reveal.visible {
+            opacity: 0.5;
+        }
+
+        /* Transition state indicator */
+        .transition-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 4s ease;
+        }
+
+        body.held-breath .transition-glow {
+            opacity: 1;
+            animation: transition-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes transition-breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.9); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* The molecule patience indicator */
+        .molecule-patience {
+            position: fixed;
+            top: 10%;
+            left: 10%;
+            width: 40px;
+            height: 40px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .molecule-patience.visible {
+            opacity: 0.3;
+        }
+
+        .molecule {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, rgba(74, 85, 104, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: molecule-vibrate var(--speed, 2s) ease-in-out infinite;
+        }
+
+        @keyframes molecule-vibrate {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(1px, -1px); }
+            50% { transform: translate(-1px, 1px); }
+            75% { transform: translate(1px, 1px); }
+        }
+
+        .molecule-patience.ice-patience .molecule {
+            animation-duration: 8s;
+        }
+
+        .molecule-patience.steam-patience .molecule {
+            animation-duration: 0.5s;
+        }
+
+        /* Right-click whisper */
+        .whisper-text {
+            position: fixed;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease, transform 2s ease;
+        }
+
+        /* State definition text */
+        .state-definition {
+            position: fixed;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.2em;
+            text-align: center;
+            line-height: 1.8;
+            max-width: 300px;
+            transition: opacity 4s ease;
+            pointer-events: none;
+        }
+
+        body.contemplating .state-definition {
+            opacity: 0.4;
+        }
+
+        /* Agreement particles - states as temporary agreements */
+        .agreement {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--slate);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .agreement.forming {
+            animation: agreement-form 4s ease-in-out forwards;
+        }
+
+        @keyframes agreement-form {
+            0% { opacity: 0; transform: scale(0); }
+            20% { opacity: 0.4; transform: scale(1); }
+            80% { opacity: 0.4; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+    <div class="grain"></div>
+
+    <div class="states-field" id="field"></div>
+
+    <!-- Gaze warmth follows cursor -->
+    <div class="gaze-warmth" id="gazeWarmth"></div>
+
+    <!-- The transition zone - where states blur -->
+    <div class="transition-zone" id="transitionZone">
+        <div class="transition-text" id="transitionText">becoming</div>
+    </div>
+
+    <!-- Silence canvas -->
+    <div class="silence-canvas" id="silenceCanvas"></div>
+
+    <!-- Steam particles - remembering ice, dreaming of cloud -->
+    <div class="steam-container" id="steamContainer">
+        <div class="steam-particle" style="--x: 20%; --dur: 7s; --del: 0s; --drift: -20px;"></div>
+        <div class="steam-particle" style="--x: 40%; --dur: 9s; --del: 1s; --drift: 15px;"></div>
+        <div class="steam-particle remembering-ice" style="--x: 60%; --dur: 8s; --del: 2s; --drift: -10px;"></div>
+        <div class="steam-particle" style="--x: 80%; --dur: 10s; --del: 0.5s; --drift: 25px;"></div>
+        <div class="steam-particle" style="--x: 30%; --dur: 8.5s; --del: 3s; --drift: -15px;"></div>
+        <div class="steam-particle remembering-ice" style="--x: 70%; --dur: 7.5s; --del: 1.5s; --drift: 10px;"></div>
+    </div>
+
+    <!-- Still pond - holding memory -->
+    <div class="pond" id="pond">
+        <div class="pond-reflection"></div>
+        <div class="pond-memory" id="pondMemory">
+            <div class="memory-trace" style="top: 20%;"></div>
+            <div class="memory-trace" style="top: 50%; animation-delay: 1s;"></div>
+            <div class="memory-trace" style="top: 70%; animation-delay: 2s;"></div>
+        </div>
+        <div class="pond-surface-text" id="pondText">what reflects here was always below</div>
+    </div>
+
+    <!-- First drop - contains the ocean's memory -->
+    <div class="first-drop" id="firstDrop">
+        <div class="drop-memory"></div>
+    </div>
+    <div class="impact-ripple" id="impactRipple"></div>
+
+    <!-- Ice - dreaming of being cloud -->
+    <div class="ice" id="ice">
+        <div class="ice-dream"></div>
+    </div>
+
+    <!-- Things heavy by nature, not physics -->
+    <div class="heavy-thing regret stays-down" id="regret">regret</div>
+    <div class="heavy-thing memory-weight stays-down" id="memoryWeight"></div>
+    <div class="heavy-thing patience stays-down" id="patienceThing">patience</div>
+
+    <!-- Molecule patience indicator -->
+    <div class="molecule-patience" id="moleculePatience">
+        <div class="molecule" style="top: 30%; left: 30%;"></div>
+        <div class="molecule" style="top: 50%; left: 60%; --speed: 2.3s;"></div>
+        <div class="molecule" style="top: 70%; left: 40%; --speed: 1.8s;"></div>
+    </div>
+
+    <!-- Between space -->
+    <div class="between-space" id="betweenSpace"></div>
+    <div class="between-meaning" id="betweenMeaning">the silence between notes</div>
+
+    <!-- Breath indicator -->
+    <div class="breath-indicator" id="breathIndicator"></div>
+
+    <!-- Transition glow -->
+    <div class="transition-glow" id="transitionGlow"></div>
+
+    <!-- State labels -->
+    <div class="state-label" id="steamLabel" style="bottom: calc(30% + 220px); left: calc(50% - 40px);">steam</div>
+    <div class="state-label" id="pondLabel" style="bottom: calc(15% - 20px); left: 50%; transform: translateX(-50%);">still pond</div>
+    <div class="state-label" id="dropLabel" style="top: calc(20% - 25px); left: 50%; transform: translateX(-50%);">first drop</div>
+    <div class="state-label" id="iceLabel" style="right: calc(15% - 20px); top: calc(40% - 25px);">ice</div>
+
+    <!-- Edge whispers -->
+    <div class="edge-whisper left" id="edgeLeft">all things flow</div>
+    <div class="edge-whisper right" id="edgeRight">nothing stays</div>
+
+    <!-- Stillness reveal -->
+    <div class="stillness-reveal" id="stillnessReveal"></div>
+
+    <!-- State definition -->
+    <div class="state-definition" id="stateDefinition">
+        a state is a temporary agreement<br>
+        matter's current mood<br>
+        identity that knows it will change
+    </div>
+
+    <!-- Instruction -->
+    <p class="instruction" id="instruction">
+        hover to warm. hold to breathe.<br>
+        stillness reveals the between.
+    </p>
+
+    <!-- Key hints -->
+    <div class="key-hint">
+        [g] gravity<br>
+        [d] drop<br>
+        [t] transition<br>
+        [space] silence<br>
+        [hold click] breathe
+    </div>
+
+    <script>
+        const field = document.getElementById('field');
+        const pond = document.getElementById('pond');
+        const firstDrop = document.getElementById('firstDrop');
+        const impactRipple = document.getElementById('impactRipple');
+        const ice = document.getElementById('ice');
+        const steamContainer = document.getElementById('steamContainer');
+        const betweenSpace = document.getElementById('betweenSpace');
+        const betweenMeaning = document.getElementById('betweenMeaning');
+        const breathIndicator = document.getElementById('breathIndicator');
+        const transitionGlow = document.getElementById('transitionGlow');
+        const instruction = document.getElementById('instruction');
+        const stillnessReveal = document.getElementById('stillnessReveal');
+        const edgeLeft = document.getElementById('edgeLeft');
+        const edgeRight = document.getElementById('edgeRight');
+        const pondText = document.getElementById('pondText');
+        const gazeWarmth = document.getElementById('gazeWarmth');
+        const transitionZone = document.getElementById('transitionZone');
+        const transitionText = document.getElementById('transitionText');
+        const moleculePatience = document.getElementById('moleculePatience');
+        const stateDefinition = document.getElementById('stateDefinition');
+
+        // Heavy things
+        const regret = document.getElementById('regret');
+        const memoryWeight = document.getElementById('memoryWeight');
+        const patienceThing = document.getElementById('patienceThing');
+
+        // State labels
+        const labels = {
+            steam: document.getElementById('steamLabel'),
+            pond: document.getElementById('pondLabel'),
+            drop: document.getElementById('dropLabel'),
+            ice: document.getElementById('iceLabel')
+        };
+
+        // State
+        let lastMove = Date.now();
+        let isHoldingBreath = false;
+        let breathStartTime = 0;
+        let gravityOff = false;
+        let inTransition = false;
+        let iceWarmth = 0;
+        let dropForming = false;
+        let thoughts = [];
+        let noteGaps = [];
+        let moveCount = 0;
+        let gazeStillnessTime = 0;
+        let lastGazePosition = { x: 0, y: 0 };
+        let condensationPoints = [];
+        let waterMemory = [];
+
+        // What water remembers
+        const waterMemories = [
+            'the shape of a hand',
+            'the moon\'s reflection',
+            'a stone\'s patience',
+            'the mountain it fell from',
+            'being cloud',
+            'the taste of salt',
+            'a river\'s journey',
+            'the inside of a leaf'
+        ];
+
+        // Poetic content - deepened
+        const stillnessMessages = [
+            'water remembers every shape it has been',
+            'the moment before change is also change',
+            'ice dreams of flowing',
+            'steam remembers being held',
+            'between solid and liquid, there is listening',
+            'the pond holds the sky without grasping',
+            'every drop contains the ocean\'s memory',
+            'a state is just matter\'s current mood',
+            'to be ice is to practice stillness',
+            'to be steam is to forget weight',
+            'the transition itself is a place you can live',
+            'molecules are patient because they have time',
+            'what changes slowly enough looks still'
+        ];
+
+        const thoughtTexts = [
+            'what rises',
+            'what stays',
+            'becoming',
+            'almost',
+            'not yet',
+            'still',
+            'between',
+            'threshold',
+            'edge',
+            'breath',
+            'agreement',
+            'temporary',
+            'mood',
+            'patience'
+        ];
+
+        const whisperTexts = [
+            'water knows waiting',
+            'ice is just patient water',
+            'steam is water dreaming upward',
+            'the drop was always falling',
+            'between states, there is this',
+            'a state is a temporary agreement',
+            'matter decides its mood',
+            'some things are heavy by nature',
+            'the silence holds more than the sound',
+            'what you focus on warms'
+        ];
+
+        const betweenMessages = [
+            'the silence between notes',
+            'where meaning lives',
+            'the pause that speaks',
+            'neither sound nor silence',
+            'the space that holds both',
+            'not here not there but between',
+            'the transition itself as home',
+            'becoming as a permanent address'
+        ];
+
+        const pondReflections = [
+            'what reflects here was always below',
+            'the surface remembers the moon',
+            'stillness is its own depth',
+            'the pond holds what you bring',
+            'i have touched mountains and held clouds',
+            'i remember your grandmother\'s tea',
+            'every river i have been'
+        ];
+
+        const transitionTexts = [
+            'becoming',
+            'neither nor',
+            'the edge',
+            'almost',
+            'not yet',
+            'threshold',
+            'between selves',
+            'changing address'
+        ];
+
+        let messageIndex = 0;
+        let betweenIndex = 0;
+        let pondTextIndex = 0;
+        let transitionIndex = 0;
+
+        // Temperature of attention - gaze tracking
+        let mouseVelocity = { x: 0, y: 0 };
+        let lastMousePos = { x: 0, y: 0 };
+        let mouseStillTime = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+            const dt = now - lastMove;
+            lastMove = now;
+            moveCount++;
+
+            // Calculate velocity
+            mouseVelocity.x = (e.clientX - lastMousePos.x) / (dt || 1);
+            mouseVelocity.y = (e.clientY - lastMousePos.y) / (dt || 1);
+            const speed = Math.sqrt(mouseVelocity.x ** 2 + mouseVelocity.y ** 2);
+
+            lastMousePos = { x: e.clientX, y: e.clientY };
+
+            // Gaze warmth follows cursor
+            gazeWarmth.style.left = e.clientX + 'px';
+            gazeWarmth.style.top = e.clientY + 'px';
+            gazeWarmth.classList.add('active');
+
+            // Focused gaze warms, peripheral cools
+            if (speed < 0.5) {
+                mouseStillTime += dt;
+                gazeWarmth.classList.add('focused');
+                gazeWarmth.classList.remove('peripheral');
+
+                // Stillness creates condensation
+                if (mouseStillTime > 2000 && Math.random() < 0.02) {
+                    createCondensation(e.clientX, e.clientY);
+                }
+            } else {
+                mouseStillTime = 0;
+                gazeWarmth.classList.remove('focused');
+                if (speed > 2) {
+                    gazeWarmth.classList.add('peripheral');
+                } else {
+                    gazeWarmth.classList.remove('peripheral');
+                }
+            }
+
+            // Pond responds to nearby movement
+            const pondRect = pond.getBoundingClientRect();
+            const distance = Math.hypot(
+                e.clientX - (pondRect.left + pondRect.width / 2),
+                e.clientY - (pondRect.top + pondRect.height / 2)
+            );
+
+            if (distance < 200) {
+                pond.classList.add('disturbed');
+                // Record memory of touch
+                if (waterMemory.length < 10 && Math.random() < 0.01) {
+                    waterMemory.push({ x: e.clientX, y: e.clientY, time: now });
+                }
+                setTimeout(() => pond.classList.remove('disturbed'), 3000);
+            }
+
+            // Show labels near elements
+            Object.values(labels).forEach(label => label.style.opacity = '0');
+
+            // Hide stillness reveals on movement
+            stillnessReveal.classList.remove('visible');
+            edgeLeft.classList.remove('visible');
+            edgeRight.classList.remove('visible');
+
+            if (moveCount > 5) {
+                instruction.classList.add('hidden');
+            }
+        });
+
+        function createCondensation(x, y) {
+            const condensation = document.createElement('div');
+            condensation.className = 'attention-condensation';
+            condensation.style.left = (x + (Math.random() - 0.5) * 40) + 'px';
+            condensation.style.top = (y + (Math.random() - 0.5) * 40) + 'px';
+            document.body.appendChild(condensation);
+
+            requestAnimationFrame(() => {
+                condensation.classList.add('forming');
+            });
+
+            setTimeout(() => {
+                condensation.style.opacity = '0';
+                setTimeout(() => condensation.remove(), 2000);
+            }, 4000);
+
+            condensationPoints.push(condensation);
+        }
+
+        // Steam responds to mouse proximity
+        steamContainer.addEventListener('mouseenter', () => {
+            labels.steam.style.opacity = '0.3';
+            moleculePatience.classList.add('steam-patience');
+            moleculePatience.classList.add('visible');
+            steamContainer.querySelectorAll('.steam-particle').forEach(p => {
+                p.style.animationDuration = '4s';
+            });
+        });
+
+        steamContainer.addEventListener('mouseleave', () => {
+            labels.steam.style.opacity = '0';
+            moleculePatience.classList.remove('steam-patience');
+            moleculePatience.classList.remove('visible');
+            steamContainer.querySelectorAll('.steam-particle').forEach(p => {
+                const dur = parseFloat(p.style.getPropertyValue('--dur'));
+                p.style.animationDuration = dur + 's';
+            });
+        });
+
+        // Pond hover - reveals memory
+        pond.addEventListener('mouseenter', () => {
+            labels.pond.style.opacity = '0.3';
+            pond.classList.add('remembering');
+        });
+
+        pond.addEventListener('mouseleave', () => {
+            labels.pond.style.opacity = '0';
+            pond.classList.remove('remembering');
+        });
+
+        // First drop interactions
+        firstDrop.addEventListener('mouseenter', () => {
+            labels.drop.style.opacity = '0.3';
+            if (!dropForming) {
+                firstDrop.classList.add('forming');
+                dropForming = true;
+            }
+        });
+
+        firstDrop.addEventListener('mouseleave', () => {
+            labels.drop.style.opacity = '0';
+        });
+
+        // Ice warming on hover - dreaming of cloud
+        ice.addEventListener('mouseenter', () => {
+            ice.classList.add('warming');
+            iceWarmth += 1;
+            labels.ice.style.opacity = '0.3';
+            moleculePatience.classList.add('ice-patience');
+            moleculePatience.classList.add('visible');
+        });
+
+        ice.addEventListener('mouseleave', () => {
+            ice.classList.remove('warming');
+            labels.ice.style.opacity = '0';
+            moleculePatience.classList.remove('ice-patience');
+            setTimeout(() => {
+                if (!moleculePatience.classList.contains('steam-patience')) {
+                    moleculePatience.classList.remove('visible');
+                }
+            }, 1000);
+            setTimeout(() => {
+                if (!ice.classList.contains('warming')) {
+                    iceWarmth = Math.max(0, iceWarmth - 0.5);
+                }
+            }, 3000);
+        });
+
+        // Continuous hover tracking for ice melting
+        let iceHoverTime = 0;
+        let iceHoverInterval = null;
+
+        ice.addEventListener('mouseenter', () => {
+            iceHoverInterval = setInterval(() => {
+                iceHoverTime += 100;
+                if (iceHoverTime > 3000 && !ice.classList.contains('melting')) {
+                    ice.classList.add('melting');
+                    createMeltDroplet();
+                }
+                if (iceHoverTime > 2000 && iceHoverTime % 1000 < 100) {
+                    createMeltDroplet();
+                }
+            }, 100);
+        });
+
+        ice.addEventListener('mouseleave', () => {
+            clearInterval(iceHoverInterval);
+            iceHoverTime = 0;
+            setTimeout(() => {
+                if (iceHoverTime === 0) {
+                    ice.classList.remove('melting');
+                }
+            }, 2000);
+        });
+
+        function createMeltDroplet() {
+            const droplet = document.createElement('div');
+            droplet.className = 'ice-droplet';
+            const iceRect = ice.getBoundingClientRect();
+            droplet.style.left = (Math.random() * 40 + 10) + 'px';
+            droplet.style.top = '50px';
+            ice.appendChild(droplet);
+
+            requestAnimationFrame(() => {
+                droplet.classList.add('falling');
+            });
+
+            setTimeout(() => droplet.remove(), 2000);
+        }
+
+        // Hold click for breath-holding
+        let holdTimeout = null;
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 0) {
+                holdTimeout = setTimeout(() => {
+                    isHoldingBreath = true;
+                    breathStartTime = Date.now();
+                    document.body.classList.add('held-breath');
+
+                    // Show state definition after holding
+                    setTimeout(() => {
+                        document.body.classList.add('contemplating');
+                    }, 2000);
+                }, 500);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            clearTimeout(holdTimeout);
+            if (isHoldingBreath) {
+                isHoldingBreath = false;
+                document.body.classList.remove('held-breath');
+                document.body.classList.remove('contemplating');
+
+                const breathDuration = Date.now() - breathStartTime;
+                if (breathDuration > 2000) {
+                    betweenMeaning.textContent = betweenMessages[betweenIndex % betweenMessages.length];
+                    betweenIndex++;
+                }
+
+                // Long breath reveals water's memory
+                if (breathDuration > 5000) {
+                    revealWaterMemory();
+                }
+            }
+        });
+
+        function revealWaterMemory() {
+            const memory = waterMemories[Math.floor(Math.random() * waterMemories.length)];
+            pondText.textContent = 'i remember ' + memory;
+            pond.classList.add('remembering');
+            setTimeout(() => {
+                pond.classList.remove('remembering');
+            }, 5000);
+        }
+
+        // Right-click whisper
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            const whisper = document.createElement('div');
+            whisper.className = 'whisper-text';
+            whisper.style.left = e.clientX + 'px';
+            whisper.style.top = e.clientY + 'px';
+            whisper.textContent = whisperTexts[Math.floor(Math.random() * whisperTexts.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.6';
+                whisper.style.transform = 'translateY(-20px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 1000);
+            }, 2000);
+        });
+
+        // Keyboard interactions
+        document.addEventListener('keydown', (e) => {
+            lastMove = Date.now();
+
+            // G - toggle gravity
+            if (e.code === 'KeyG') {
+                gravityOff = !gravityOff;
+                document.body.classList.toggle('gravity-off');
+
+                if (gravityOff) {
+                    // Light things rise
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => createFloatingThought(), i * 800);
+                    }
+                    // Heavy things stay (they choose to)
+                    regret.classList.add('visible');
+                    memoryWeight.classList.add('visible');
+                    patienceThing.classList.add('visible');
+                } else {
+                    regret.classList.remove('visible');
+                    memoryWeight.classList.remove('visible');
+                    patienceThing.classList.remove('visible');
+                }
+            }
+
+            // D - drop the first drop
+            if (e.code === 'KeyD' && dropForming) {
+                releaseDrop();
+            }
+
+            // T - enter transition state
+            if (e.code === 'KeyT') {
+                inTransition = !inTransition;
+                document.body.classList.toggle('in-transition');
+
+                if (inTransition) {
+                    transitionText.textContent = transitionTexts[transitionIndex % transitionTexts.length];
+                    transitionIndex++;
+                    // Create agreements - particles that show the temporary nature
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => createAgreement(), i * 300);
+                    }
+                }
+            }
+
+            // Space - musical silence / release
+            if (e.code === 'Space') {
+                e.preventDefault();
+                document.body.classList.add('hearing-silence');
+
+                // Create the space between notes
+                createMeaningGap(e);
+
+                setTimeout(() => {
+                    document.body.classList.remove('hearing-silence');
+                }, 3000);
+
+                // Reset drop if it was falling
+                if (!dropForming) {
+                    firstDrop.classList.remove('falling');
+                    firstDrop.classList.add('forming');
+                    dropForming = true;
+                }
+            }
+
+            // Escape - return
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        function createAgreement() {
+            const agreement = document.createElement('div');
+            agreement.className = 'agreement';
+            agreement.style.left = (Math.random() * 60 + 20) + '%';
+            agreement.style.top = (Math.random() * 60 + 20) + '%';
+            document.body.appendChild(agreement);
+
+            requestAnimationFrame(() => {
+                agreement.classList.add('forming');
+            });
+
+            setTimeout(() => agreement.remove(), 4000);
+        }
+
+        function releaseDrop() {
+            firstDrop.classList.remove('forming');
+            firstDrop.classList.add('falling');
+            dropForming = false;
+
+            setTimeout(() => {
+                impactRipple.classList.add('active');
+                pond.classList.add('disturbed');
+                pond.classList.add('remembering');
+
+                setTimeout(() => {
+                    impactRipple.classList.remove('active');
+                    pond.classList.remove('remembering');
+
+                    firstDrop.classList.remove('falling');
+                    firstDrop.style.opacity = '0';
+
+                    setTimeout(() => {
+                        firstDrop.style.opacity = '';
+                        firstDrop.classList.add('forming');
+                        dropForming = true;
+                    }, 3000);
+                }, 2000);
+            }, 1500);
+        }
+
+        function createFloatingThought() {
+            const thought = document.createElement('div');
+            thought.className = 'thought';
+            thought.textContent = thoughtTexts[Math.floor(Math.random() * thoughtTexts.length)];
+            thought.style.left = (Math.random() * 60 + 20) + '%';
+            thought.style.bottom = '20%';
+            document.body.appendChild(thought);
+
+            requestAnimationFrame(() => {
+                thought.classList.add('rising');
+            });
+
+            setTimeout(() => thought.remove(), 12000);
+        }
+
+        function createMeaningGap(e) {
+            const gap = document.createElement('div');
+            gap.className = 'meaning-gap';
+            gap.innerHTML = '<div class="gap-content"></div>';
+            gap.style.left = (Math.random() * 50 + 25) + '%';
+            gap.style.top = (Math.random() * 30 + 35) + '%';
+            document.body.appendChild(gap);
+
+            requestAnimationFrame(() => {
+                gap.classList.add('visible');
+            });
+
+            setTimeout(() => {
+                gap.style.opacity = '0';
+                gap.style.transition = 'opacity 2s ease';
+                setTimeout(() => gap.remove(), 2000);
+            }, 3000);
+
+            // Also create the old note gaps for visual rhythm
+            const noteGap = document.createElement('div');
+            noteGap.className = 'note-gap';
+            noteGap.style.left = (Math.random() * 60 + 20) + '%';
+            noteGap.style.top = (Math.random() * 40 + 30) + '%';
+            document.body.appendChild(noteGap);
+
+            requestAnimationFrame(() => {
+                noteGap.classList.add(Math.random() > 0.5 ? 'sounding' : 'silent');
+            });
+
+            setTimeout(() => {
+                noteGap.style.opacity = '0';
+                setTimeout(() => noteGap.remove(), 500);
+            }, 2000);
+        }
+
+        // Stillness detection
+        setInterval(() => {
+            const timeSinceMove = Date.now() - lastMove;
+
+            if (timeSinceMove > 5000) {
+                edgeLeft.classList.add('visible');
+                edgeRight.classList.add('visible');
+            }
+
+            if (timeSinceMove > 8000) {
+                stillnessReveal.textContent = stillnessMessages[messageIndex % stillnessMessages.length];
+                stillnessReveal.classList.add('visible');
+            }
+
+            if (timeSinceMove > 12000) {
+                messageIndex++;
+                lastMove = Date.now() - 5000;
+            }
+
+            // Show molecule patience during deep stillness
+            if (timeSinceMove > 10000) {
+                moleculePatience.classList.add('visible');
+            }
+
+            // Update pond reflection text during breath-holding
+            if (timeSinceMove > 6000 && isHoldingBreath) {
+                pondText.textContent = pondReflections[pondTextIndex % pondReflections.length];
+                pondTextIndex++;
+            }
+
+            // Occasional floating thoughts when gravity is off
+            if (gravityOff && Math.random() < 0.01) {
+                createFloatingThought();
+            }
+
+            // Fade gaze warmth during stillness
+            if (timeSinceMove > 3000) {
+                gazeWarmth.classList.remove('active');
+            }
+
+        }, 1000);
+
+        // Initialize first drop as forming
+        setTimeout(() => {
+            firstDrop.classList.add('forming');
+            dropForming = true;
+        }, 2000);
+
+        // Console poetry - deepened
+        console.log('%c', 'font-size: 1px; padding: 40px;');
+        console.log('%cstates', 'font-size: 22px; color: #4a5568; font-weight: 100; letter-spacing: 0.5em;');
+        console.log('%c', 'font-size: 1px; padding: 12px;');
+        console.log('%ca state is a temporary agreement', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%cmatter\'s current mood', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%cidentity that knows it will change', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 20px;');
+        console.log('%csteam:', 'font-size: 9px; color: #a0aec0;', '%cremembers being ice, dreams of cloud', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+        console.log('%cpond:', 'font-size: 9px; color: #a0aec0;', '%cholds memory of everything it touched', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+        console.log('%cdrop:', 'font-size: 9px; color: #a0aec0;', '%ccontains the ocean\'s entire history', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+        console.log('%cice:', 'font-size: 9px; color: #a0aec0;', '%cpracticing stillness, dreaming of flow', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%cthe transition is its own place', 'font-size: 8px; color: #d4a056;');
+        console.log('%cbecoming as a permanent address', 'font-size: 8px; color: #d4a056;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%cthe temperature of attention:', 'font-size: 8px; color: #718096;');
+        console.log('%c  focused gaze warms', 'font-size: 7px; color: #a0aec0;');
+        console.log('%c  peripheral vision cools', 'font-size: 7px; color: #a0aec0;');
+        console.log('%c  stillness creates condensation', 'font-size: 7px; color: #a0aec0;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%cgravity as choice:', 'font-size: 8px; color: #718096;');
+        console.log('%c  some things are heavy by nature', 'font-size: 7px; color: #a0aec0;');
+        console.log('%c  regret stays down when physics doesn\'t require it', 'font-size: 7px; color: #a0aec0;');
+        console.log('%c  patience chooses weight', 'font-size: 7px; color: #a0aec0;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%c[g] gravity takes a day off', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c[d] release the drop', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c[t] enter the transition', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c[space] the silence between notes', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c[hold] breathe and water remembers', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%cthe space between notes is where meaning lives', 'font-size: 8px; color: #718096; font-style: italic;');
+        console.log('%csilence is the canvas. sound is the interruption.', 'font-size: 8px; color: #718096; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%cmolecules are patient because they have time', 'font-size: 7px; color: #a0aec0; font-style: italic;');
+    </script>
+</body>
+</html>

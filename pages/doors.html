@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doors - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Pre-rain atmosphere - electric and pending */
+        .atmosphere {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(
+                180deg,
+                rgba(74, 85, 104, 0.03) 0%,
+                rgba(45, 55, 72, 0.06) 50%,
+                rgba(74, 85, 104, 0.08) 100%
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .static-charge {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(
+                ellipse at 50% 0%,
+                rgba(212, 160, 86, 0.04) 0%,
+                transparent 60%
+            );
+            pointer-events: none;
+            z-index: 2;
+            animation: chargeFlicker 8s ease-in-out infinite;
+        }
+
+        @keyframes chargeFlicker {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+            73% { opacity: 0.8; }
+            77% { opacity: 1; }
+        }
+
+        /* Grain overlay */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Shadow doors - echoes of doors that were here before */
+        .door-shadow {
+            position: absolute;
+            background: rgba(45, 42, 36, 0.03);
+            border-radius: 4px 4px 0 0;
+            pointer-events: none;
+            z-index: 3;
+            transition: opacity 3s ease, transform 3s ease;
+        }
+
+        .door-shadow.ancient {
+            animation: ancientBreath 12s ease-in-out infinite;
+        }
+
+        @keyframes ancientBreath {
+            0%, 100% { opacity: 0.03; transform: scale(1) translateX(0); }
+            50% { opacity: 0.06; transform: scale(1.02) translateX(-2px); }
+        }
+
+        /* The threshold feeling - abstract doorness */
+        .threshold-field {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .threshold-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                transparent 0%,
+                rgba(212, 160, 86, 0.1) 30%,
+                rgba(212, 160, 86, 0.2) 50%,
+                rgba(212, 160, 86, 0.1) 70%,
+                transparent 100%
+            );
+            transform: translateX(-50%);
+            animation: thresholdPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes thresholdPulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* The concept of "through" - where you've been, where you're going */
+        .through-echo {
+            position: fixed;
+            width: 40px;
+            height: 60px;
+            border: 1px solid rgba(212, 160, 86, 0.1);
+            border-radius: 2px 2px 0 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1.5s ease, transform 1.5s ease;
+            z-index: 5;
+        }
+
+        .through-echo.visible {
+            opacity: 0.3;
+        }
+
+        /* Door container */
+        .door-space {
+            position: relative;
+            width: 90vmin;
+            height: 90vmin;
+            max-width: 600px;
+            max-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        /* Approach zone detection */
+        .approach-zone {
+            position: absolute;
+            inset: -100px;
+            pointer-events: none;
+        }
+
+        /* Nested door structure */
+        .door {
+            position: absolute;
+            background: linear-gradient(145deg, var(--amber-dark) 0%, #3d2810 100%);
+            border: 2px solid var(--amber-deep);
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.5s ease,
+                        opacity 0.5s ease;
+            transform-origin: left center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                inset -4px 0 12px rgba(0,0,0,0.3),
+                4px 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .door::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1px solid rgba(212, 160, 86, 0.15);
+            border-radius: 2px 2px 0 0;
+            pointer-events: none;
+        }
+
+        /* Approach-responsive aura */
+        .door::after {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 8px;
+            background: radial-gradient(ellipse at center, rgba(212, 160, 86, 0.08) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+
+        .door.approached::after {
+            opacity: 1;
+        }
+
+        .door.approached-slow::after {
+            background: radial-gradient(ellipse at center, rgba(74, 124, 89, 0.1) 0%, transparent 70%);
+            animation: welcomeGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes welcomeGlow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .door.approached-fast::after {
+            background: radial-gradient(ellipse at center, rgba(212, 160, 86, 0.15) 0%, transparent 60%);
+        }
+
+        .door.edge-approach {
+            transform: perspective(800px) rotateY(-5deg);
+        }
+
+        .door-knob {
+            position: absolute;
+            right: 12%;
+            top: 50%;
+            width: 8%;
+            height: 4%;
+            background: radial-gradient(circle, var(--amber-glow) 0%, var(--amber) 100%);
+            border-radius: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .door:hover .door-knob {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 0 15px rgba(212, 160, 86, 0.5);
+        }
+
+        .door.open {
+            transform: perspective(800px) rotateY(-75deg);
+            box-shadow:
+                inset -4px 0 12px rgba(0,0,0,0.3),
+                15px 4px 30px rgba(0,0,0,0.4);
+        }
+
+        .door.open .door-knob {
+            opacity: 0.3;
+        }
+
+        /* Door sizes - recursion within recursion */
+        .door-0 { width: 280px; height: 380px; }
+        .door-1 { width: 200px; height: 280px; }
+        .door-2 { width: 140px; height: 200px; }
+        .door-3 { width: 95px; height: 140px; }
+        .door-4 { width: 60px; height: 95px; }
+        .door-5 { width: 35px; height: 60px; }
+
+        /* Contents revealed behind doors */
+        .door-content {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 1s ease 0.3s;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .door.open + .door-content,
+        .door.open ~ .door-content {
+            opacity: 1;
+        }
+
+        /* Garden content - verdant interiors */
+        .garden {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(74, 124, 89, 0.2) 0%,
+                rgba(134, 179, 152, 0.3) 50%,
+                rgba(74, 124, 89, 0.4) 100%
+            );
+        }
+
+        .garden.breathing {
+            animation: gardenBreath 6s ease-in-out infinite;
+        }
+
+        @keyframes gardenBreath {
+            0%, 100% {
+                background: linear-gradient(180deg,
+                    rgba(74, 124, 89, 0.2) 0%,
+                    rgba(134, 179, 152, 0.3) 50%,
+                    rgba(74, 124, 89, 0.4) 100%
+                );
+            }
+            50% {
+                background: linear-gradient(180deg,
+                    rgba(74, 124, 89, 0.25) 0%,
+                    rgba(134, 179, 152, 0.4) 50%,
+                    rgba(74, 124, 89, 0.35) 100%
+                );
+            }
+        }
+
+        .garden-plant {
+            position: absolute;
+            bottom: 0;
+            font-size: 1.5rem;
+            opacity: 0.7;
+            animation: sway 4s ease-in-out infinite;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .garden-plant.noticed {
+            opacity: 0.9;
+            transform: scale(1.1);
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+
+        .garden-vine {
+            position: absolute;
+            color: var(--green-deep);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            writing-mode: vertical-rl;
+            opacity: 0.5;
+            animation: grow 3s ease-out forwards;
+        }
+
+        @keyframes grow {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 100%; opacity: 0.5; }
+        }
+
+        /* Garden whispers */
+        .garden-whisper {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.5rem;
+            font-style: italic;
+            color: var(--green-deep);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        .garden.aware .garden-whisper {
+            animation: whisperFade 4s ease-in-out infinite;
+        }
+
+        @keyframes whisperFade {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Memory world content */
+        .memory-world {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at center,
+                rgba(232, 184, 109, 0.1) 0%,
+                rgba(45, 42, 36, 0.3) 100%
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .memory-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0.6;
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        /* Scurrying letters with personality */
+        .letter {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition:
+                left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+                top 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+                opacity 1.5s ease,
+                transform 0.5s ease;
+        }
+
+        .letter.visible {
+            opacity: 0.4;
+        }
+
+        .letter.scurrying {
+            transition:
+                left 0.3s cubic-bezier(0.8, 0, 1, 1),
+                top 0.3s cubic-bezier(0.8, 0, 1, 1),
+                opacity 0.3s ease;
+        }
+
+        .letter.hiding {
+            opacity: 0.15;
+            font-size: 0.6rem;
+        }
+
+        /* Letter personalities */
+        .letter.brave {
+            transition-duration: 0.5s !important;
+            opacity: 0.5;
+        }
+
+        .letter.brave.scurrying {
+            transition-duration: 0.4s !important;
+        }
+
+        .letter.shy {
+            transition-duration: 1.2s !important;
+            opacity: 0.25;
+        }
+
+        .letter.shy.scurrying {
+            transition-duration: 0.15s !important;
+        }
+
+        .letter.curious {
+            animation: letterWobble 3s ease-in-out infinite;
+        }
+
+        @keyframes letterWobble {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+
+        .letter.dreamy {
+            animation: letterFloat 5s ease-in-out infinite;
+        }
+
+        @keyframes letterFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .letter.meeting {
+            opacity: 0.6 !important;
+            animation: letterPulse 0.5s ease-in-out;
+        }
+
+        @keyframes letterPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Margin words formed by meeting letters */
+        .margin-word {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.65rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+            z-index: 51;
+        }
+
+        .margin-word.visible {
+            opacity: 0.4;
+        }
+
+        /* Elements that bloom when forgotten */
+        .bloom {
+            position: fixed;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+            transition: opacity 3s ease, transform 3s ease;
+            transform: scale(0.8);
+        }
+
+        .bloom.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .bloom-flower {
+            font-size: 1.5rem;
+            filter: blur(0.5px);
+        }
+
+        .bloom-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Edge margins where letters hide */
+        .margin {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+            letter-spacing: 0.3em;
+        }
+
+        .margin.top { top: 1rem; left: 50%; transform: translateX(-50%); }
+        .margin.bottom { bottom: 1rem; left: 50%; transform: translateX(-50%); }
+        .margin.left { left: 1rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .margin.right { right: 1rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+        .margin.populated { opacity: 0.3; }
+
+        /* Pending rain indicator */
+        .pending {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            z-index: 100;
+        }
+
+        .pending.visible { opacity: 0.4; }
+
+        /* Depth indicator */
+        .depth-counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 100;
+        }
+
+        .depth-counter.visible { opacity: 0.4; }
+
+        /* Permission indicator - what a door really is */
+        .permission {
+            position: fixed;
+            top: 50%;
+            left: 2rem;
+            transform: translateY(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            writing-mode: vertical-rl;
+            z-index: 100;
+        }
+
+        .permission.visible { opacity: 0.3; }
+
+        /* Keyboard hint */
+        .hint {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 100;
+        }
+
+        body:hover .hint { opacity: 0.25; }
+
+        .hint kbd {
+            display: inline-block;
+            padding: 0.1rem 0.25rem;
+            border: 1px solid var(--slate-light);
+            border-radius: 2px;
+            margin-right: 0.25rem;
+        }
+
+        /* Secret found message */
+        .secret-found {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 200;
+            text-align: center;
+            transition: opacity 2s ease;
+        }
+
+        .secret-found.visible { opacity: 0.7; }
+
+        /* Sound visualization - the shape of almost-open */
+        .sound-ripple {
+            position: fixed;
+            border: 1px solid rgba(212, 160, 86, 0.2);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+            animation: rippleExpand 2s ease-out forwards;
+        }
+
+        @keyframes rippleExpand {
+            0% {
+                width: 20px;
+                height: 20px;
+                opacity: 0.4;
+                margin-left: -10px;
+                margin-top: -10px;
+            }
+            100% {
+                width: 100px;
+                height: 100px;
+                opacity: 0;
+                margin-left: -50px;
+                margin-top: -50px;
+            }
+        }
+
+        /* Air whisper - the breath of doors */
+        .air-whisper {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 7;
+            animation: airDrift 4s ease-out forwards;
+        }
+
+        @keyframes airDrift {
+            0% { opacity: 0; transform: translateY(0) translateX(0); }
+            20% { opacity: 0.3; }
+            100% { opacity: 0; transform: translateY(-30px) translateX(20px); }
+        }
+
+        /* Creak visualization */
+        .creak-line {
+            position: fixed;
+            width: 30px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212, 160, 86, 0.3), transparent);
+            pointer-events: none;
+            z-index: 6;
+            animation: creakWave 0.8s ease-out forwards;
+        }
+
+        @keyframes creakWave {
+            0% { transform: scaleX(0); opacity: 0; }
+            30% { transform: scaleX(1); opacity: 0.5; }
+            100% { transform: scaleX(1.5); opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            .door-0 { width: 220px; height: 300px; }
+            .door-1 { width: 155px; height: 220px; }
+            .door-2 { width: 105px; height: 155px; }
+            .door-3 { width: 70px; height: 105px; }
+            .door-4 { width: 45px; height: 70px; }
+            .door-5 { width: 25px; height: 45px; }
+            .letter { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="atmosphere"></div>
+    <div class="static-charge"></div>
+    <div class="grain"></div>
+
+    <!-- Threshold field - abstract doorness -->
+    <div class="threshold-field" id="thresholdField">
+        <div class="threshold-line"></div>
+    </div>
+
+    <!-- Margins where letters hide -->
+    <div class="margin top" id="marginTop"></div>
+    <div class="margin bottom" id="marginBottom"></div>
+    <div class="margin left" id="marginLeft"></div>
+    <div class="margin right" id="marginRight"></div>
+
+    <!-- Pending rain message -->
+    <div class="pending" id="pending">the air holds its breath</div>
+
+    <!-- Permission indicator -->
+    <div class="permission" id="permission">permission granted</div>
+
+    <!-- Depth counter -->
+    <div class="depth-counter" id="depthCounter">depth: 0</div>
+
+    <!-- Secret message -->
+    <div class="secret-found" id="secretFound">
+        recursion is its own reward<br>
+        <span style="font-size: 0.7rem; opacity: 0.6;">the innermost door opens inward</span>
+    </div>
+
+    <!-- Door space -->
+    <div class="door-space" id="doorSpace"></div>
+
+    <!-- Keyboard hint -->
+    <div class="hint">
+        <kbd>r</kbd> reset <kbd>space</kbd> open all
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // Door and content data
+        const DOOR_CONTENTS = [
+            { type: 'garden', plants: ['⌇', '჌', '߹', '⌇'], whispers: ['here', 'now', 'always'] },
+            { type: 'memory', text: 'you have been here before' },
+            { type: 'garden', plants: ['⌘', '⌬', '⌭', '⍟'], whispers: ['grow', 'reach', 'become'] },
+            { type: 'memory', text: 'the door remembers' },
+            { type: 'garden', plants: ['◌', '○', '◎', '◉'], whispers: ['breathe', 'wait', 'open'] },
+            { type: 'final', text: 'within within within' }
+        ];
+
+        const LETTERS_TEXT = 'the doors remember those who enter quietly';
+        const LETTER_PERSONALITIES = ['brave', 'shy', 'curious', 'dreamy', 'shy', 'brave', 'curious', 'dreamy'];
+        const MARGIN_WORDS = ['through', 'enter', 'pass', 'become', 'open', 'here', 'now', 'always'];
+
+        const BLOOM_TEXTS = [
+            'attention makes them shy',
+            'seen only sideways',
+            'patience blooms',
+            'the forgotten flourish',
+            'doors dream of being walked through'
+        ];
+
+        const MEMORIES = [
+            'a room you once knew',
+            'light through dust',
+            'the shape of waiting',
+            'before the rain',
+            'gardens that forgot',
+            'threshold upon threshold',
+            'permission without asking',
+            'the space between in and out'
+        ];
+
+        const AIR_WHISPERS = ['creak', 'sigh', 'hush', 'wait', 'through', 'almost'];
+
+        // State
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let lastMouseX = mouseX;
+        let lastMouseY = mouseY;
+        let lastMouseMove = Date.now();
+        let mouseVelocity = 0;
+        let approachAngle = 'center';
+        let isStill = false;
+        let openDoors = new Set();
+        let letters = [];
+        let blooms = [];
+        let doorShadows = [];
+        let throughEchoes = [];
+        let stillnessTimer = null;
+        let deepStillnessTimer = null;
+        let gardenAwarenessTimer = null;
+
+        const doorSpace = document.getElementById('doorSpace');
+        const pending = document.getElementById('pending');
+        const permission = document.getElementById('permission');
+        const depthCounter = document.getElementById('depthCounter');
+        const secretFound = document.getElementById('secretFound');
+        const thresholdField = document.getElementById('thresholdField');
+        const margins = {
+            top: document.getElementById('marginTop'),
+            bottom: document.getElementById('marginBottom'),
+            left: document.getElementById('marginLeft'),
+            right: document.getElementById('marginRight')
+        };
+
+        // Create shadow doors - echoes of doors that were here before
+        function createDoorShadows() {
+            const shadowConfigs = [
+                { x: -30, y: -20, scale: 1.05, opacity: 0.02 },
+                { x: 15, y: 10, scale: 0.98, opacity: 0.015 },
+                { x: -10, y: 25, scale: 1.02, opacity: 0.02 },
+            ];
+
+            shadowConfigs.forEach((config, i) => {
+                const shadow = document.createElement('div');
+                shadow.className = 'door-shadow ancient';
+                shadow.style.cssText = `
+                    width: ${280 * config.scale}px;
+                    height: ${380 * config.scale}px;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(calc(-50% + ${config.x}px), calc(-50% + ${config.y}px));
+                    opacity: ${config.opacity};
+                    animation-delay: ${i * 2}s;
+                `;
+                document.body.appendChild(shadow);
+                doorShadows.push(shadow);
+            });
+        }
+
+        // Create "through" echoes - the path of passage
+        function createThroughEchoes() {
+            for (let i = 0; i < 5; i++) {
+                const echo = document.createElement('div');
+                echo.className = 'through-echo';
+                echo.style.cssText = `
+                    left: ${20 + Math.random() * 60}%;
+                    top: ${20 + Math.random() * 60}%;
+                `;
+                document.body.appendChild(echo);
+                throughEchoes.push(echo);
+            }
+        }
+
+        // Create nested doors
+        function createDoors() {
+            doorSpace.innerHTML = '';
+
+            for (let i = 0; i < 6; i++) {
+                // Door
+                const door = document.createElement('div');
+                door.className = `door door-${i}`;
+                door.dataset.level = i;
+                door.innerHTML = '<div class="door-knob"></div>';
+
+                door.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleDoor(i);
+                });
+
+                door.addEventListener('mouseenter', () => {
+                    createSoundRipple(door);
+                });
+
+                doorSpace.appendChild(door);
+
+                // Content behind door
+                const content = document.createElement('div');
+                content.className = `door-content door-content-${i}`;
+                content.style.width = door.style.width;
+                content.style.height = door.style.height;
+
+                const data = DOOR_CONTENTS[i];
+                if (data.type === 'garden') {
+                    content.innerHTML = createGarden(data.plants, data.whispers, i);
+                } else if (data.type === 'memory') {
+                    content.innerHTML = `
+                        <div class="memory-world">
+                            <div class="memory-text">${data.text}</div>
+                        </div>`;
+                } else if (data.type === 'final') {
+                    content.innerHTML = `
+                        <div class="memory-world" style="background: radial-gradient(circle, rgba(212,160,86,0.2) 0%, rgba(45,42,36,0.5) 100%);">
+                            <div class="memory-text" style="color: var(--amber-glow);">${data.text}</div>
+                        </div>`;
+                }
+
+                doorSpace.appendChild(content);
+            }
+        }
+
+        function createGarden(plants, whispers, index) {
+            let html = `<div class="garden breathing" data-garden="${index}">`;
+
+            // Random plants
+            for (let i = 0; i < 5; i++) {
+                const plant = plants[Math.floor(Math.random() * plants.length)];
+                const left = 10 + Math.random() * 80;
+                const delay = Math.random() * 2;
+                html += `<div class="garden-plant" style="left: ${left}%; animation-delay: ${delay}s;" data-plant="${i}">${plant}</div>`;
+            }
+
+            // Vines with text
+            const vineTexts = ['grow', 'rise', 'reach', 'bloom'];
+            for (let i = 0; i < 3; i++) {
+                const left = 5 + i * 35 + Math.random() * 20;
+                const text = vineTexts[Math.floor(Math.random() * vineTexts.length)];
+                html += `<div class="garden-vine" style="left: ${left}%; top: 20%;">${text.split('').join('<br>')}</div>`;
+            }
+
+            // Garden whispers
+            whispers.forEach((whisper, i) => {
+                const left = 20 + i * 30;
+                const top = 30 + Math.random() * 40;
+                html += `<div class="garden-whisper" style="left: ${left}%; top: ${top}%; animation-delay: ${i * 1.5}s;">${whisper}</div>`;
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        function createSoundRipple(door) {
+            const rect = door.getBoundingClientRect();
+            const ripple = document.createElement('div');
+            ripple.className = 'sound-ripple';
+            ripple.style.left = (rect.left + rect.width * 0.88) + 'px';
+            ripple.style.top = (rect.top + rect.height * 0.5) + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 2000);
+        }
+
+        function createCreakEffect(door) {
+            const rect = door.getBoundingClientRect();
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const creak = document.createElement('div');
+                    creak.className = 'creak-line';
+                    creak.style.left = (rect.left - 20) + 'px';
+                    creak.style.top = (rect.top + 20 + i * 30) + 'px';
+                    document.body.appendChild(creak);
+                    setTimeout(() => creak.remove(), 800);
+                }, i * 100);
+            }
+        }
+
+        function createAirWhisper(door) {
+            const rect = door.getBoundingClientRect();
+            const whisper = document.createElement('div');
+            whisper.className = 'air-whisper';
+            whisper.textContent = AIR_WHISPERS[Math.floor(Math.random() * AIR_WHISPERS.length)];
+            whisper.style.left = (rect.left + rect.width / 2) + 'px';
+            whisper.style.top = (rect.top + rect.height / 2) + 'px';
+            document.body.appendChild(whisper);
+            setTimeout(() => whisper.remove(), 4000);
+        }
+
+        function toggleDoor(level) {
+            const door = document.querySelector(`.door-${level}`);
+            if (!door) return;
+
+            if (openDoors.has(level)) {
+                // Close this door and all doors after it
+                for (let i = level; i < 6; i++) {
+                    const d = document.querySelector(`.door-${i}`);
+                    if (d) {
+                        d.classList.remove('open');
+                        openDoors.delete(i);
+                    }
+                }
+            } else {
+                // Open all doors up to and including this one
+                for (let i = 0; i <= level; i++) {
+                    const d = document.querySelector(`.door-${i}`);
+                    if (d && !openDoors.has(i)) {
+                        setTimeout(() => {
+                            d.classList.add('open');
+                            openDoors.add(i);
+                            createCreakEffect(d);
+                            createAirWhisper(d);
+
+                            // Make gardens aware when door opens
+                            const garden = document.querySelector(`.door-content-${i} .garden`);
+                            if (garden) {
+                                garden.classList.add('aware');
+                            }
+                        }, (i - Math.min(...Array.from(openDoors).concat([level]))) * 150);
+                    }
+                }
+            }
+
+            updateDepthCounter();
+            checkSecret();
+            updatePermission();
+        }
+
+        function updateDepthCounter() {
+            const depth = openDoors.size;
+            depthCounter.textContent = `depth: ${depth}`;
+            depthCounter.classList.toggle('visible', depth > 0);
+        }
+
+        function updatePermission() {
+            const messages = [
+                'permission granted',
+                'you may pass',
+                'the way is open',
+                'enter freely',
+                'threshold crossed',
+                'within within'
+            ];
+            permission.textContent = messages[Math.min(openDoors.size, messages.length - 1)];
+            permission.classList.toggle('visible', openDoors.size > 0);
+        }
+
+        function checkSecret() {
+            if (openDoors.size === 6) {
+                setTimeout(() => {
+                    secretFound.classList.add('visible');
+                    thresholdField.style.opacity = '1';
+                    setTimeout(() => {
+                        secretFound.classList.remove('visible');
+                        thresholdField.style.opacity = '0';
+                    }, 5000);
+                }, 1000);
+            }
+        }
+
+        // Scurrying letters with personality
+        function createLetters() {
+            const chars = LETTERS_TEXT.split('');
+            let charIndex = 0;
+
+            chars.forEach((char, i) => {
+                if (char === ' ') return;
+
+                const letter = document.createElement('div');
+                letter.className = 'letter';
+                letter.textContent = char;
+                letter.dataset.index = i;
+
+                // Assign personality
+                const personality = LETTER_PERSONALITIES[charIndex % LETTER_PERSONALITIES.length];
+                letter.classList.add(personality);
+                letter.dataset.personality = personality;
+                charIndex++;
+
+                // Initial positions - scattered around center
+                const angle = (i / chars.length) * Math.PI * 2;
+                const radius = 150 + Math.random() * 100;
+                letter.dataset.homeX = window.innerWidth / 2 + Math.cos(angle) * radius;
+                letter.dataset.homeY = window.innerHeight / 2 + Math.sin(angle) * radius;
+                letter.style.left = letter.dataset.homeX + 'px';
+                letter.style.top = letter.dataset.homeY + 'px';
+
+                document.body.appendChild(letter);
+                letters.push(letter);
+
+                // Fade in gradually
+                setTimeout(() => letter.classList.add('visible'), 2000 + i * 100);
+            });
+        }
+
+        function updateLetters() {
+            // Threshold based on approach speed
+            const threshold = mouseVelocity > 10 ? 200 : mouseVelocity > 5 ? 150 : 120;
+            const hiddenLetters = { top: [], bottom: [], left: [], right: [] };
+            const marginPositions = { top: [], bottom: [], left: [], right: [] };
+
+            letters.forEach(letter => {
+                const homeX = parseFloat(letter.dataset.homeX);
+                const homeY = parseFloat(letter.dataset.homeY);
+                const dx = mouseX - homeX;
+                const dy = mouseY - homeY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const personality = letter.dataset.personality;
+
+                // Personality affects behavior
+                let personalThreshold = threshold;
+                if (personality === 'brave') personalThreshold *= 0.7;
+                if (personality === 'shy') personalThreshold *= 1.5;
+
+                if (dist < personalThreshold) {
+                    // Scurry away to nearest margin
+                    letter.classList.add('scurrying');
+
+                    const toLeft = homeX;
+                    const toRight = window.innerWidth - homeX;
+                    const toTop = homeY;
+                    const toBottom = window.innerHeight - homeY;
+
+                    const min = Math.min(toLeft, toRight, toTop, toBottom);
+                    let targetX, targetY, margin;
+
+                    // Shy letters go further
+                    const extraDistance = personality === 'shy' ? 30 : 0;
+
+                    if (min === toLeft) {
+                        targetX = 20 - extraDistance;
+                        targetY = homeY + (Math.random() - 0.5) * 100;
+                        margin = 'left';
+                    } else if (min === toRight) {
+                        targetX = window.innerWidth - 20 + extraDistance;
+                        targetY = homeY + (Math.random() - 0.5) * 100;
+                        margin = 'right';
+                    } else if (min === toTop) {
+                        targetX = homeX + (Math.random() - 0.5) * 100;
+                        targetY = 20 - extraDistance;
+                        margin = 'top';
+                    } else {
+                        targetX = homeX + (Math.random() - 0.5) * 100;
+                        targetY = window.innerHeight - 20 + extraDistance;
+                        margin = 'bottom';
+                    }
+
+                    letter.style.left = targetX + 'px';
+                    letter.style.top = targetY + 'px';
+                    letter.classList.add('hiding');
+                    hiddenLetters[margin].push({ char: letter.textContent, x: targetX, y: targetY });
+                    marginPositions[margin].push(letter);
+                } else {
+                    // Return home slowly - curious letters take longer
+                    letter.classList.remove('scurrying');
+                    letter.classList.remove('hiding');
+                    letter.style.left = homeX + 'px';
+                    letter.style.top = homeY + 'px';
+                }
+            });
+
+            // Update margins with hidden letters
+            Object.keys(margins).forEach(key => {
+                const text = hiddenLetters[key].map(l => l.char).join(' ');
+                margins[key].textContent = text;
+                margins[key].classList.toggle('populated', text.length > 0);
+            });
+
+            // Check for letter meetings that form words
+            checkLetterMeetings(marginPositions);
+        }
+
+        function checkLetterMeetings(marginPositions) {
+            // Remove old margin words
+            document.querySelectorAll('.margin-word').forEach(w => w.remove());
+
+            Object.keys(marginPositions).forEach(margin => {
+                const letters = marginPositions[margin];
+                if (letters.length >= 3) {
+                    // Check if letters can form a word
+                    const chars = letters.map(l => l.textContent.toLowerCase()).join('');
+
+                    MARGIN_WORDS.forEach(word => {
+                        // Check if these letters could spell the word (simplified check)
+                        let found = true;
+                        for (let char of word) {
+                            if (!chars.includes(char)) {
+                                found = false;
+                                break;
+                            }
+                        }
+
+                        if (found && Math.random() > 0.7) {
+                            // Letters meet and form a word
+                            letters.forEach(l => l.classList.add('meeting'));
+                            setTimeout(() => letters.forEach(l => l.classList.remove('meeting')), 500);
+
+                            // Show the formed word
+                            const wordEl = document.createElement('div');
+                            wordEl.className = 'margin-word visible';
+                            wordEl.textContent = word;
+
+                            if (margin === 'top') {
+                                wordEl.style.top = '2.5rem';
+                                wordEl.style.left = '50%';
+                                wordEl.style.transform = 'translateX(-50%)';
+                            } else if (margin === 'bottom') {
+                                wordEl.style.bottom = '2.5rem';
+                                wordEl.style.left = '50%';
+                                wordEl.style.transform = 'translateX(-50%)';
+                            } else if (margin === 'left') {
+                                wordEl.style.left = '2.5rem';
+                                wordEl.style.top = '50%';
+                                wordEl.style.transform = 'translateY(-50%)';
+                            } else {
+                                wordEl.style.right = '2.5rem';
+                                wordEl.style.top = '50%';
+                                wordEl.style.transform = 'translateY(-50%)';
+                            }
+
+                            document.body.appendChild(wordEl);
+                            setTimeout(() => wordEl.classList.remove('visible'), 3000);
+                            setTimeout(() => wordEl.remove(), 5000);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Blooms that appear when forgotten
+        function createBlooms() {
+            for (let i = 0; i < 8; i++) {
+                const bloom = document.createElement('div');
+                bloom.className = 'bloom';
+
+                const isFlower = Math.random() > 0.4;
+                if (isFlower) {
+                    bloom.innerHTML = `<div class="bloom-flower">${['✿', '❀', '✾', '❁', '◌', '◦'][Math.floor(Math.random() * 6)]}</div>`;
+                } else {
+                    bloom.innerHTML = `<div class="bloom-text">${BLOOM_TEXTS[Math.floor(Math.random() * BLOOM_TEXTS.length)]}</div>`;
+                }
+
+                // Position away from center
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 250 + Math.random() * 150;
+                bloom.style.left = (window.innerWidth / 2 + Math.cos(angle) * radius) + 'px';
+                bloom.style.top = (window.innerHeight / 2 + Math.sin(angle) * radius) + 'px';
+
+                document.body.appendChild(bloom);
+                blooms.push(bloom);
+            }
+        }
+
+        function checkBlooms() {
+            blooms.forEach(bloom => {
+                const rect = bloom.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const dx = mouseX - centerX;
+                const dy = mouseY - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Bloom when mouse is far away (attention elsewhere)
+                if (dist > 300) {
+                    bloom.classList.add('visible');
+                } else {
+                    bloom.classList.remove('visible');
+                }
+            });
+        }
+
+        // Approach detection
+        function updateApproach() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const dx = mouseX - centerX;
+            const dy = mouseY - centerY;
+
+            // Calculate approach angle
+            const angle = Math.atan2(dy, dx);
+            const normalizedAngle = ((angle + Math.PI) / (Math.PI * 2)) * 360;
+
+            // Determine approach type
+            const distToCenter = Math.sqrt(dx * dx + dy * dy);
+
+            if (distToCenter < 300) {
+                const isEdge = Math.abs(dx) > 100;
+                const isSlow = mouseVelocity < 3;
+                const isFast = mouseVelocity > 15;
+
+                document.querySelectorAll('.door').forEach(door => {
+                    door.classList.remove('approached', 'approached-slow', 'approached-fast', 'edge-approach');
+
+                    if (distToCenter < 200) {
+                        door.classList.add('approached');
+                        if (isSlow) door.classList.add('approached-slow');
+                        if (isFast) door.classList.add('approached-fast');
+                        if (isEdge) door.classList.add('edge-approach');
+                    }
+                });
+            } else {
+                document.querySelectorAll('.door').forEach(door => {
+                    door.classList.remove('approached', 'approached-slow', 'approached-fast', 'edge-approach');
+                });
+            }
+        }
+
+        // Through echoes respond to door openings
+        function updateThroughEchoes() {
+            throughEchoes.forEach((echo, i) => {
+                if (openDoors.has(i) || openDoors.size > 3) {
+                    echo.classList.add('visible');
+                } else {
+                    echo.classList.remove('visible');
+                }
+            });
+        }
+
+        // Garden awareness - respond to presence
+        function updateGardenAwareness() {
+            const gardens = document.querySelectorAll('.garden');
+            gardens.forEach(garden => {
+                if (!garden.classList.contains('aware')) return;
+
+                const rect = garden.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const dx = mouseX - centerX;
+                const dy = mouseY - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Plants notice nearby presence
+                const plants = garden.querySelectorAll('.garden-plant');
+                plants.forEach(plant => {
+                    if (dist < 200) {
+                        plant.classList.add('noticed');
+                    } else {
+                        plant.classList.remove('noticed');
+                    }
+                });
+            });
+        }
+
+        // Stillness rewards
+        function onStillness() {
+            pending.classList.add('visible');
+            isStill = true;
+
+            // Show through echoes during stillness
+            throughEchoes.forEach(echo => echo.classList.add('visible'));
+        }
+
+        function onDeepStillness() {
+            // More blooms appear
+            blooms.forEach(bloom => bloom.classList.add('visible'));
+
+            // Letters slowly drift back to form words
+            const message = document.createElement('div');
+            message.style.cssText = `
+                position: fixed;
+                bottom: 20%;
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.9rem;
+                font-style: italic;
+                color: var(--slate);
+                opacity: 0;
+                transition: opacity 3s ease;
+                z-index: 100;
+            `;
+            message.textContent = MEMORIES[Math.floor(Math.random() * MEMORIES.length)];
+            document.body.appendChild(message);
+
+            setTimeout(() => message.style.opacity = '0.5', 100);
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 3000);
+            }, 6000);
+
+            // Threshold field becomes visible during deep stillness
+            thresholdField.style.opacity = '0.5';
+        }
+
+        function resetStillness() {
+            clearTimeout(stillnessTimer);
+            clearTimeout(deepStillnessTimer);
+            pending.classList.remove('visible');
+            isStill = false;
+
+            // Hide through echoes when moving
+            if (openDoors.size < 4) {
+                throughEchoes.forEach(echo => echo.classList.remove('visible'));
+            }
+
+            // Hide threshold field
+            if (openDoors.size < 6) {
+                thresholdField.style.opacity = '0';
+            }
+
+            stillnessTimer = setTimeout(onStillness, 5000);
+            deepStillnessTimer = setTimeout(onDeepStillness, 12000);
+        }
+
+        // Mouse tracking with velocity
+        let moveThrottle = false;
+        document.addEventListener('mousemove', (e) => {
+            if (moveThrottle) return;
+            moveThrottle = true;
+
+            const newX = e.clientX;
+            const newY = e.clientY;
+
+            // Calculate velocity
+            const dx = newX - mouseX;
+            const dy = newY - mouseY;
+            mouseVelocity = Math.sqrt(dx * dx + dy * dy);
+
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+            mouseX = newX;
+            mouseY = newY;
+            lastMouseMove = Date.now();
+
+            updateLetters();
+            checkBlooms();
+            updateApproach();
+            updateGardenAwareness();
+            resetStillness();
+
+            setTimeout(() => moveThrottle = false, 50);
+        }, { passive: true });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            resetStillness();
+
+            if (e.key === 'r' || e.key === 'R') {
+                // Reset all doors
+                openDoors.clear();
+                document.querySelectorAll('.door').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.garden').forEach(g => g.classList.remove('aware'));
+                updateDepthCounter();
+                updatePermission();
+                updateThroughEchoes();
+            }
+
+            if (e.key === ' ') {
+                e.preventDefault();
+                // Open all doors sequentially
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => {
+                        const door = document.querySelector(`.door-${i}`);
+                        if (door) {
+                            door.classList.add('open');
+                            openDoors.add(i);
+                            createCreakEffect(door);
+                            createAirWhisper(door);
+
+                            const garden = document.querySelector(`.door-content-${i} .garden`);
+                            if (garden) garden.classList.add('aware');
+
+                            updateDepthCounter();
+                            updatePermission();
+                            updateThroughEchoes();
+                            if (i === 5) checkSecret();
+                        }
+                    }, i * 300);
+                }
+            }
+
+            // Secret: arrow key sequence for deeper secret
+            handleArrowSequence(e.key);
+        });
+
+        // Arrow key secret
+        let arrowSequence = [];
+        const SECRET_SEQUENCE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown'];
+
+        function handleArrowSequence(key) {
+            if (key.startsWith('Arrow')) {
+                arrowSequence.push(key);
+                if (arrowSequence.length > 4) arrowSequence.shift();
+
+                if (arrowSequence.join(',') === SECRET_SEQUENCE.join(',')) {
+                    showDeepSecret();
+                    arrowSequence = [];
+                }
+            }
+        }
+
+        function showDeepSecret() {
+            const deep = document.createElement('div');
+            deep.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: rgba(45, 42, 36, 0.95);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 500;
+                opacity: 0;
+                transition: opacity 2s ease;
+            `;
+            deep.innerHTML = `
+                <div style="text-align: center; color: var(--amber); font-family: 'Cormorant Garamond', serif;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.8;">⟦ ⟧</div>
+                    <div style="font-size: 1.1rem; font-style: italic; opacity: 0.6; line-height: 2;">
+                        what is a door?<br><br>
+                        <span style="opacity: 0.5;">a permission</span><br>
+                        <span style="opacity: 0.4;">a transition</span><br>
+                        <span style="opacity: 0.3;">a frame for what's next</span><br><br>
+                        <span style="opacity: 0.5; font-size: 0.9rem;">the threshold is not crossed<br>the threshold is become</span>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(deep);
+
+            setTimeout(() => deep.style.opacity = '1', 100);
+
+            deep.addEventListener('click', () => {
+                deep.style.opacity = '0';
+                setTimeout(() => deep.remove(), 2000);
+            });
+        }
+
+        // Right-click whisper
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            const whispers = [
+                'another door, always',
+                'gardens grow in forgetting',
+                'the letters know you',
+                'rain is coming',
+                'permission without asking',
+                'the space between in and out',
+                'doorness without door shapes',
+                'the concept of through'
+            ];
+
+            const whisper = document.createElement('div');
+            whisper.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.8rem;
+                font-style: italic;
+                color: var(--amber);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 0.8s ease, transform 2s ease;
+                z-index: 1000;
+            `;
+            whisper.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.7';
+                whisper.style.transform = 'translate(-50%, -50%) translateY(-15px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 800);
+            }, 2000);
+        });
+
+        // Initialize
+        createDoorShadows();
+        createThroughEchoes();
+        createDoors();
+        createLetters();
+        createBlooms();
+        resetStillness();
+
+        // Console poetry
+        console.log('%cdoors', 'font-size: 20px; color: #d4a056; font-family: Georgia, serif; font-weight: 100; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 0;');
+        console.log('%cwhat is a door?', 'font-size: 11px; color: #718096; font-style: italic;');
+        console.log('%c', 'padding: 0;');
+        console.log('%ca permission.', 'font-size: 10px; color: #4a5568;');
+        console.log('%ca transition.', 'font-size: 10px; color: #4a5568;');
+        console.log('%ca frame for what\'s next.', 'font-size: 10px; color: #4a5568;');
+        console.log('%c', 'padding: 0;');
+        console.log('%cwithin doors within doors', 'font-size: 10px; color: #4a5568; font-style: italic;');
+        console.log('%c', 'padding: 0;');
+        console.log('%cthe letters watch from the margins', 'font-size: 9px; color: #718096;');
+        console.log('%csome are brave. some are shy.', 'font-size: 9px; color: #718096;');
+        console.log('%cwhen they meet, they form words.', 'font-size: 9px; color: #718096;');
+        console.log('%c', 'padding: 0;');
+        console.log('%cthings bloom only when forgotten', 'font-size: 9px; color: #718096;');
+        console.log('%cgardens whisper to those who linger', 'font-size: 9px; color: #718096;');
+        console.log('%c', 'padding: 0;');
+        console.log('%capproach slowly for welcome', 'font-size: 8px; color: #a0aec0;');
+        console.log('%capproach quickly for anticipation', 'font-size: 8px; color: #a0aec0;');
+        console.log('%capproach from the edge for perspective', 'font-size: 8px; color: #a0aec0;');
+        console.log('%c', 'padding: 0;');
+        console.log('%c[up up down down] for deeper truth', 'font-size: 8px; font-family: monospace; color: #a0aec0;');
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            // Update letter home positions
+            letters.forEach((letter, i) => {
+                const angle = (i / letters.length) * Math.PI * 2;
+                const radius = 150 + Math.random() * 100;
+                letter.dataset.homeX = window.innerWidth / 2 + Math.cos(angle) * radius;
+                letter.dataset.homeY = window.innerHeight / 2 + Math.sin(angle) * radius;
+            });
+        });
+
+    })();
+    </script>
+</body>
+</html>

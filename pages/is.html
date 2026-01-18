@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>is - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            --breath-duration: 8s;
+            --breath-scale: 1.015;
+            --presence-opacity: 0.25;
+        }
+
+        body {
+            background: var(--cream);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* The page breathes - slow, organic, alive */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.02) 100%);
+            animation: ambient-breath var(--breath-duration) ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Secondary breath layer - offset rhythm */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 30% 70%, rgba(212, 160, 86, 0.015) 0%, transparent 50%);
+            animation: ambient-breath-offset calc(var(--breath-duration) * 1.3) ease-in-out infinite;
+            animation-delay: calc(var(--breath-duration) * -0.5);
+            pointer-events: none;
+        }
+
+        @keyframes ambient-breath {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.02); }
+        }
+
+        @keyframes ambient-breath-offset {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Temporal states */
+        body.past {
+            filter: sepia(0.25) brightness(0.93);
+            --breath-duration: 12s; /* Memory breathes slower */
+            --presence-opacity: 0.2;
+        }
+
+        body.future {
+            filter: brightness(1.12) saturate(0.88) hue-rotate(3deg);
+            --breath-duration: 5s; /* Anticipation breathes faster */
+            --presence-opacity: 0.18;
+        }
+
+        body.all {
+            filter: blur(1px) brightness(1.03);
+            --breath-duration: 6s;
+        }
+
+        body.eternal {
+            filter: contrast(0.92) brightness(1.08);
+            --breath-duration: 10s;
+            --breath-scale: 1.02;
+        }
+
+        /* Deep stillness state */
+        body.deep-still {
+            --breath-duration: 15s;
+            --presence-opacity: 0.35;
+        }
+
+        body.deep-still::before {
+            background: radial-gradient(ellipse at center, rgba(212, 160, 86, 0.03) 0%, transparent 60%);
+        }
+
+        /* The word itself */
+        .is {
+            font-size: clamp(4rem, 12vw, 8rem);
+            font-weight: 200;
+            letter-spacing: 0.2em;
+            color: var(--ink);
+            opacity: 0;
+            animation: isAppear 10s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            cursor: default;
+            user-select: none;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* "is" breathes too */
+        .is::after {
+            content: '';
+            position: absolute;
+            inset: -2rem;
+            background: radial-gradient(circle, rgba(45, 42, 36, 0.02) 0%, transparent 70%);
+            animation: word-breath calc(var(--breath-duration) * 0.8) ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes word-breath {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(var(--breath-scale)); opacity: 1; }
+        }
+
+        @keyframes isAppear {
+            0% { opacity: 0; transform: scale(0.97); letter-spacing: 0.3em; }
+            70% { opacity: 0; transform: scale(0.98); letter-spacing: 0.25em; }
+            100% { opacity: var(--presence-opacity); transform: scale(1); letter-spacing: 0.2em; }
+        }
+
+        .is:hover {
+            opacity: 0.4;
+            transition: opacity 3s ease;
+        }
+
+        /* Presence ripple - the echo of being */
+        .is-ripple {
+            position: fixed;
+            border: 1px solid var(--ink);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: ripple-out 4s cubic-bezier(0, 0.4, 0.4, 1) forwards;
+        }
+
+        @keyframes ripple-out {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.12;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                width: 250vmax;
+                height: 250vmax;
+                opacity: 0;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* The whisper - truth at the bottom */
+        .whisper {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-weight: 300;
+            font-style: italic;
+            letter-spacing: 0.35em;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 10s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .whisper.visible {
+            opacity: 0.22;
+        }
+
+        /* Tense words - temporal echoes */
+        .tense-word {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 200;
+            letter-spacing: 0.12em;
+            color: var(--ink);
+            opacity: 0;
+            pointer-events: none;
+            user-select: none;
+            transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .just {
+            font-size: clamp(1.2rem, 4vw, 2.8rem);
+            left: calc(50% - clamp(6rem, 16vw, 11rem));
+        }
+
+        .just.visible {
+            opacity: 0.1;
+        }
+
+        .was {
+            font-size: clamp(1.2rem, 4vw, 2.8rem);
+            left: calc(50% - clamp(10rem, 26vw, 18rem));
+            font-style: italic;
+        }
+
+        .will {
+            font-size: clamp(1.2rem, 4vw, 2.8rem);
+            left: calc(50% + clamp(4rem, 10vw, 8rem));
+        }
+
+        .was.visible, .will.visible {
+            opacity: 0.1;
+        }
+
+        .be {
+            font-size: clamp(1.2rem, 4vw, 2.8rem);
+            left: calc(50% + clamp(8rem, 20vw, 15rem));
+            transition-delay: 0.6s;
+        }
+
+        .be.visible {
+            opacity: 0.07;
+        }
+
+        /* The main word shifts with tense */
+        .is-main {
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .is-main.tense-was {
+            opacity: 0.15 !important;
+            transform: translateX(8px);
+            filter: blur(0.5px);
+        }
+
+        .is-main.tense-will {
+            opacity: 0.15 !important;
+            transform: translateX(-8px);
+            filter: blur(0.3px);
+        }
+
+        /* Ghost tenses - right-click contemplations */
+        .ghost-tense {
+            position: fixed;
+            font-size: 1.2rem;
+            font-weight: 200;
+            letter-spacing: 0.15em;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            animation: ghost-tense-fade 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes ghost-tense-fade {
+            0% { opacity: 0; transform: translateY(0) scale(0.98); }
+            8% { opacity: 0.2; transform: translateY(-5px) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.02); }
+        }
+
+        /* Key hints - appear only on hover, extremely subtle */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            font-weight: 300;
+            letter-spacing: 0.12em;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            text-align: right;
+            line-height: 2.2;
+        }
+
+        body:hover .key-hint {
+            opacity: 0.15;
+        }
+
+        body.still .key-hint {
+            opacity: 0;
+        }
+
+        /* Mantra - revealed after deep meditation */
+        .mantra {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.55rem;
+            font-weight: 300;
+            letter-spacing: 0.6em;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            text-transform: lowercase;
+            white-space: nowrap;
+            transition: opacity 12s ease;
+            z-index: 1;
+        }
+
+        .mantra.visible {
+            opacity: 0.08;
+        }
+
+        /* Cycle mantra - the eternal return */
+        .cycle-mantra {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.45rem;
+            font-weight: 300;
+            letter-spacing: 0.5em;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 8s ease;
+        }
+
+        .cycle-mantra.visible {
+            opacity: 0.06;
+        }
+
+        /* Being revealed - secret word trigger */
+        .being-revealed {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 200;
+            letter-spacing: 0.35em;
+            color: var(--ink);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 6s ease;
+        }
+
+        .being-revealed.visible {
+            opacity: 0.12;
+        }
+
+        /* Now pulse - intensification */
+        .now-pulse {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(212, 160, 86, 0.08) 0%, transparent 50%);
+            opacity: 0;
+            pointer-events: none;
+            animation: now-pulse-anim 2s ease-out forwards;
+        }
+
+        @keyframes now-pulse-anim {
+            0% { opacity: 0; transform: scale(0.8); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: scale(2); }
+        }
+
+        /* Stillness counter - presence tracker */
+        .stillness {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.38rem;
+            font-weight: 300;
+            letter-spacing: 0.12em;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        body.still .stillness {
+            opacity: 0.12;
+        }
+
+        /* Eternal word - triple-click reveal */
+        .eternal-word {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, calc(-50% - 4rem));
+            font-size: 0.9rem;
+            font-weight: 200;
+            letter-spacing: 0.6em;
+            color: var(--ink);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 4s ease;
+            text-transform: lowercase;
+        }
+
+        .eternal-word.visible {
+            opacity: 0.08;
+        }
+
+        /* Cursor fades to nothing in stillness */
+        body.still {
+            cursor: none;
+        }
+
+        body.still .is {
+            cursor: none;
+        }
+
+        /* Minimal dot cursor - presence without intrusion */
+        .dot-cursor {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--ink);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 2s ease, width 1s ease, height 1s ease;
+            z-index: 1000;
+        }
+
+        body.still .dot-cursor {
+            opacity: 0.25;
+            width: 2px;
+            height: 2px;
+        }
+
+        body.deep-still .dot-cursor {
+            opacity: 0.15;
+            width: 1px;
+            height: 1px;
+        }
+
+        body.very-deep-still .dot-cursor {
+            opacity: 0;
+        }
+
+        /* Sound toggle - hidden until discovered */
+        .sound-toggle {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            color: var(--slate);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 4s ease;
+            text-transform: uppercase;
+        }
+
+        body.sound-discovered .sound-toggle {
+            opacity: 0.1;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.2 !important;
+        }
+
+        /* Presence indicator - barely visible at edge */
+        .presence {
+            position: fixed;
+            top: 50%;
+            left: 1rem;
+            width: 2px;
+            height: 2px;
+            background: var(--amber);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translateY(-50%);
+            transition: opacity 8s ease, height 4s ease;
+        }
+
+        body.still .presence {
+            opacity: 0.2;
+            height: 8px;
+        }
+
+        body.deep-still .presence {
+            opacity: 0.3;
+            height: 20px;
+        }
+
+        body.very-deep-still .presence {
+            opacity: 0.4;
+            height: 40px;
+            animation: presence-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes presence-breathe {
+            0%, 100% { height: 40px; opacity: 0.4; }
+            50% { height: 50px; opacity: 0.5; }
+        }
+
+        /* The eternal present indicator */
+        .eternal-present {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 6s ease;
+            text-transform: uppercase;
+        }
+
+        body.very-deep-still .eternal-present {
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <span class="tense-word was" id="was">was</span>
+    <span class="tense-word just" id="just">just</span>
+    <span class="is is-main" id="isMain">is</span>
+    <span class="tense-word will" id="will">will</span>
+    <span class="tense-word be" id="be">be</span>
+
+    <p class="whisper" id="whisper">is just is</p>
+
+    <p class="mantra" id="mantra">being is becoming is being</p>
+    <p class="cycle-mantra" id="cycleMantra">was is will be was is will be</p>
+
+    <div class="eternal-word" id="eternal">always</div>
+
+    <div class="being-revealed" id="beingRevealed">to be is to become</div>
+
+    <div class="stillness" id="stillness"></div>
+    <div class="presence" id="presence"></div>
+    <div class="eternal-present" id="eternalPresent">now</div>
+
+    <div class="dot-cursor" id="dotCursor"></div>
+
+    <div class="sound-toggle" id="soundToggle">s - silence</div>
+
+    <div class="key-hint">
+        w &middot; was<br>
+        b &middot; will be<br>
+        j &middot; just<br>
+        space &middot; all at once
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const whisper = document.getElementById('whisper');
+        const just = document.getElementById('just');
+        const was = document.getElementById('was');
+        const will = document.getElementById('will');
+        const be = document.getElementById('be');
+        const isMain = document.getElementById('isMain');
+        const mantra = document.getElementById('mantra');
+        const cycleMantra = document.getElementById('cycleMantra');
+        const eternal = document.getElementById('eternal');
+        const beingRevealed = document.getElementById('beingRevealed');
+        const stillnessEl = document.getElementById('stillness');
+        const dotCursor = document.getElementById('dotCursor');
+        const soundToggle = document.getElementById('soundToggle');
+        const presence = document.getElementById('presence');
+        const eternalPresent = document.getElementById('eternalPresent');
+
+        let stillnessSeconds = 0;
+        let totalPresenceSeconds = 0;
+        let lastActivity = Date.now();
+        let typedKeys = '';
+        let soundEnabled = false;
+        let audioContext = null;
+
+        // Track mouse for minimal cursor
+        document.addEventListener('mousemove', (e) => {
+            dotCursor.style.left = e.clientX + 'px';
+            dotCursor.style.top = e.clientY + 'px';
+            lastActivity = Date.now();
+            document.body.classList.remove('still', 'deep-still', 'very-deep-still');
+        });
+
+        // Stillness tracker - rewards patience
+        setInterval(() => {
+            const now = Date.now();
+            totalPresenceSeconds++;
+
+            if (now - lastActivity > 4000) {
+                stillnessSeconds++;
+                document.body.classList.add('still');
+                stillnessEl.textContent = formatStillness(stillnessSeconds);
+
+                // Deep stillness after 30 seconds
+                if (stillnessSeconds >= 30) {
+                    document.body.classList.add('deep-still');
+                }
+
+                // Very deep stillness after 90 seconds
+                if (stillnessSeconds >= 90) {
+                    document.body.classList.add('very-deep-still');
+                }
+
+                // Show cycle mantra after 60 seconds of stillness
+                if (stillnessSeconds === 60) {
+                    cycleMantra.classList.add('visible');
+                }
+            } else {
+                stillnessSeconds = 0;
+                cycleMantra.classList.remove('visible');
+            }
+        }, 1000);
+
+        function formatStillness(s) {
+            if (s < 60) return `${s}s`;
+            const m = Math.floor(s / 60);
+            const remaining = s % 60;
+            return remaining > 0 ? `${m}m ${remaining}s` : `${m}m`;
+        }
+
+        // Show whisper after patient waiting (12 seconds)
+        setTimeout(() => {
+            whisper.classList.add('visible');
+        }, 12000);
+
+        // Show "just" after longer waiting (25 seconds)
+        setTimeout(() => {
+            just.classList.add('visible');
+        }, 25000);
+
+        // Show mantra after deep meditation (90 seconds)
+        setTimeout(() => {
+            mantra.classList.add('visible');
+        }, 90000);
+
+        // Sound discovery after 3 minutes of presence
+        setTimeout(() => {
+            document.body.classList.add('sound-discovered');
+        }, 180000);
+
+        // Click on "is" creates presence ripple
+        isMain.addEventListener('click', (e) => {
+            const ripple = document.createElement('div');
+            ripple.className = 'is-ripple';
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 4000);
+
+            // Subtle sound on click if enabled
+            if (soundEnabled && audioContext) {
+                playTone(220, 0.03, 2);
+            }
+        });
+
+        // Triple-click reveals "always" - the eternal
+        let clickCount = 0;
+        let clickTimer = null;
+        isMain.addEventListener('click', () => {
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                if (clickCount >= 3) {
+                    document.body.classList.add('eternal');
+                    eternal.classList.add('visible');
+                    whisper.textContent = 'is always is';
+                    whisper.classList.add('visible');
+
+                    if (soundEnabled && audioContext) {
+                        playTone(330, 0.02, 3);
+                        setTimeout(() => playTone(440, 0.02, 3), 500);
+                    }
+
+                    setTimeout(() => {
+                        eternal.classList.remove('visible');
+                        document.body.classList.remove('eternal');
+                        whisper.textContent = 'is just is';
+                    }, 10000);
+                }
+                clickCount = 0;
+            }, 400);
+        });
+
+        // Right-click creates ghost tenses - contemplation
+        const tenses = ['was', 'is', 'will be', 'might be', 'could be', 'has been', 'being', 'becoming', 'remains'];
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                lastActivity = Date.now();
+                const ghost = document.createElement('div');
+                ghost.className = 'ghost-tense';
+                ghost.textContent = tenses[Math.floor(Math.random() * tenses.length)];
+                ghost.style.left = e.clientX + 'px';
+                ghost.style.top = e.clientY + 'px';
+                document.body.appendChild(ghost);
+                setTimeout(() => ghost.remove(), 4000);
+            }
+        });
+
+        // Keyboard interactions
+        document.addEventListener('keydown', (e) => {
+            lastActivity = Date.now();
+            document.body.classList.remove('still', 'deep-still', 'very-deep-still');
+
+            // Track typed keys for easter eggs
+            if (e.key.length === 1) {
+                typedKeys += e.key.toLowerCase();
+                typedKeys = typedKeys.slice(-15); // Keep last 15 chars
+
+                // Secret: typing "being" reveals deeper truth
+                if (typedKeys.includes('being')) {
+                    beingRevealed.classList.add('visible');
+                    if (soundEnabled && audioContext) {
+                        playTone(261.63, 0.02, 4); // C4
+                    }
+                    setTimeout(() => {
+                        beingRevealed.classList.remove('visible');
+                    }, 10000);
+                    typedKeys = '';
+                }
+
+                // Secret: typing "now" intensifies the present
+                if (typedKeys.includes('now')) {
+                    const pulse = document.createElement('div');
+                    pulse.className = 'now-pulse';
+                    document.body.appendChild(pulse);
+                    setTimeout(() => pulse.remove(), 2000);
+
+                    isMain.style.opacity = '0.55';
+                    isMain.style.letterSpacing = '0.25em';
+                    isMain.style.transition = 'all 0.8s ease';
+
+                    if (soundEnabled && audioContext) {
+                        playTone(329.63, 0.04, 1.5); // E4
+                    }
+
+                    setTimeout(() => {
+                        isMain.style.opacity = '';
+                        isMain.style.letterSpacing = '';
+                        isMain.style.transition = '';
+                    }, 4000);
+                    typedKeys = '';
+                }
+
+                // Secret: typing "eternal" reveals the cycle
+                if (typedKeys.includes('eternal')) {
+                    document.body.classList.add('eternal');
+                    mantra.classList.add('visible');
+                    cycleMantra.classList.add('visible');
+                    whisper.textContent = 'what is, is';
+                    whisper.classList.add('visible');
+
+                    setTimeout(() => {
+                        document.body.classList.remove('eternal');
+                        cycleMantra.classList.remove('visible');
+                        whisper.textContent = 'is just is';
+                    }, 15000);
+                    typedKeys = '';
+                }
+            }
+
+            // W - past tense
+            if (e.code === 'KeyW') {
+                document.body.classList.remove('future', 'all', 'eternal');
+                document.body.classList.toggle('past');
+                was.classList.toggle('visible');
+                isMain.classList.toggle('tense-was');
+                be.classList.remove('visible');
+                will.classList.remove('visible');
+                isMain.classList.remove('tense-will');
+                whisper.textContent = document.body.classList.contains('past') ? 'what was, was' : 'is just is';
+                whisper.classList.add('visible');
+
+                if (soundEnabled && audioContext && document.body.classList.contains('past')) {
+                    playTone(196, 0.02, 2.5); // G3 - lower, past
+                }
+            }
+
+            // B - future tense
+            if (e.code === 'KeyB') {
+                document.body.classList.remove('past', 'all', 'eternal');
+                document.body.classList.toggle('future');
+                will.classList.toggle('visible');
+                be.classList.toggle('visible');
+                isMain.classList.toggle('tense-will');
+                was.classList.remove('visible');
+                isMain.classList.remove('tense-was');
+                whisper.textContent = document.body.classList.contains('future') ? 'what will be, will be' : 'is just is';
+                whisper.classList.add('visible');
+
+                if (soundEnabled && audioContext && document.body.classList.contains('future')) {
+                    playTone(392, 0.02, 2); // G4 - higher, future
+                }
+            }
+
+            // J - toggle just
+            if (e.code === 'KeyJ') {
+                just.classList.toggle('visible');
+            }
+
+            // Space or A - all tenses at once - temporal collapse
+            if (e.code === 'KeyA' || e.code === 'Space') {
+                e.preventDefault();
+                document.body.classList.add('all');
+                was.classList.add('visible');
+                will.classList.add('visible');
+                be.classList.add('visible');
+                just.classList.add('visible');
+                whisper.textContent = 'was is will be';
+                whisper.classList.add('visible');
+
+                if (soundEnabled && audioContext) {
+                    // Chord - all tenses together
+                    playTone(196, 0.015, 3);
+                    playTone(261.63, 0.015, 3);
+                    playTone(392, 0.015, 3);
+                }
+
+                setTimeout(() => {
+                    document.body.classList.remove('all');
+                    was.classList.remove('visible');
+                    will.classList.remove('visible');
+                    be.classList.remove('visible');
+                    whisper.textContent = 'is just is';
+                }, 8000);
+            }
+
+            // S - toggle sound (hidden feature)
+            if (e.code === 'KeyS') {
+                toggleSound();
+            }
+
+            // Escape - return
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Sound toggle click
+        soundToggle.addEventListener('click', toggleSound);
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled && !audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            soundToggle.textContent = soundEnabled ? 's - sound' : 's - silence';
+            document.body.classList.add('sound-discovered');
+
+            if (soundEnabled && audioContext) {
+                // Quiet confirmation tone
+                playTone(440, 0.02, 0.5);
+            }
+        }
+
+        function playTone(frequency, volume, duration) {
+            if (!audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        // Console poetry - another room in the house
+        console.log('%c  ', 'font-size: 40px;');
+        console.log('%c  ', 'font-size: 20px;');
+        console.log('%cis', 'font-size: 28px; font-weight: 200; color: #2d2a24; letter-spacing: 0.3em;');
+        console.log('%c  ', 'font-size: 30px;');
+        console.log('%cis just is', 'font-size: 11px; font-style: italic; color: #718096; letter-spacing: 0.4em;');
+        console.log('%c  ', 'font-size: 20px;');
+        console.log('%cbeing is becoming is being', 'font-size: 9px; color: #a0aec0; letter-spacing: 0.3em;');
+        console.log('%c  ', 'font-size: 40px;');
+        console.log('%c. . .', 'font-size: 8px; color: #cbd5e0; letter-spacing: 1em;');
+        console.log('%c  ', 'font-size: 20px;');
+        console.log('%c[w] was  [b] will be  [space] all at once', 'font-size: 8px; color: #a0aec0; letter-spacing: 0.08em;');
+        console.log('%c[s] sound  [j] just', 'font-size: 8px; color: #a0aec0; letter-spacing: 0.08em;');
+        console.log('%c  ', 'font-size: 15px;');
+        console.log('%ctype "being" or "now" or "eternal"', 'font-size: 7px; color: #cbd5e0; letter-spacing: 0.05em;');
+        console.log('%ctriple-click for always', 'font-size: 7px; color: #cbd5e0; letter-spacing: 0.05em;');
+        console.log('%c  ', 'font-size: 30px;');
+        console.log('%cstillness reveals', 'font-size: 8px; font-style: italic; color: #718096;');
+    </script>
+</body>
+</html>

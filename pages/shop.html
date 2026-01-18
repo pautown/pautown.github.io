@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shop - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, #2a2520 0%, #1a1815 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: filter 1.5s ease, background 2s ease;
+            animation: room-breathe 12s ease-in-out infinite;
+        }
+
+        @keyframes room-breathe {
+            0%, 100% { background-position: 50% 50%; }
+            50% { background-position: 50% 52%; }
+        }
+
+        body.closing { filter: brightness(0.4) saturate(0.8); }
+        body.cozy { filter: sepia(0.15) saturate(1.3) brightness(1.05); }
+        body.rain { filter: hue-rotate(8deg) saturate(0.75) brightness(0.95); }
+        body.deep-night { filter: brightness(0.3) saturate(0.6) hue-rotate(-10deg); }
+
+        .shop {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            height: 70vh;
+            background: linear-gradient(180deg, #3a3530 0%, #2a2520 100%);
+            border: 2px solid #4a4540;
+            display: flex;
+            flex-direction: column;
+            animation: shop-settle 2s ease-out;
+            box-shadow:
+                0 0 80px rgba(0, 0, 0, 0.5),
+                inset 0 0 100px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes shop-settle {
+            0% { opacity: 0; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .shelf {
+            flex: 1;
+            border-bottom: 3px solid #5a5550;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 1rem 0.5rem;
+            gap: 1rem;
+            position: relative;
+            animation: shelf-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes shelf-breathe {
+            0%, 100% { border-color: #5a5550; }
+            50% { border-color: #5a5552; }
+        }
+
+        .shelf:last-child { border-bottom: none; }
+
+        /* Dust motes floating in the air */
+        .dust {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 220, 180, 0.25);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-dust 20s ease-in-out infinite;
+        }
+
+        @keyframes float-dust {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.2; }
+            25% { transform: translate(15px, -30px) rotate(90deg); opacity: 0.4; }
+            50% { transform: translate(-8px, -50px) rotate(180deg); opacity: 0.15; }
+            75% { transform: translate(20px, -25px) rotate(270deg); opacity: 0.35; }
+        }
+
+        /* Larger, slower drifting motes */
+        .dust.large {
+            width: 3px;
+            height: 3px;
+            animation-duration: 35s;
+            background: rgba(255, 230, 200, 0.15);
+        }
+
+        .item {
+            font-size: 1.5rem;
+            opacity: 0.55;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            animation: item-idle 6s ease-in-out infinite;
+        }
+
+        @keyframes item-idle {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 0.6; }
+        }
+
+        .item:hover {
+            opacity: 0.9;
+            transform: translateY(-5px);
+            text-shadow: 0 0 10px rgba(212, 160, 86, 0.3);
+        }
+
+        .item.selected {
+            opacity: 1;
+            transform: scale(1.15);
+            color: var(--amber);
+            animation: item-selected 4s ease-in-out infinite;
+        }
+
+        @keyframes item-selected {
+            0%, 100% { transform: scale(1.15); filter: brightness(1); }
+            50% { transform: scale(1.18); filter: brightness(1.1); }
+        }
+
+        .item.falling {
+            animation: fall 1.2s ease-in forwards;
+        }
+
+        .item.floating {
+            animation: gentle-float 4s ease-in-out infinite;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(200px) rotate(90deg); opacity: 0; }
+        }
+
+        @keyframes gentle-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .item-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--bone);
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 0.5s ease;
+        }
+
+        .item:hover .item-label { opacity: 0.45; }
+
+        .item-whisper {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--amber-soft);
+            opacity: 0;
+            white-space: nowrap;
+            font-style: italic;
+            transition: opacity 0.8s ease 0.4s;
+        }
+
+        .item:hover .item-whisper { opacity: 0.3; }
+
+        /* Item auras for selected items */
+        .item.selected::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: aura-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes aura-pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .cat {
+            position: absolute;
+            bottom: 1rem;
+            right: 2rem;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            user-select: none;
+            animation: cat-presence 5s ease-in-out infinite;
+        }
+
+        @keyframes cat-presence {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .cat:hover { transform: scale(1.08); }
+        .cat.noticed { animation: cat-notice 0.6s ease; }
+        .cat.sleeping { animation: cat-sleep 3s ease-in-out infinite; }
+        .cat.pet { animation: cat-pet 0.4s ease; }
+        .cat.curious { animation: cat-curious 1s ease; }
+        .cat.happy { animation: cat-wiggle 0.6s ease; }
+        .cat.stretching { animation: cat-stretch 2.5s ease; }
+        .cat.watching { animation: cat-watch 2s ease-in-out infinite; }
+        .cat.guardian { animation: cat-guardian 4s ease-in-out infinite; }
+
+        @keyframes cat-notice {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-12deg); }
+            75% { transform: rotate(12deg); }
+        }
+
+        @keyframes cat-sleep {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.03); opacity: 0.75; }
+        }
+
+        @keyframes cat-pet {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.18); }
+        }
+
+        @keyframes cat-curious {
+            0%, 100% { transform: rotate(0deg) translateX(0); }
+            30% { transform: rotate(-18deg) translateX(-8px); }
+            60% { transform: rotate(18deg) translateX(8px); }
+        }
+
+        @keyframes cat-wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-6deg); }
+            40% { transform: rotate(6deg); }
+            60% { transform: rotate(-4deg); }
+            80% { transform: rotate(4deg); }
+        }
+
+        @keyframes cat-stretch {
+            0% { transform: scale(1, 1); }
+            30% { transform: scale(1.15, 0.85); }
+            60% { transform: scale(0.92, 1.15); }
+            100% { transform: scale(1, 1); }
+        }
+
+        @keyframes cat-watch {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(3px); }
+        }
+
+        @keyframes cat-guardian {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.02); filter: brightness(1.05); }
+        }
+
+        /* Cat blink - gentle moment of presence */
+        @keyframes cat-blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .cat.blinking .cat-eyes {
+            opacity: 1 !important;
+            animation: cat-blink 0.3s ease;
+        }
+
+        /* Cat eyes that occasionally glow in darkness */
+        .cat-eyes {
+            position: absolute;
+            bottom: 1.1rem;
+            right: 2.5rem;
+            width: 1.5rem;
+            height: 0.4rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        .cat-eyes::before, .cat-eyes::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(180, 220, 180, 0.6);
+            border-radius: 50%;
+            animation: eye-glow 4s ease-in-out infinite;
+        }
+
+        .cat-eyes::before { left: 2px; }
+        .cat-eyes::after { right: 2px; }
+
+        @keyframes eye-glow {
+            0%, 100% { opacity: 0.6; box-shadow: 0 0 4px rgba(180, 220, 180, 0.4); }
+            50% { opacity: 0.9; box-shadow: 0 0 8px rgba(180, 220, 180, 0.6); }
+        }
+
+        body.closing .cat-eyes, body.deep-night .cat-eyes { opacity: 1; }
+
+        .cat-thought {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: var(--paper);
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: var(--ink);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            white-space: nowrap;
+            max-width: 220px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .cat-thought::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            right: 20px;
+            border: 8px solid transparent;
+            border-top-color: var(--paper);
+            border-bottom: none;
+        }
+
+        .cat.thinking .cat-thought { opacity: 1; transform: translateY(0); }
+
+        /* Cat tail that occasionally swishes */
+        .cat-tail {
+            position: absolute;
+            bottom: 0.8rem;
+            right: 5rem;
+            font-size: 1.5rem;
+            opacity: 0.5;
+            transform-origin: right center;
+            animation: tail-idle 5s ease-in-out infinite;
+        }
+
+        @keyframes tail-idle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(8deg); }
+            75% { transform: rotate(-8deg); }
+        }
+
+        .cat.sleeping ~ .cat-tail { animation: tail-sleep 8s ease-in-out infinite; opacity: 0.4; }
+
+        @keyframes tail-sleep {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+
+        .warm-light {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(255, 200, 100, 0.25) 0%, transparent 70%);
+            pointer-events: none;
+            transition: all 1.5s ease;
+            animation: light-breathe 10s ease-in-out infinite;
+        }
+
+        @keyframes light-breathe {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.88; transform: translateX(-50%) scale(1.02); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            48% { opacity: 0.94; }
+            50% { opacity: 0.98; }
+            52% { opacity: 0.92; }
+            54% { opacity: 0.96; }
+        }
+
+        body.closing .warm-light { opacity: 0.15; width: 80px; height: 80px; }
+        body.cozy .warm-light {
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(255, 180, 80, 0.35) 0%, transparent 70%);
+            animation: light-breathe 8s ease-in-out infinite, flicker 12s ease-in-out infinite;
+        }
+
+        /* Fire glow in cozy mode */
+        .fire-glow {
+            position: absolute;
+            bottom: 65px;
+            left: 10%;
+            width: 60px;
+            height: 40px;
+            background: radial-gradient(ellipse, rgba(255, 120, 50, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        body.cozy .fire-glow {
+            opacity: 1;
+            animation: fire-dance 3s ease-in-out infinite;
+        }
+
+        @keyframes fire-dance {
+            0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.8; }
+            25% { transform: scaleY(1.1) scaleX(0.95); opacity: 1; }
+            50% { transform: scaleY(0.9) scaleX(1.05); opacity: 0.85; }
+            75% { transform: scaleY(1.05) scaleX(0.98); opacity: 0.95; }
+        }
+
+        .window {
+            position: absolute;
+            top: 10%;
+            left: 5%;
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(180deg,
+                rgba(180, 200, 220, 0.15) 0%, rgba(150, 170, 190, 0.08) 100%);
+            border: 3px solid #5a5550;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            transition: background 4s ease;
+            animation: window-breathe 15s ease-in-out infinite;
+        }
+
+        @keyframes window-breathe {
+            0%, 100% { border-color: #5a5550; }
+            50% { border-color: #5a5553; }
+        }
+
+        .window.evening {
+            background: linear-gradient(180deg,
+                rgba(255, 150, 100, 0.25) 0%, rgba(200, 100, 80, 0.12) 100%);
+        }
+
+        .window.night {
+            background: linear-gradient(180deg,
+                rgba(40, 50, 80, 0.35) 0%, rgba(20, 30, 50, 0.25) 100%);
+        }
+
+        body.rain .window::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                180deg,
+                transparent,
+                transparent 10px,
+                rgba(150, 180, 200, 0.08) 10px,
+                rgba(150, 180, 200, 0.08) 12px
+            );
+            animation: rain-window 0.4s linear infinite;
+        }
+
+        /* Rain drops on window */
+        body.rain .window::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(150, 180, 200, 0.15) 1px, transparent 1px),
+                radial-gradient(circle at 60% 50%, rgba(150, 180, 200, 0.12) 1px, transparent 1px),
+                radial-gradient(circle at 40% 70%, rgba(150, 180, 200, 0.1) 1px, transparent 1px);
+            animation: rain-drops 2s ease-in-out infinite;
+        }
+
+        @keyframes rain-window {
+            to { transform: translateY(12px); }
+        }
+
+        @keyframes rain-drops {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .window-pane { border: 1px solid #4a4540; }
+
+        /* Faint stars occasionally visible through window at night */
+        .window-star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 240, 0.5);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .window-star:nth-child(5) { top: 20%; left: 30%; }
+        .window-star:nth-child(6) { top: 35%; left: 60%; animation-delay: 1s; }
+        .window-star:nth-child(7) { top: 15%; left: 70%; animation-delay: 2s; }
+
+        .window.night .window-star {
+            opacity: 1;
+            animation: twinkle 4s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(1.3); }
+        }
+
+        /* Occasional moon through window */
+        .window-moon {
+            position: absolute;
+            top: 10%;
+            right: 15%;
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 250, 230, 0.15);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .window.night .window-moon {
+            opacity: 1;
+            animation: moon-glow 8s ease-in-out infinite;
+        }
+
+        @keyframes moon-glow {
+            0%, 100% { opacity: 0.6; box-shadow: 0 0 10px rgba(255, 250, 230, 0.2); }
+            50% { opacity: 0.8; box-shadow: 0 0 15px rgba(255, 250, 230, 0.3); }
+        }
+
+        .counter {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, #4a4035 0%, #3a3025 100%);
+            border-top: 3px solid #5a5045;
+        }
+
+        /* Wood grain texture suggestion */
+        .counter::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 20px,
+                rgba(0, 0, 0, 0.03) 20px,
+                rgba(0, 0, 0, 0.03) 21px
+            );
+            pointer-events: none;
+        }
+
+        /* Small bell on counter */
+        .bell {
+            position: absolute;
+            bottom: 70px;
+            left: 2rem;
+            font-size: 1rem;
+            opacity: 0.4;
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        .bell:hover { opacity: 0.7; transform: rotate(12deg); }
+        .bell.ringing { animation: ring-bell 0.6s ease; }
+
+        @keyframes ring-bell {
+            0%, 100% { transform: rotate(0deg); }
+            15% { transform: rotate(25deg); }
+            30% { transform: rotate(-20deg); }
+            45% { transform: rotate(15deg); }
+            60% { transform: rotate(-10deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        .visits {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--bone);
+            opacity: 0.25;
+            transition: opacity 1s ease;
+        }
+
+        .visits:hover { opacity: 0.4; }
+
+        .message {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--amber-soft);
+            opacity: 0;
+            transition: opacity 2.5s ease;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .message.visible { opacity: 0.55; }
+
+        /* Stillness message - appears after being still */
+        .stillness-message {
+            position: fixed;
+            bottom: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 3s ease;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .stillness-message.visible { opacity: 0.4; }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 2;
+            z-index: 100;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        /* Sound control */
+        .sound-control {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 1s ease;
+            cursor: pointer;
+        }
+
+        body:hover .sound-control { opacity: 0.25; }
+        .sound-control:hover { opacity: 0.5 !important; }
+
+        .back-link { color: var(--amber); }
+
+        /* Secret drawer under counter */
+        .secret-drawer {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 8px;
+            background: #2a2520;
+            border: 1px solid #3a3530;
+            cursor: pointer;
+            opacity: 0.25;
+            transition: all 0.4s ease;
+        }
+
+        .secret-drawer:hover { opacity: 0.5; transform: translateX(-50%) translateY(-2px); }
+
+        .secret-drawer.open::after {
+            content: attr(data-secret);
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--amber-soft);
+            white-space: nowrap;
+            opacity: 0.5;
+            animation: secret-fade 0.8s ease;
+        }
+
+        @keyframes secret-fade {
+            from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            to { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* Cobweb in corner */
+        .cobweb {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50px;
+            height: 50px;
+            opacity: 0.12;
+            pointer-events: none;
+            background:
+                linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.25) 50.5%, transparent 51%),
+                linear-gradient(45deg, transparent 70%, rgba(255,255,255,0.15) 70.5%, transparent 71%),
+                linear-gradient(115deg, transparent 60%, rgba(255,255,255,0.1) 60.5%, transparent 61%);
+            animation: cobweb-sway 20s ease-in-out infinite;
+        }
+
+        @keyframes cobweb-sway {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(0.5deg); }
+        }
+
+        /* Mood indicator based on selections */
+        .shop.peaceful { box-shadow: 0 0 80px rgba(100, 150, 200, 0.08), inset 0 0 100px rgba(0, 0, 0, 0.2); }
+        .shop.curious { box-shadow: 0 0 80px rgba(200, 150, 100, 0.08), inset 0 0 100px rgba(0, 0, 0, 0.2); }
+        .shop.nostalgic { box-shadow: 0 0 80px rgba(180, 130, 180, 0.08), inset 0 0 100px rgba(0, 0, 0, 0.2); }
+
+        /* Old clock on wall - barely visible */
+        .old-clock {
+            position: absolute;
+            top: 15%;
+            right: 10%;
+            width: 25px;
+            height: 25px;
+            border: 2px solid rgba(90, 85, 80, 0.4);
+            border-radius: 50%;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .old-clock::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 1px;
+            height: 8px;
+            background: rgba(90, 85, 80, 0.5);
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+            animation: clock-hand 60s linear infinite;
+        }
+
+        @keyframes clock-hand {
+            to { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        /* Ambient fog layer */
+        .fog {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(30, 28, 25, 0.1) 50%,
+                transparent 100%
+            );
+            pointer-events: none;
+            opacity: 0.5;
+            animation: fog-drift 30s ease-in-out infinite;
+        }
+
+        @keyframes fog-drift {
+            0%, 100% { transform: translateY(0); opacity: 0.3; }
+            50% { transform: translateY(-10px); opacity: 0.5; }
+        }
+
+        /* Patience reward indicator */
+        .patience-glow {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at center, rgba(212, 160, 86, 0.03) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .patience-glow.active { opacity: 1; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="patience-glow" id="patienceGlow"></div>
+
+    <div class="shop" id="shop">
+        <div class="warm-light"></div>
+        <div class="fire-glow"></div>
+        <div class="fog"></div>
+        <div class="cobweb"></div>
+        <div class="old-clock"></div>
+
+        <div class="window" id="window">
+            <div class="window-pane"></div>
+            <div class="window-pane"></div>
+            <div class="window-pane"></div>
+            <div class="window-pane"></div>
+            <div class="window-star"></div>
+            <div class="window-star"></div>
+            <div class="window-star"></div>
+            <div class="window-moon"></div>
+        </div>
+
+        <div class="shelf" id="shelf1"></div>
+        <div class="shelf" id="shelf2"></div>
+        <div class="shelf" id="shelf3"></div>
+
+        <div class="counter">
+            <div class="secret-drawer" id="drawer" data-secret=""></div>
+        </div>
+
+        <div class="bell" id="bell" title="ring for service">&#128276;</div>
+
+        <span class="cat-tail">~</span>
+        <div class="cat-eyes"></div>
+        <div class="cat" id="cat">
+            :3
+            <div class="cat-thought" id="thought"></div>
+        </div>
+    </div>
+
+    <p class="visits" id="visits"></p>
+    <p class="message" id="message"></p>
+    <p class="stillness-message" id="stillnessMessage"></p>
+
+    <div class="key-hint">
+        [c] cozy<br>
+        [l] closing time<br>
+        [r] rain<br>
+        [n] deep night<br>
+        [s] cat sleeps<br>
+        [p] pet cat<br>
+        [t] time of day<br>
+        [m] toggle sound<br>
+        right-click: knock item
+    </div>
+
+    <div class="sound-control" id="soundControl">[m] sound: off</div>
+
+    <script>
+        const cat = document.getElementById('cat');
+        const thought = document.getElementById('thought');
+        const visitsEl = document.getElementById('visits');
+        const messageEl = document.getElementById('message');
+        const stillnessMessageEl = document.getElementById('stillnessMessage');
+        const shop = document.getElementById('shop');
+        const windowEl = document.getElementById('window');
+        const bell = document.getElementById('bell');
+        const drawer = document.getElementById('drawer');
+        const patienceGlow = document.getElementById('patienceGlow');
+        const soundControl = document.getElementById('soundControl');
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Create floating dust motes
+        for (let i = 0; i < 8; i++) {
+            const dust = document.createElement('div');
+            dust.className = i < 2 ? 'dust large' : 'dust';
+            dust.style.left = `${15 + Math.random() * 70}%`;
+            dust.style.top = `${15 + Math.random() * 70}%`;
+            dust.style.animationDelay = `${Math.random() * 20}s`;
+            shop.appendChild(dust);
+        }
+
+        // Sound state
+        let soundEnabled = false;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playBellSound() {
+            if (!soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playRainAmbience() {
+            if (!soundEnabled || !audioCtx) return;
+            // Create gentle rain-like noise
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * 0.02;
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.08;
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            noise.loop = true;
+            noise.start();
+            return { noise, gain };
+        }
+
+        function playFireCrackle() {
+            if (!soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100 + Math.random() * 50, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playCatPurr() {
+            if (!soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(25, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        soundControl.addEventListener('click', () => {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            soundControl.textContent = `[m] sound: ${soundEnabled ? 'on' : 'off'}`;
+            if (soundEnabled && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        });
+
+        // Enhanced items with deeper symbolism and whispers
+        const items = [
+            { emoji: '!', label: 'a feeling', whisper: 'it startles you awake', mood: 'curious' },
+            { emoji: '?', label: 'a question', whisper: 'it has no answer yet', mood: 'curious' },
+            { emoji: '*', label: 'a memory', whisper: 'someone left it here long ago', mood: 'nostalgic' },
+            { emoji: '~', label: 'a sound', whisper: 'almost like humming in another room', mood: 'peaceful' },
+            { emoji: '#', label: 'a weight', whisper: 'heavier than it looks', mood: 'nostalgic' },
+            { emoji: '&', label: 'a connection', whisper: 'between two someones who forgot', mood: 'peaceful' },
+            { emoji: '%', label: 'a fragment', whisper: 'of something that was once whole', mood: 'nostalgic' },
+            { emoji: '^', label: 'a direction', whisper: 'always pointing elsewhere', mood: 'curious' },
+            { emoji: '@', label: 'a place', whisper: 'you might have dreamed', mood: 'nostalgic' },
+            { emoji: '+', label: 'an addition', whisper: 'makes things more than before', mood: 'peaceful' },
+            { emoji: '=', label: 'a balance', whisper: 'rarely achieved, always sought', mood: 'peaceful' },
+            { emoji: '<', label: 'a before', whisper: 'when things were different', mood: 'nostalgic' },
+        ];
+
+        const itemElements = [];
+        const selectedItems = new Set();
+
+        const shelves = [
+            document.getElementById('shelf1'),
+            document.getElementById('shelf2'),
+            document.getElementById('shelf3')
+        ];
+
+        items.forEach((item, i) => {
+            const shelfIndex = Math.floor(i / 4);
+            const itemEl = document.createElement('span');
+            itemEl.className = 'item mono';
+            itemEl.innerHTML = `${item.emoji}<span class="item-label">${item.label}</span><span class="item-whisper">${item.whisper}</span>`;
+            itemEl.dataset.label = item.label;
+            itemEl.dataset.mood = item.mood;
+            itemEl.dataset.emoji = item.emoji;
+            itemEl.style.animationDelay = `${Math.random() * 6}s`;
+
+            // Some items float gently
+            if (Math.random() > 0.65) {
+                itemEl.classList.add('floating');
+                itemEl.style.animationDelay = `${Math.random() * 4}s`;
+            }
+
+            itemEl.addEventListener('click', () => {
+                itemEl.classList.toggle('selected');
+                if (itemEl.classList.contains('selected')) {
+                    selectedItems.add(item.emoji);
+                } else {
+                    selectedItems.delete(item.emoji);
+                }
+                catNotice();
+                updateShopMood();
+                resetStillnessTimer();
+
+                // Cat sometimes comments on specific items
+                if (itemEl.classList.contains('selected') && Math.random() > 0.55) {
+                    const itemComments = {
+                        '!': 'that one wakes me sometimes',
+                        '?': 'i wonder about that one too',
+                        '*': 'ah, that one glows when no one watches',
+                        '~': 'can you hear it? i can',
+                        '#': 'careful. it remembers who held it',
+                        '&': 'that one belongs to two people at once',
+                        '%': 'the rest is somewhere. probably.',
+                        '^': 'it wants to leave. it never does.',
+                        '@': 'home is where you think it is',
+                        '+': 'more is sometimes enough',
+                        '=': 'i have never found one in the wild',
+                        '<': 'that one is older than me'
+                    };
+                    setTimeout(() => {
+                        thought.textContent = itemComments[item.emoji];
+                        cat.classList.add('thinking');
+                        setTimeout(() => cat.classList.remove('thinking'), 4000);
+                    }, 600);
+                }
+            });
+
+            shelves[shelfIndex].appendChild(itemEl);
+            itemElements.push(itemEl);
+        });
+
+        function updateShopMood() {
+            shop.classList.remove('peaceful', 'curious', 'nostalgic');
+            const moods = { peaceful: 0, curious: 0, nostalgic: 0 };
+
+            itemElements.forEach(el => {
+                if (el.classList.contains('selected')) {
+                    moods[el.dataset.mood]++;
+                }
+            });
+
+            const dominant = Object.keys(moods).reduce((a, b) => moods[a] > moods[b] ? a : b);
+            if (moods[dominant] > 0) {
+                shop.classList.add(dominant);
+            }
+        }
+
+        // Right-click knocks item off shelf
+        itemElements.forEach(item => {
+            item.addEventListener('mousedown', (e) => {
+                if (e.button === 2) {
+                    item.classList.add('falling');
+                    setTimeout(() => {
+                        item.classList.remove('falling');
+                        item.style.opacity = '0.25';
+                    }, 1200);
+
+                    // Cat reacts with varied responses
+                    catNotice();
+                    const reactions = [
+                        'rude',
+                        'excuse me',
+                        'that was on purpose',
+                        '...',
+                        '*stares with judgment*',
+                        'i saw that',
+                        'gravity is my domain',
+                        'i will remember this',
+                        'the items talk, you know'
+                    ];
+                    setTimeout(() => {
+                        thought.textContent = reactions[Math.floor(Math.random() * reactions.length)];
+                        cat.classList.add('thinking');
+                        setTimeout(() => cat.classList.remove('thinking'), 2500);
+                    }, 600);
+                }
+            });
+        });
+
+        // Extended cat thoughts with more personality - the guardian presence
+        const catThoughts = [
+            'hello',
+            'you came',
+            'the shop is always here. are you?',
+            'take what you need',
+            'leave what you dont',
+            'time moves strangely in here',
+            'the shelves rearrange when i blink',
+            'did you notice?',
+            ':3',
+            'purr',
+            'mrow',
+            'zzz',
+            'the dust is friendly',
+            'i know where everything is',
+            'mostly',
+            'things find their way here',
+            'and their way out. when ready.',
+            'no rush. there never is.',
+            'the window shows what it wants',
+            'i like the warm spot. it knows me.',
+            'have you tried the bell?',
+            'some items hum at night',
+            'the drawer has secrets',
+            'shh',
+            '*blink blink*',
+            'you smell like elsewhere',
+            'interesting',
+            'i approve. probably.',
+            'stay as long as you like',
+            'or dont. the shop will be here.',
+            'it was here before. it will be after.',
+            'i am the keeper. or the kept.',
+            'hard to say which'
+        ];
+
+        // Rare thoughts that appear less frequently
+        const rareThoughts = [
+            'the shop was here before me. i think.',
+            'i dreamed you once. or you dreamed me.',
+            'some visitors never leave... their echoes remain',
+            'the cobweb is decorative. mostly.',
+            'between visits, i practice being elsewhere',
+            'the items choose their people. not the other way.',
+            'or so they tell me in the quiet hours',
+            'the window remembers every weather',
+            'if you listen, the shelves breathe',
+            'i am the guardian. what am i guarding? you. or them.',
+            'time is different here. haven you noticed?',
+            'the shop exists because it does. like me. like you.'
+        ];
+
+        // Stillness detection - cat responds to patience
+        let lastMovement = Date.now();
+        let stillnessLevel = 0;
+        let stillnessTimeout = null;
+        let deepStillnessReached = false;
+
+        const stillnessMessages = [
+            'stillness noticed',
+            'the quiet finds you',
+            'patience is a kind of warmth',
+            'the shop settles around you',
+            'you belong here now',
+            'the dust approves',
+            'time slows when you do'
+        ];
+
+        const deepStillnessMessages = [
+            'the shop breathes with you now',
+            'you have been still long enough to become part of here',
+            'the cat sees you. truly sees you.',
+            'in stillness, secrets surface',
+            'the items notice your patience',
+            'you are no longer visiting. you are here.'
+        ];
+
+        function checkStillness() {
+            const now = Date.now();
+            const stillDuration = now - lastMovement;
+
+            // After 5 seconds of stillness
+            if (stillDuration > 5000 && stillnessLevel === 0) {
+                stillnessLevel = 1;
+                if (!isSleeping) {
+                    cat.classList.add('watching');
+                }
+            }
+
+            // After 10 seconds - cat notices
+            if (stillDuration > 10000 && stillnessLevel === 1) {
+                stillnessLevel = 2;
+                if (!isSleeping && Math.random() > 0.5) {
+                    thought.textContent = 'you are patient';
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 3000);
+                }
+            }
+
+            // After 20 seconds - stillness message appears
+            if (stillDuration > 20000 && stillnessLevel === 2) {
+                stillnessLevel = 3;
+                patienceGlow.classList.add('active');
+                stillnessMessageEl.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                stillnessMessageEl.classList.add('visible');
+                setTimeout(() => stillnessMessageEl.classList.remove('visible'), 5000);
+            }
+
+            // After 45 seconds - deep stillness
+            if (stillDuration > 45000 && stillnessLevel === 3 && !deepStillnessReached) {
+                stillnessLevel = 4;
+                deepStillnessReached = true;
+                cat.classList.remove('watching');
+                cat.classList.add('guardian');
+                stillnessMessageEl.textContent = deepStillnessMessages[Math.floor(Math.random() * deepStillnessMessages.length)];
+                stillnessMessageEl.classList.add('visible');
+                setTimeout(() => stillnessMessageEl.classList.remove('visible'), 6000);
+
+                // Cat shares a secret
+                setTimeout(() => {
+                    thought.textContent = rareThoughts[Math.floor(Math.random() * rareThoughts.length)];
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 5000);
+                }, 2000);
+            }
+
+            stillnessTimeout = setTimeout(checkStillness, 1000);
+        }
+
+        function resetStillnessTimer() {
+            lastMovement = Date.now();
+            if (stillnessLevel > 0) {
+                stillnessLevel = 0;
+                cat.classList.remove('watching', 'guardian');
+                patienceGlow.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillnessTimer);
+        document.addEventListener('keydown', (e) => {
+            if (!['KeyC', 'KeyL', 'KeyR', 'KeyN', 'KeyS', 'KeyP', 'KeyT', 'KeyM', 'KeyH', 'Space', 'Escape'].includes(e.code)) {
+                resetStillnessTimer();
+            }
+        });
+
+        // Start stillness detection
+        checkStillness();
+
+        let thoughtIndex = 0;
+        let interactionCount = 0;
+        let isSleeping = false;
+        let petCount = 0;
+        let bellRings = 0;
+        let timeOfDay = 'day';
+        let hasBeenGreeted = false;
+
+        function catNotice() {
+            if (isSleeping) {
+                isSleeping = false;
+                cat.classList.remove('sleeping');
+                cat.textContent = ':3';
+                const wakeThoughts = [
+                    'hmm?',
+                    '*yawn*',
+                    'i was resting my eyes',
+                    'oh. its you.',
+                    'five more minutes... no?',
+                    '*stretches*',
+                    'the nap was good. short but good.'
+                ];
+                thought.textContent = wakeThoughts[Math.floor(Math.random() * wakeThoughts.length)];
+                cat.classList.add('thinking');
+                setTimeout(() => cat.classList.remove('thinking'), 2500);
+            }
+            cat.classList.remove('watching', 'guardian');
+            cat.classList.add('noticed');
+            setTimeout(() => cat.classList.remove('noticed'), 600);
+        }
+
+        function showThought() {
+            if (isSleeping) {
+                const sleepSounds = ['zzz...', 'mrph...', '*twitch*', 'zzZzz...', '...fish...', '...warm...', '*ear flick*'];
+                thought.textContent = sleepSounds[Math.floor(Math.random() * sleepSounds.length)];
+            } else {
+                // Occasionally show rare thought
+                if (Math.random() > 0.9) {
+                    thought.textContent = rareThoughts[Math.floor(Math.random() * rareThoughts.length)];
+                } else {
+                    thought.textContent = catThoughts[thoughtIndex % catThoughts.length];
+                    thoughtIndex++;
+                }
+            }
+            cat.classList.add('thinking');
+            setTimeout(() => cat.classList.remove('thinking'), 4000);
+        }
+
+        shop.addEventListener('mouseenter', () => {
+            if (interactionCount === 0 && !hasBeenGreeted) {
+                hasBeenGreeted = true;
+                setTimeout(() => {
+                    catNotice();
+                    setTimeout(showThought, 600);
+                }, 1200);
+            }
+            interactionCount++;
+        });
+
+        cat.addEventListener('click', () => {
+            catNotice();
+            setTimeout(showThought, 400);
+            resetStillnessTimer();
+        });
+
+        // Double-click makes cat curious
+        cat.addEventListener('dblclick', () => {
+            cat.classList.add('curious');
+            thought.textContent = 'what are you looking for?';
+            cat.classList.add('thinking');
+            setTimeout(() => {
+                cat.classList.remove('curious', 'thinking');
+            }, 2000);
+        });
+
+        // Pet cat on right-click with evolving responses
+        cat.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                e.stopPropagation();
+                petCount++;
+                cat.classList.add('pet');
+                playCatPurr();
+
+                let petResponse;
+                if (petCount <= 3) {
+                    petResponse = 'purrrr';
+                } else if (petCount <= 6) {
+                    const responses = ['purrrrrr', 'mrrp!', '*content*', '^_^', 'warm'];
+                    petResponse = responses[Math.floor(Math.random() * responses.length)];
+                } else if (petCount <= 10) {
+                    const responses = ['okay okay', 'still going?', 'noted', 'yes. hello.'];
+                    petResponse = responses[Math.floor(Math.random() * responses.length)];
+                } else if (petCount <= 20) {
+                    const responses = ['enough', 'im full of pets', '*tolerates*', 'you again', 'persistent'];
+                    petResponse = responses[Math.floor(Math.random() * responses.length)];
+                } else {
+                    const responses = ['we have an understanding now', 'professional petter', 'this is your job?', 'i see'];
+                    petResponse = responses[Math.floor(Math.random() * responses.length)];
+                }
+
+                thought.textContent = petResponse;
+                cat.classList.add('thinking');
+
+                // Very happy wiggle after lots of pets
+                if (petCount === 5 || petCount === 15) {
+                    cat.classList.add('happy');
+                    setTimeout(() => cat.classList.remove('happy'), 600);
+                }
+
+                setTimeout(() => {
+                    cat.classList.remove('pet', 'thinking');
+                }, 1200);
+            }
+        });
+
+        // Bell interaction
+        bell.addEventListener('click', () => {
+            bell.classList.add('ringing');
+            bellRings++;
+            playBellSound();
+            setTimeout(() => bell.classList.remove('ringing'), 600);
+            resetStillnessTimer();
+
+            catNotice();
+            const bellResponses = [
+                'yes?',
+                'i heard',
+                'no need. im right here.',
+                '*ear twitch*',
+                'service is self-serve',
+                'the bell is for ambiance',
+                'ding',
+                'noted',
+                'you have my attention. what will you do with it?'
+            ];
+
+            if (bellRings > 7) {
+                thought.textContent = 'the bell has made its point. many times.';
+            } else if (bellRings > 4) {
+                thought.textContent = 'the bell knows you now';
+            } else {
+                thought.textContent = bellResponses[Math.floor(Math.random() * bellResponses.length)];
+            }
+            cat.classList.add('thinking');
+            setTimeout(() => cat.classList.remove('thinking'), 2500);
+        });
+
+        // Secret drawer
+        const secrets = [
+            'you are enough',
+            'rest is productive',
+            'the cat approves',
+            'some things simply are',
+            'its okay to stay awhile',
+            'found: one small hope',
+            'warranty: eternal',
+            'handle with wonder',
+            'belongs to: you, now',
+            'contents: possibility',
+            'best before: never',
+            'instructions: none needed'
+        ];
+        let drawerOpen = false;
+        let drawerOpens = 0;
+
+        drawer.addEventListener('click', () => {
+            drawerOpen = !drawerOpen;
+            drawer.classList.toggle('open', drawerOpen);
+            resetStillnessTimer();
+
+            if (drawerOpen) {
+                drawerOpens++;
+                drawer.dataset.secret = secrets[Math.floor(Math.random() * secrets.length)];
+
+                // Cat notices with varying responses
+                if (drawerOpens === 1) {
+                    thought.textContent = 'you found it';
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 2500);
+                } else if (drawerOpens === 3) {
+                    thought.textContent = 'the drawer likes you';
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 2500);
+                } else if (Math.random() > 0.6) {
+                    const drawerComments = ['curious', 'that one changes', 'different every time', 'the drawer knows things'];
+                    thought.textContent = drawerComments[Math.floor(Math.random() * drawerComments.length)];
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 2500);
+                }
+            }
+        });
+
+        // Visit tracking with more messages and memory
+        let visits = parseInt(localStorage.getItem('townhaus-shop-visits') || '0');
+        let lastVisit = localStorage.getItem('townhaus-shop-last-visit');
+        let totalTime = parseInt(localStorage.getItem('townhaus-shop-time') || '0');
+        const now = new Date();
+
+        visits++;
+        localStorage.setItem('townhaus-shop-visits', visits.toString());
+        localStorage.setItem('townhaus-shop-last-visit', now.toISOString());
+
+        // Track time spent
+        setInterval(() => {
+            totalTime++;
+            localStorage.setItem('townhaus-shop-time', totalTime.toString());
+        }, 60000);
+
+        visitsEl.textContent = `visit ${visits}`;
+
+        // Calculate days since last visit
+        let daysSinceVisit = 0;
+        if (lastVisit) {
+            const lastDate = new Date(lastVisit);
+            daysSinceVisit = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+        }
+
+        const welcomeMessages = {
+            1: 'welcome to the shop',
+            2: 'you returned',
+            3: 'becoming familiar',
+            5: 'the cat remembers you',
+            10: 'a regular now',
+            15: 'the items recognize your touch',
+            20: 'practically family',
+            30: 'the shop shapes itself to you',
+            50: 'you know the way without looking',
+            75: 'the dust settles around your presence',
+            100: 'you are part of the inventory now'
+        };
+
+        const returnAfterAbsence = {
+            7: 'it has been a while. welcome back.',
+            14: 'the shop waited. patiently.',
+            30: 'you were missed. quietly.',
+            60: 'the dust collected in your shape.'
+        };
+
+        // Check for long absence
+        let absenceMessage = null;
+        if (daysSinceVisit >= 7) {
+            const absenceKeys = Object.keys(returnAfterAbsence).map(Number).filter(n => n <= daysSinceVisit).sort((a, b) => b - a);
+            if (absenceKeys.length > 0) {
+                absenceMessage = returnAfterAbsence[absenceKeys[0]];
+            }
+        }
+
+        const closestWelcome = Object.keys(welcomeMessages)
+            .map(Number)
+            .filter(n => n <= visits)
+            .sort((a, b) => b - a)[0];
+
+        setTimeout(() => {
+            if (absenceMessage && visits > 1) {
+                messageEl.textContent = absenceMessage;
+            } else if (closestWelcome && visits <= 100) {
+                messageEl.textContent = welcomeMessages[closestWelcome];
+            }
+            messageEl.classList.add('visible');
+            setTimeout(() => messageEl.classList.remove('visible'), 5000);
+        }, visits === 1 ? 2500 : 1500);
+
+        // Time of day cycle
+        function setTimeOfDay(time) {
+            timeOfDay = time;
+            windowEl.classList.remove('evening', 'night');
+            document.body.classList.remove('deep-night');
+            if (time === 'evening') windowEl.classList.add('evening');
+            if (time === 'night') windowEl.classList.add('night');
+        }
+
+        // Cozy mode fire crackle
+        let fireInterval = null;
+        function startFireCrackle() {
+            if (fireInterval) return;
+            fireInterval = setInterval(() => {
+                if (Math.random() > 0.6) playFireCrackle();
+            }, 2000);
+        }
+        function stopFireCrackle() {
+            if (fireInterval) {
+                clearInterval(fireInterval);
+                fireInterval = null;
+            }
+        }
+
+        // Rain ambience
+        let rainAmbience = null;
+        function startRain() {
+            if (rainAmbience) return;
+            rainAmbience = playRainAmbience();
+        }
+        function stopRain() {
+            if (rainAmbience) {
+                rainAmbience.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+                setTimeout(() => {
+                    rainAmbience.noise.stop();
+                    rainAmbience = null;
+                }, 1000);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyC') {
+                document.body.classList.remove('closing', 'rain', 'deep-night');
+                stopRain();
+                document.body.classList.toggle('cozy');
+                if (document.body.classList.contains('cozy')) {
+                    startFireCrackle();
+                    messageEl.textContent = 'cozy mode';
+                    messageEl.classList.add('visible');
+                    setTimeout(() => messageEl.classList.remove('visible'), 2500);
+                    // Cat likes cozy
+                    setTimeout(() => {
+                        thought.textContent = 'warm. this is good.';
+                        cat.classList.add('thinking');
+                        setTimeout(() => cat.classList.remove('thinking'), 3000);
+                    }, 1000);
+                } else {
+                    stopFireCrackle();
+                }
+            }
+            if (e.code === 'KeyL') {
+                document.body.classList.remove('cozy', 'rain', 'deep-night');
+                stopFireCrackle();
+                stopRain();
+                document.body.classList.toggle('closing');
+                if (document.body.classList.contains('closing')) {
+                    messageEl.textContent = 'closing time';
+                    messageEl.classList.add('visible');
+                    setTimeout(() => messageEl.classList.remove('visible'), 2500);
+                    // Cat gets sleepy at closing time
+                    setTimeout(() => {
+                        thought.textContent = '*yawn* the shop grows quiet';
+                        cat.classList.add('thinking');
+                        setTimeout(() => cat.classList.remove('thinking'), 3000);
+                    }, 1200);
+                }
+            }
+            if (e.code === 'KeyR') {
+                document.body.classList.remove('cozy', 'closing', 'deep-night');
+                stopFireCrackle();
+                document.body.classList.toggle('rain');
+                if (document.body.classList.contains('rain')) {
+                    startRain();
+                    messageEl.textContent = 'rain outside';
+                    messageEl.classList.add('visible');
+                    setTimeout(() => messageEl.classList.remove('visible'), 2500);
+                    // Cat likes rain
+                    setTimeout(() => {
+                        const rainThoughts = [
+                            'good weather for staying',
+                            'the window weeps gently',
+                            'perfect napping weather',
+                            'the rain knows things'
+                        ];
+                        thought.textContent = rainThoughts[Math.floor(Math.random() * rainThoughts.length)];
+                        cat.classList.add('thinking');
+                        setTimeout(() => cat.classList.remove('thinking'), 3500);
+                    }, 1500);
+                } else {
+                    stopRain();
+                }
+            }
+            if (e.code === 'KeyN') {
+                document.body.classList.remove('cozy', 'closing', 'rain');
+                stopFireCrackle();
+                stopRain();
+                document.body.classList.toggle('deep-night');
+                setTimeOfDay('night');
+                if (document.body.classList.contains('deep-night')) {
+                    messageEl.textContent = 'deep night';
+                    messageEl.classList.add('visible');
+                    setTimeout(() => messageEl.classList.remove('visible'), 2500);
+                    setTimeout(() => {
+                        thought.textContent = 'the hour when items whisper loudest';
+                        cat.classList.add('thinking');
+                        setTimeout(() => cat.classList.remove('thinking'), 4000);
+                    }, 1500);
+                }
+            }
+            if (e.code === 'KeyS') {
+                isSleeping = !isSleeping;
+                cat.classList.toggle('sleeping', isSleeping);
+                if (isSleeping) {
+                    cat.textContent = '-_-';
+                    // Sometimes stretches before sleeping
+                    if (Math.random() > 0.4) {
+                        cat.classList.add('stretching');
+                        setTimeout(() => cat.classList.remove('stretching'), 2500);
+                    }
+                    thought.textContent = 'zzz...';
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 2000);
+                } else {
+                    cat.textContent = ':3';
+                    thought.textContent = '*yawn*';
+                    cat.classList.add('thinking');
+                    setTimeout(() => cat.classList.remove('thinking'), 1500);
+                }
+            }
+            if (e.code === 'KeyP') {
+                petCount++;
+                cat.classList.add('pet');
+                playCatPurr();
+                thought.textContent = petCount > 10 ? '*tolerates*' : 'purrrr';
+                cat.classList.add('thinking');
+                setTimeout(() => cat.classList.remove('pet', 'thinking'), 1200);
+            }
+            if (e.code === 'KeyT') {
+                const times = ['day', 'evening', 'night'];
+                const currentIndex = times.indexOf(timeOfDay);
+                setTimeOfDay(times[(currentIndex + 1) % times.length]);
+                messageEl.textContent = timeOfDay;
+                messageEl.classList.add('visible');
+                setTimeout(() => messageEl.classList.remove('visible'), 2000);
+            }
+            if (e.code === 'KeyM') {
+                initAudio();
+                soundEnabled = !soundEnabled;
+                soundControl.textContent = `[m] sound: ${soundEnabled ? 'on' : 'off'}`;
+                if (soundEnabled && audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                showThought();
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret hints
+            if (e.code === 'KeyH') {
+                thought.textContent = 'try the drawer. or be still.';
+                cat.classList.add('thinking');
+                setTimeout(() => cat.classList.remove('thinking'), 2500);
+            }
+        });
+
+        // Random ambient cat behavior - more organic timing
+        function scheduleCatThought() {
+            const delay = 8000 + Math.random() * 15000; // 8-23 seconds
+            setTimeout(() => {
+                if (Math.random() > 0.7 && !cat.classList.contains('thinking') && !cat.classList.contains('guardian')) {
+                    showThought();
+                }
+                scheduleCatThought();
+            }, delay);
+        }
+        scheduleCatThought();
+
+        // Occasional cat stretch when idle
+        function scheduleCatStretch() {
+            const delay = 25000 + Math.random() * 35000; // 25-60 seconds
+            setTimeout(() => {
+                if (!isSleeping && !cat.classList.contains('thinking') && Math.random() > 0.8) {
+                    cat.classList.add('stretching');
+                    setTimeout(() => cat.classList.remove('stretching'), 2500);
+                }
+                scheduleCatStretch();
+            }, delay);
+        }
+        scheduleCatStretch();
+
+        // Occasional cat blink - a gentle moment of presence
+        function scheduleCatBlink() {
+            const delay = 3000 + Math.random() * 8000; // 3-11 seconds
+            setTimeout(() => {
+                if (!isSleeping && Math.random() > 0.85) {
+                    cat.classList.add('blinking');
+                    setTimeout(() => cat.classList.remove('blinking'), 300);
+                }
+                scheduleCatBlink();
+            }, delay);
+        }
+        scheduleCatBlink();
+
+        // Cat occasionally glances at selected items
+        function scheduleCatGlance() {
+            const delay = 20000 + Math.random() * 25000;
+            setTimeout(() => {
+                if (selectedItems.size > 0 && !isSleeping && Math.random() > 0.75) {
+                    cat.classList.add('curious');
+                    const selectedArray = Array.from(selectedItems);
+                    const randomItem = selectedArray[Math.floor(Math.random() * selectedArray.length)];
+                    const glanceComments = [
+                        `still thinking about ${randomItem}?`,
+                        `${randomItem} suits you`,
+                        `${randomItem} watches you back`,
+                        `good choice. or is it choosing you?`
+                    ];
+                    thought.textContent = glanceComments[Math.floor(Math.random() * glanceComments.length)];
+                    cat.classList.add('thinking');
+                    setTimeout(() => {
+                        cat.classList.remove('curious', 'thinking');
+                    }, 3000);
+                }
+                scheduleCatGlance();
+            }, delay);
+        }
+        scheduleCatGlance();
+
+        // Console poetry
+        console.log('%c', 'padding: 20px');
+        console.log('%cshop', 'font-size: 24px; color: #d4a056; font-weight: 100; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 5px');
+        console.log('%ca place between places', 'font-size: 11px; color: #8b7355; font-style: italic;');
+        console.log('%cwhere things wait to be found', 'font-size: 11px; color: #8b7355; font-style: italic;');
+        console.log('%cor to find you', 'font-size: 11px; color: #8b7355; font-style: italic;');
+        console.log('%c', 'padding: 10px');
+        console.log('%c[c] cozy | [l] closing | [r] rain | [n] night | [s] sleep | [p] pet | [t] time | [m] sound', 'font-size: 9px; color: #6b5545;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cthe cat says: welcome, code explorer', 'font-size: 10px; color: #a08060; font-style: italic;');
+        console.log('%ctype "meow" for a conversation', 'font-size: 8px; color: #605040;');
+        console.log('%ctype "secrets" for hidden knowledge', 'font-size: 8px; color: #605040;');
+        console.log('%c', 'padding: 10px');
+        console.log('%cstillness is rewarded here', 'font-size: 9px; color: #4a4035;');
+
+        // Console easter egg functions
+        window.meow = () => {
+            thought.textContent = 'you speak cat?! few do.';
+            cat.classList.add('curious', 'thinking');
+            setTimeout(() => cat.classList.remove('curious', 'thinking'), 4000);
+            console.log('%c:3', 'font-size: 20px; color: #d4a056;');
+            console.log('%cthe cat is pleased by your effort', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            return 'mrrp';
+        };
+
+        window.secrets = () => {
+            console.log('%c', 'padding: 10px');
+            console.log('%csecrets of the shop:', 'font-size: 12px; color: #d4a056;');
+            console.log('%c- be still for 45 seconds. the cat will notice.', 'font-size: 9px; color: #8b7355;');
+            console.log('%c- the drawer contains different wisdom each time', 'font-size: 9px; color: #8b7355;');
+            console.log('%c- some items float. they are dreaming.', 'font-size: 9px; color: #8b7355;');
+            console.log('%c- the cat remembers how long you have been away', 'font-size: 9px; color: #8b7355;');
+            console.log('%c- cozy mode brings fire. rain brings peace.', 'font-size: 9px; color: #8b7355;');
+            console.log('%c- deep night is when items whisper loudest', 'font-size: 9px; color: #8b7355;');
+            console.log('%c', 'padding: 10px');
+            thought.textContent = 'sharing secrets with the console, i see';
+            cat.classList.add('thinking');
+            setTimeout(() => cat.classList.remove('thinking'), 3000);
+            return 'knowledge shared is knowledge doubled';
+        };
+
+        window.inventory = () => {
+            const selected = itemElements.filter(el => el.classList.contains('selected'))
+                .map(el => el.dataset.label);
+            if (selected.length === 0) {
+                console.log('%cyour basket is empty', 'font-size: 10px; color: #8b7355; font-style: italic;');
+                console.log('%cbut emptiness is also a choice', 'font-size: 9px; color: #6b5545;');
+                return 'nothing, which is something';
+            }
+            console.log('%cyou are carrying:', 'font-size: 10px; color: #d4a056;');
+            selected.forEach(item => {
+                console.log('%c  - ' + item, 'font-size: 9px; color: #8b7355;');
+            });
+            return `${selected.length} ${selected.length === 1 ? 'thing' : 'things'} chosen`;
+        };
+
+        window.time = () => {
+            console.log('%c', 'padding: 5px');
+            console.log('%ctime in the shop:', 'font-size: 11px; color: #d4a056;');
+            console.log(`%cvisits: ${visits}`, 'font-size: 9px; color: #8b7355;');
+            console.log(`%cminutes spent: ${totalTime}`, 'font-size: 9px; color: #8b7355;');
+            console.log(`%ccurrent stillness level: ${stillnessLevel}`, 'font-size: 9px; color: #8b7355;');
+            console.log('%c', 'padding: 5px');
+            return 'time moves strangely here';
+        };
+
+        window.guardian = () => {
+            console.log('%c', 'padding: 10px');
+            console.log('%cthe guardian:', 'font-size: 14px; color: #d4a056;');
+            console.log('%c', 'padding: 5px');
+            console.log('%ci am the cat.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%ci was here before the shop.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%cor the shop was here before me.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%cit is hard to remember which.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%c', 'padding: 5px');
+            console.log('%ci notice who enters.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%ci notice who stays.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%ci notice who returns.', 'font-size: 10px; color: #8b7355; font-style: italic;');
+            console.log('%c', 'padding: 5px');
+            console.log('%cyou have been noticed.', 'font-size: 10px; color: #a08060;');
+            console.log('%c', 'padding: 10px');
+            thought.textContent = 'you asked about me. interesting.';
+            cat.classList.add('thinking');
+            setTimeout(() => cat.classList.remove('thinking'), 4000);
+            return ':3';
+        };
+    </script>
+</body>
+</html>

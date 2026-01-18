@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>almost - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            --the-number: 1.618033988749895; /* phi, the number between numbers */
+            --warmth: rgba(212, 160, 86, 0);
+            --peripheral-opacity: 0.7;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: background 3s ease;
+        }
+
+        body.still {
+            --peripheral-opacity: 1;
+        }
+
+        body.very-still {
+            --peripheral-opacity: 1;
+        }
+
+        /* The grain, but it listens */
+        .grain-listening {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+            transition: opacity 8s ease;
+        }
+
+        body.very-still .grain-listening {
+            opacity: 0.06;
+        }
+
+        /* Peripheral elements - fade when cursor approaches */
+        .peripheral {
+            position: fixed;
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .peripheral.visible {
+            opacity: var(--peripheral-opacity);
+        }
+
+        .peripheral.retreating {
+            opacity: 0.05 !important;
+            transition: opacity 1.8s ease;
+        }
+
+        /* The recurring number - hidden until stillness */
+        .the-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            opacity: 0;
+            position: fixed;
+            transition: opacity 3s ease;
+            pointer-events: none;
+        }
+
+        .the-number.still-reveal {
+            opacity: 0;
+        }
+
+        body.still .the-number.still-reveal {
+            opacity: 0.12;
+        }
+
+        body.very-still .the-number.still-reveal {
+            opacity: 0.2;
+        }
+
+        .the-number.very-still-reveal {
+            opacity: 0;
+        }
+
+        body.very-still .the-number.very-still-reveal {
+            opacity: 0.15;
+        }
+
+        .the-number.noticed {
+            opacity: 0.35 !important;
+            color: var(--amber);
+            transition: opacity 0.8s ease, color 1.2s ease;
+        }
+
+        /* Warmth zones - glow when secrets are near */
+        .warmth-zone {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+            opacity: 0;
+            pointer-events: none;
+            filter: blur(40px);
+            transition: opacity 3s ease;
+            z-index: 2;
+        }
+
+        .warmth-zone.warm {
+            opacity: 0.15;
+        }
+
+        .warmth-zone.hot {
+            opacity: 0.3;
+        }
+
+        /* The mirror element - reflection slightly different */
+        .mirror-container {
+            position: fixed;
+            bottom: 15%;
+            right: 10%;
+            width: 100px;
+            height: 150px;
+            opacity: 0;
+            transition: opacity 5s ease;
+            z-index: 5;
+        }
+
+        body.still .mirror-container {
+            opacity: 0.15;
+        }
+
+        body.very-still .mirror-container {
+            opacity: 0.4;
+        }
+
+        .mirror {
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--slate-light);
+            border-radius: 60px 60px 45px 45px;
+            background: linear-gradient(
+                135deg,
+                rgba(245, 240, 230, 0.9) 0%,
+                rgba(200, 195, 185, 0.7) 50%,
+                rgba(180, 175, 165, 0.8) 100%
+            );
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mirror::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                45deg,
+                transparent 40%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 60%
+            );
+            animation: mirrorSheen 8s ease-in-out infinite;
+        }
+
+        @keyframes mirrorSheen {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .mirror-figure {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 50px;
+            background: var(--slate);
+            border-radius: 50% 50% 40% 40%;
+            opacity: 0.2;
+            /* The reflection is slightly tilted - not quite you */
+            transform: translateX(-50%) rotate(3deg) scaleX(-1);
+        }
+
+        .mirror-whisper {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 4s ease;
+            white-space: nowrap;
+        }
+
+        body.very-still .mirror-whisper {
+            opacity: 0.3;
+        }
+
+        body.deeply-still .mirror-whisper {
+            opacity: 0.5;
+        }
+
+        /* The shape of holding without vessel */
+        .holding-shape {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            z-index: 3;
+        }
+
+        .holding-gesture {
+            position: absolute;
+            inset: 0;
+            border: 1px dashed var(--slate-light);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .holding-gesture:nth-child(2) {
+            inset: 15px;
+            border-style: dotted;
+            animation: holdingRotate 40s linear infinite;
+        }
+
+        .holding-gesture:nth-child(3) {
+            inset: 35px;
+            border-style: solid;
+            border-color: transparent;
+            animation: holdingRotate 30s linear infinite reverse;
+        }
+
+        @keyframes holdingRotate {
+            to { transform: rotate(360deg); }
+        }
+
+        body.still .holding-gesture {
+            opacity: 0.2;
+        }
+
+        body.very-still .holding-gesture {
+            opacity: 0.4;
+        }
+
+        body.very-still .holding-gesture:nth-child(3) {
+            border-color: var(--amber-soft);
+            opacity: 0.15;
+        }
+
+        .holding-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            width: 120px;
+        }
+
+        body.very-still .holding-center {
+            opacity: 0.5;
+        }
+
+        /* Echoes of others - warmth that hasn't faded */
+        .echo {
+            position: fixed;
+            opacity: 0;
+            transition: opacity 6s ease;
+            pointer-events: none;
+        }
+
+        .echo-warmth {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.3) 0%, transparent 70%);
+            filter: blur(35px);
+        }
+
+        .echo-question {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--slate-light);
+            transform: rotate(var(--rotation, 0deg));
+            letter-spacing: 0.05em;
+        }
+
+        body.still .echo {
+            opacity: 0.08;
+        }
+
+        body.very-still .echo {
+            opacity: 0.18;
+        }
+
+        body.deeply-still .echo {
+            opacity: 0.28;
+        }
+
+        /* The recurring shape (spiral/fibonacci) */
+        .coincidence-shape {
+            position: fixed;
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        .coincidence-shape svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .coincidence-shape path {
+            fill: none;
+            stroke: var(--slate-light);
+            stroke-width: 0.5;
+        }
+
+        body.still .coincidence-shape {
+            opacity: 0.15;
+        }
+
+        body.very-still .coincidence-shape {
+            opacity: 0.3;
+        }
+
+        /* Time tense display - liminal, between */
+        .time-tense {
+            position: fixed;
+            top: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 5s ease;
+            text-align: center;
+            letter-spacing: 0.1em;
+        }
+
+        .time-tense .past,
+        .time-tense .future {
+            display: inline;
+            opacity: 0.6;
+        }
+
+        .time-tense .touch-point {
+            color: var(--amber);
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        body.very-still .time-tense {
+            opacity: 0.3;
+        }
+
+        body.deeply-still .time-tense {
+            opacity: 0.45;
+        }
+
+        /* Central text - word on tip of tongue */
+        .almost-word {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--slate);
+            opacity: 0;
+            animation: fadeIn 4s ease 1.5s forwards;
+            letter-spacing: 0.25em;
+            z-index: 20;
+        }
+
+        .almost-word::after {
+            content: '...';
+            animation: ellipsisPulse 5s ease-in-out infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes ellipsisPulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Stillness timer visualization */
+        .stillness-ring {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 1px solid transparent;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: border-color 3s ease;
+            z-index: 1;
+        }
+
+        body.still .stillness-ring {
+            border-color: rgba(74, 85, 104, 0.1);
+        }
+
+        body.very-still .stillness-ring {
+            border-color: rgba(212, 160, 86, 0.2);
+        }
+
+        /* Messages that appear in stillness */
+        .stillness-message {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            letter-spacing: 0.1em;
+            pointer-events: none;
+        }
+
+        body.very-still .stillness-message.reveal {
+            opacity: 0.35;
+        }
+
+        /* Compass direction that doesn't exist */
+        .fifth-direction {
+            position: fixed;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .fifth-direction svg {
+            width: 60px;
+            height: 60px;
+        }
+
+        .fifth-direction .needle {
+            fill: var(--slate);
+            transform-origin: center;
+            animation: needleWander 20s ease-in-out infinite;
+        }
+
+        @keyframes needleWander {
+            0%, 100% { transform: rotate(22.5deg); }
+            25% { transform: rotate(67.5deg); }
+            50% { transform: rotate(112.5deg); }
+            75% { transform: rotate(157.5deg); }
+        }
+
+        .fifth-direction .direction-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            fill: var(--slate-light);
+        }
+
+        body.very-still .fifth-direction {
+            opacity: 0.4;
+        }
+
+        /* Cursor glow (warmth follows attention) */
+        .cursor-warmth {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            filter: blur(20px);
+            transform: translate(-50%, -50%);
+            transition: opacity 1s ease;
+            z-index: 1;
+        }
+
+        body:not(.still) .cursor-warmth {
+            opacity: 0.1;
+        }
+
+        /* Edge whispers */
+        .edge-revelation {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            letter-spacing: 0.15em;
+        }
+
+        .edge-revelation.top { top: 2rem; left: 50%; transform: translateX(-50%); }
+        .edge-revelation.left { left: 2rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .edge-revelation.right { right: 2rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+        body.very-still .edge-revelation {
+            opacity: 0.25;
+        }
+
+        /* Return link override for this page */
+        .back-link {
+            z-index: 200;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .almost-word { font-size: 1.8rem; }
+            .mirror-container { display: none; }
+            .peripheral { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="grain-listening"></div>
+
+    <!-- Cursor warmth indicator -->
+    <div class="cursor-warmth" id="cursorWarmth"></div>
+
+    <!-- Warmth zone - subtle, singular -->
+    <div class="warmth-zone" id="warmth1" style="width: 180px; height: 180px; top: 30%; left: 20%;"></div>
+
+    <!-- The recurring number (phi) - sparse, discovered -->
+    <div class="the-number still-reveal" id="num1" style="top: 8%; left: 12%;">1.618</div>
+    <div class="the-number very-still-reveal" id="num2" style="bottom: 15%; left: 8%;">φ</div>
+    <div class="the-number very-still-reveal" id="num3" style="bottom: 8%; left: 45%;">1,1,2,3,5...</div>
+
+    <!-- Peripheral elements - sparse, gentle retreat -->
+    <div class="peripheral" id="peri1" style="top: 12%; left: 6%;">
+        <span style="font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; font-style: italic; color: var(--slate-light);">someone was here</span>
+    </div>
+    <div class="peripheral" id="peri2" style="bottom: 30%; right: 5%;">
+        <span style="font-family: 'Cormorant Garamond', serif; font-size: 0.8rem; color: var(--slate-light);">the shape before the name</span>
+    </div>
+    <div class="peripheral" id="peri3" style="top: 65%; left: 4%;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; color: var(--slate);">just there</span>
+    </div>
+
+    <!-- Coincidence shape - one spiral, discovered -->
+    <div class="coincidence-shape" id="spiral1" style="top: 18%; right: 15%; width: 30px; height: 30px;">
+        <svg viewBox="0 0 100 100"><path d="M50 50 Q60 40 55 30 Q45 25 35 35 Q30 50 45 55 Q60 55 65 45 Q65 30 50 25 Q30 30 30 50 Q35 70 55 70 Q75 65 75 45 Q70 25 50 20"/></svg>
+    </div>
+
+    <!-- Echoes of others - warmth that hasn't faded -->
+    <div class="echo echo-warmth" id="echo1" style="top: 35%; left: 22%;"></div>
+    <div class="echo echo-question" id="echo2" style="bottom: 28%; left: 18%; --rotation: -3deg;">what if—</div>
+
+    <!-- The shape of holding without vessel -->
+    <div class="holding-shape">
+        <div class="holding-gesture"></div>
+        <div class="holding-gesture"></div>
+        <div class="holding-gesture"></div>
+        <div class="holding-center">the shape<br>of holding</div>
+    </div>
+
+    <!-- The stillness ring -->
+    <div class="stillness-ring"></div>
+
+    <!-- Central almost-word -->
+    <div class="almost-word">almost</div>
+
+    <!-- Time tense that doesn't exist -->
+    <div class="time-tense">
+        <span class="past">what was</span>
+        <span class="touch-point"> touches </span>
+        <span class="future">what will be</span>
+    </div>
+
+    <!-- The mirror, reflection slightly different -->
+    <div class="mirror-container">
+        <div class="mirror">
+            <div class="mirror-figure"></div>
+        </div>
+        <div class="mirror-whisper">you, but listening</div>
+    </div>
+
+    <!-- Fifth compass direction -->
+    <div class="fifth-direction">
+        <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="var(--slate-light)" stroke-width="0.5" opacity="0.3"/>
+            <text x="50" y="12" class="direction-label" text-anchor="middle">N</text>
+            <text x="90" y="53" class="direction-label" text-anchor="middle">E</text>
+            <text x="50" y="95" class="direction-label" text-anchor="middle">S</text>
+            <text x="10" y="53" class="direction-label" text-anchor="middle">W</text>
+            <text x="75" y="25" class="direction-label" text-anchor="middle" fill="var(--amber)" opacity="0.6">?</text>
+            <polygon class="needle" points="50,20 53,50 50,55 47,50" opacity="0.4"/>
+        </svg>
+    </div>
+
+    <!-- Edge revelation - singular, patient -->
+    <div class="edge-revelation top">the secret is kind</div>
+
+    <!-- Stillness message - one is enough -->
+    <div class="stillness-message" id="stillMsg1" style="bottom: 22%; right: 28%;">it forgets you are watching</div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // Console poetry - sparse, patient
+        console.log('%calmost', 'font-size:16px;font-family:Georgia,serif;color:#718096;font-weight:100;letter-spacing:0.5em;');
+        console.log('%c', 'padding:3px');
+        console.log('%cperipheral revelation', 'font-size:10px;color:#4a5568;font-style:italic;letter-spacing:0.1em;');
+
+        setTimeout(() => {
+            console.log('%c', 'padding:2px');
+            console.log('%c◌ what shows itself by not showing itself', 'font-size:9px;font-family:monospace;color:#718096;');
+        }, 8000);
+
+        setTimeout(() => {
+            console.log('%c◌ be still. it will forget you are watching.', 'font-size:9px;font-family:monospace;color:#718096;');
+        }, 20000);
+
+        // State
+        let lastMove = Date.now();
+        let stillnessLevel = 0;
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let isStill = false;
+        let isVeryStill = false;
+        let peripheralElements = document.querySelectorAll('.peripheral');
+        let numberElements = document.querySelectorAll('.the-number');
+        let warmthZones = document.querySelectorAll('.warmth-zone');
+        let cursorWarmth = document.getElementById('cursorWarmth');
+        let stillnessMessages = document.querySelectorAll('.stillness-message');
+
+        // The number phi - appears more the longer you stay
+        const PHI = 1.618033988749895;
+
+        // Calculate distance from cursor to element
+        function distanceToElement(el) {
+            const rect = el.getBoundingClientRect();
+            const elX = rect.left + rect.width / 2;
+            const elY = rect.top + rect.height / 2;
+            return Math.sqrt(Math.pow(mouseX - elX, 2) + Math.pow(mouseY - elY, 2));
+        }
+
+        // Peripheral vision - elements fade when looked at directly
+        function updatePeripherals() {
+            peripheralElements.forEach(el => {
+                const dist = distanceToElement(el);
+                const threshold = 150; // pixels - if cursor is closer than this, element retreats
+
+                if (stillnessLevel >= 1) {
+                    el.classList.add('visible');
+                }
+
+                if (dist < threshold) {
+                    el.classList.add('retreating');
+                } else {
+                    el.classList.remove('retreating');
+                }
+            });
+        }
+
+        // Numbers that notice when you notice them
+        function updateNumbers() {
+            numberElements.forEach(el => {
+                const dist = distanceToElement(el);
+                if (dist < 100) {
+                    el.classList.add('noticed');
+                } else {
+                    el.classList.remove('noticed');
+                }
+            });
+        }
+
+        // Warmth zones glow when cursor approaches secrets
+        function updateWarmth() {
+            warmthZones.forEach(zone => {
+                const dist = distanceToElement(zone);
+                zone.classList.remove('warm', 'hot');
+
+                if (dist < 200) {
+                    zone.classList.add('hot');
+                } else if (dist < 350) {
+                    zone.classList.add('warm');
+                }
+            });
+
+            // Update cursor warmth position
+            cursorWarmth.style.left = mouseX + 'px';
+            cursorWarmth.style.top = mouseY + 'px';
+        }
+
+        // Stillness detection
+        let isDeeplyStill = false;
+        let deepRevelationShown = false;
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastMove;
+
+            // Still (5 seconds)
+            if (elapsed > 5000 && !isStill) {
+                isStill = true;
+                document.body.classList.add('still');
+                stillnessLevel = 1;
+            }
+
+            // Very still (12 seconds) - more reveals
+            if (elapsed > 12000 && !isVeryStill) {
+                isVeryStill = true;
+                document.body.classList.add('very-still');
+                stillnessLevel = 2;
+
+                // Reveal stillness messages one by one
+                stillnessMessages.forEach((msg, i) => {
+                    setTimeout(() => {
+                        msg.classList.add('reveal');
+                    }, i * 2500);
+                });
+            }
+
+            // Extremely still (25 seconds) - console poem
+            if (elapsed > 25000 && stillnessLevel === 2) {
+                stillnessLevel = 3;
+                console.log('%c', 'padding:2px');
+                console.log('%c◌ you have become still enough', 'font-size:9px;font-family:monospace;color:#d4a056;');
+                console.log('%c◌ the room forgets you are watching', 'font-size:9px;font-family:monospace;color:#d4a056;');
+            }
+
+            // Deeply still (35 seconds) - the deepest reward
+            if (elapsed > 35000 && !isDeeplyStill) {
+                isDeeplyStill = true;
+                document.body.classList.add('deeply-still');
+                stillnessLevel = 4;
+
+                // The deepest revelation
+                if (!deepRevelationShown) {
+                    deepRevelationShown = true;
+                    showDeepRevelation();
+                }
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        // The deepest reward - a new way of noticing
+        function showDeepRevelation() {
+            const revelation = document.createElement('div');
+            revelation.className = 'deep-revelation';
+            revelation.innerHTML = 'what follows you out:<br><em>a new way of noticing</em>';
+            revelation.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) translateY(80px);
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.9rem;
+                color: var(--amber);
+                opacity: 0;
+                text-align: center;
+                line-height: 1.8;
+                pointer-events: none;
+                transition: opacity 5s ease;
+                z-index: 25;
+            `;
+            document.body.appendChild(revelation);
+
+            setTimeout(() => {
+                revelation.style.opacity = '0.5';
+            }, 100);
+
+            // It stays. It doesn't fade. Because that's what it means.
+        }
+
+        // Reset stillness on movement
+        function resetStillness() {
+            lastMove = Date.now();
+
+            if (isStill) {
+                isStill = false;
+                document.body.classList.remove('still');
+            }
+
+            if (isVeryStill) {
+                isVeryStill = false;
+                document.body.classList.remove('very-still');
+                stillnessMessages.forEach(msg => msg.classList.remove('reveal'));
+            }
+
+            if (isDeeplyStill) {
+                isDeeplyStill = false;
+                document.body.classList.remove('deeply-still');
+                // The deep revelation stays - it's what follows you out
+            }
+
+            if (stillnessLevel > 0) {
+                stillnessLevel = 0;
+            }
+        }
+
+        // Mouse tracking
+        let moveThrottle = false;
+        document.addEventListener('mousemove', e => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            if (!moveThrottle) {
+                moveThrottle = true;
+                resetStillness();
+                updatePeripherals();
+                updateNumbers();
+                updateWarmth();
+                setTimeout(() => moveThrottle = false, 50);
+            }
+        }, { passive: true });
+
+        // Touch support
+        document.addEventListener('touchmove', e => {
+            if (e.touches.length > 0) {
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+                resetStillness();
+                updatePeripherals();
+                updateNumbers();
+                updateWarmth();
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchstart', resetStillness, { passive: true });
+
+        // Right-click whisper
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            const whispers = [
+                'look away to see',
+                'it was just there',
+                'the corner of your eye'
+            ];
+
+            const whisper = document.createElement('div');
+            whisper.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.85rem;
+                font-style: italic;
+                color: var(--amber);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 1s ease, transform 2s ease;
+                z-index: 1000;
+            `;
+            whisper.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.7';
+                whisper.style.transform = 'translate(-50%, -50%) translateY(-20px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 1000);
+            }, 2500);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            resetStillness();
+
+            // Press 'p' for phi
+            if (e.key.toLowerCase() === 'p') {
+                console.log('%cφ = 1.618033988749895...', 'font-size:11px;font-family:monospace;color:#d4a056;');
+                console.log('%cthe number between numbers', 'font-size:9px;color:#718096;font-style:italic;');
+                console.log('%ca ratio that appears in spirals, shells, galaxies, faces', 'font-size:9px;color:#718096;font-style:italic;');
+            }
+
+            // Press 's' for stillness hint
+            if (e.key.toLowerCase() === 's') {
+                console.log('%cbe still. it will forget you are watching.', 'font-size:10px;color:#4a5568;font-style:italic;');
+            }
+        });
+
+        // Blink effect - meaning shifts
+        let blinkCount = 0;
+        const almostWord = document.querySelector('.almost-word');
+        const blinkTexts = [
+            'almost',
+            'nearly',
+            'almost'
+        ];
+
+        // Simulate blink detection via rapid clicks
+        let lastClick = 0;
+        document.addEventListener('click', e => {
+            if (e.target.closest('a')) return;
+
+            const now = Date.now();
+            if (now - lastClick < 300) {
+                // Double-click is like a blink
+                blinkCount = (blinkCount + 1) % blinkTexts.length;
+                almostWord.textContent = blinkTexts[blinkCount];
+
+                console.log('%c*blink*', 'font-size:9px;color:#718096;font-style:italic;');
+                console.log('%cthe meaning shifts', 'font-size:9px;color:#718096;');
+            }
+            lastClick = now;
+            resetStillness();
+        });
+
+        // Initialize
+        checkStillness();
+
+        // Gradually reveal peripherals even before full stillness
+        setTimeout(() => {
+            peripheralElements.forEach((el, i) => {
+                setTimeout(() => {
+                    if (!el.classList.contains('retreating')) {
+                        el.classList.add('visible');
+                    }
+                }, i * 1000);
+            });
+        }, 3000);
+
+        // The mirror occasionally shifts - subtle, patient
+        const mirrorFigure = document.querySelector('.mirror-figure');
+        setInterval(() => {
+            const newRotation = -3 + Math.random() * 6;
+            mirrorFigure.style.transform = `translateX(-50%) rotate(${newRotation}deg) scaleX(-1)`;
+        }, 12000);
+
+        // The number phi remains present but quiet
+        // It appears in the page, not the console
+        // Discovery, not announcement
+
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>silence - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: crosshair;
+            overflow: hidden;
+            transition: background 4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deep-silence {
+            background: #0a0a0a;
+        }
+
+        body.deep-silence .back-link {
+            color: var(--bone);
+            opacity: 0.2;
+        }
+
+        .silence-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Subtle grain overlay for texture */
+        .silence-field::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.012;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .ripple {
+            position: absolute;
+            border: 1px solid var(--slate);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: ripple-expand 5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .ripple.gentle {
+            animation-duration: 7s;
+            border-style: dashed;
+            border-color: rgba(74, 85, 104, 0.4);
+        }
+
+        .ripple.breath {
+            animation-duration: 8s;
+            border-width: 0.5px;
+            border-color: rgba(74, 85, 104, 0.25);
+        }
+
+        body.deep-silence .ripple {
+            border-color: rgba(240, 180, 120, 0.3);
+        }
+
+        @keyframes ripple-expand {
+            0% { width: 0; height: 0; opacity: 0.25; transform: translate(-50%, -50%); }
+            50% { opacity: 0.12; }
+            100% { width: 450px; height: 450px; opacity: 0; transform: translate(-50%, -50%); }
+        }
+
+        /* Anti-ripple on right click */
+        .anti-ripple {
+            position: absolute;
+            border: 1px solid var(--amber);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: anti-ripple 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes anti-ripple {
+            0% { width: 280px; height: 280px; opacity: 0; transform: translate(-50%, -50%); }
+            25% { opacity: 0.45; }
+            100% { width: 0; height: 0; opacity: 0; transform: translate(-50%, -50%); }
+        }
+
+        /* Void particles that appear in deep silence */
+        .void-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--amber);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: void-drift 10s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes void-drift {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            15% { opacity: 0.35; transform: translate(-50%, -50%) scale(1); }
+            75% { opacity: 0.15; }
+            100% { opacity: 0; transform: translate(calc(-50% + var(--drift-x)), calc(-50% + var(--drift-y))) scale(0.3); }
+        }
+
+        /* The watcher - something that observes */
+        .watcher {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: transparent;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 6s cubic-bezier(0.4, 0, 0.2, 1), transform 8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .watcher::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1px;
+            height: 1px;
+            background: var(--slate);
+            border-radius: 50%;
+            box-shadow: 0 0 8px 2px rgba(74, 85, 104, 0.15);
+        }
+
+        body.deep-silence .watcher::before {
+            background: var(--amber);
+            box-shadow: 0 0 12px 3px rgba(212, 160, 86, 0.2);
+        }
+
+        .watcher.observing {
+            opacity: 0.6;
+        }
+
+        .presence {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px;
+            height: 3px;
+            background: var(--amber);
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .presence::before,
+        .presence::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid var(--amber);
+            opacity: 0;
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .presence::before {
+            width: 20px;
+            height: 20px;
+        }
+
+        .presence::after {
+            width: 40px;
+            height: 40px;
+        }
+
+        .presence.aware {
+            opacity: 0.6;
+            box-shadow: 0 0 80px 30px var(--amber-glow);
+        }
+
+        .presence.aware::before,
+        .presence.aware::after {
+            opacity: 0.25;
+            animation: presence-breathe 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .presence.aware::after {
+            animation-delay: 1s;
+        }
+
+        /* Deep awareness - more intense presence after extended stillness */
+        .presence.deep-aware {
+            opacity: 0.8;
+            box-shadow: 0 0 100px 40px var(--amber-glow);
+        }
+
+        .presence.deep-aware::before {
+            width: 30px;
+            height: 30px;
+        }
+
+        .presence.deep-aware::after {
+            width: 60px;
+            height: 60px;
+        }
+
+        @keyframes presence-breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.25; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.1; }
+        }
+
+        body.deep-silence .presence.aware {
+            box-shadow: 0 0 120px 50px var(--amber-glow);
+        }
+
+        /* Breathing background for deep silence */
+        body.deep-silence::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100vmax;
+            height: 100vmax;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(240, 180, 120, 0.025) 0%, transparent 55%);
+            animation: deep-breathe 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            pointer-events: none;
+        }
+
+        @keyframes deep-breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.4; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.8; }
+        }
+
+        .loudness {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: var(--bone-dark);
+            opacity: 0.15;
+            transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deep-silence .loudness {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .loudness-fill {
+            height: 100%;
+            background: var(--slate);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deep-silence .loudness-fill {
+            background: var(--amber);
+            opacity: 0.7;
+        }
+
+        .stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.95rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 5s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            pointer-events: none;
+            letter-spacing: 0.05em;
+            max-width: 80%;
+            line-height: 1.9;
+        }
+
+        body.deep-silence .stillness-message {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stillness-message.visible {
+            opacity: 0.55;
+        }
+
+        /* Secondary message for layered poetry */
+        .stillness-whisper {
+            position: fixed;
+            top: calc(50% + 3.5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 6s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            pointer-events: none;
+            letter-spacing: 0.18em;
+            font-style: italic;
+        }
+
+        body.deep-silence .stillness-whisper {
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .stillness-whisper.visible {
+            opacity: 0.3;
+        }
+
+        /* Deep poetry - appears only after very long stillness */
+        .deep-poetry {
+            position: fixed;
+            top: calc(50% - 5rem);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 8s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            pointer-events: none;
+            letter-spacing: 0.25em;
+            font-weight: 300;
+        }
+
+        body.deep-silence .deep-poetry {
+            color: rgba(212, 160, 86, 0.8);
+        }
+
+        .deep-poetry.visible {
+            opacity: 0.4;
+        }
+
+        .instruction {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            animation: instruction-appear 4s cubic-bezier(0.4, 0, 0.2, 1) 3s forwards;
+            letter-spacing: 0.14em;
+        }
+
+        @keyframes instruction-appear {
+            0% { opacity: 0; }
+            100% { opacity: 0.35; }
+        }
+
+        .instruction.hidden { opacity: 0 !important; transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        body.deep-silence .instruction {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        /* Keyboard hint - barely visible */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: right;
+            line-height: 2.2;
+        }
+
+        body:hover .key-hint { opacity: 0.18; }
+        body.deep-silence .key-hint { color: rgba(255, 255, 255, 0.4); }
+
+        /* Echo text that appears on spacebar */
+        .echo {
+            position: fixed;
+            font-size: 1.1rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            animation: echo-fade 6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            letter-spacing: 0.12em;
+        }
+
+        @keyframes echo-fade {
+            0% { opacity: 0.4; transform: scale(1); filter: blur(0); }
+            60% { opacity: 0.12; }
+            100% { opacity: 0; transform: scale(1.6) translateY(-50px); filter: blur(3px); }
+        }
+
+        body.deep-silence .echo { color: var(--amber); opacity: 0.5; }
+
+        /* Hidden glyph that appears after extended stillness */
+        .hidden-glyph {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 10s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            letter-spacing: 0.35em;
+        }
+
+        body.deep-silence .hidden-glyph {
+            color: var(--amber);
+        }
+
+        .hidden-glyph.revealed {
+            opacity: 0.12;
+        }
+
+        /* Time indicator - subtle marks for passage of stillness */
+        .time-marks {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .time-mark {
+            width: 2px;
+            height: 2px;
+            border-radius: 50%;
+            background: var(--slate);
+            opacity: 0;
+            transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deep-silence .time-mark {
+            background: var(--amber);
+        }
+
+        .time-mark.filled {
+            opacity: 0.35;
+        }
+
+        /* Corner whispers - text that appears at edges */
+        .corner-whisper {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            letter-spacing: 0.25em;
+        }
+
+        .corner-whisper.top-left { top: 2rem; left: 2rem; }
+        .corner-whisper.bottom-right { bottom: 2rem; right: 2rem; }
+        .corner-whisper.top-right { top: 2rem; right: 6rem; }
+        .corner-whisper.bottom-left { bottom: 2rem; left: 2rem; }
+
+        body.deep-silence .corner-whisper { color: rgba(255, 255, 255, 0.25); }
+
+        .corner-whisper.visible { opacity: 0.15; }
+
+        /* Secret: Konami-style activation indicator */
+        .secret-activated {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.45rem;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            animation: secret-reveal 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            letter-spacing: 0.6em;
+        }
+
+        @keyframes secret-reveal {
+            0% { opacity: 0; letter-spacing: 1.2em; }
+            40% { opacity: 0.5; }
+            100% { opacity: 0; letter-spacing: 0.15em; }
+        }
+
+        /* The threshold - appears at the edge of perception */
+        .threshold {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 6s cubic-bezier(0.4, 0, 0.2, 1);
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(74, 85, 104, 0.02) 70%);
+        }
+
+        body.deep-silence .threshold {
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(212, 160, 86, 0.03) 70%);
+        }
+
+        .threshold.visible {
+            opacity: 1;
+        }
+
+        /* Heartbeat pause indicator - the nothing between heartbeats */
+        .heartbeat-pause {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 0;
+            background: var(--slate);
+            opacity: 0;
+            transition: height 2s cubic-bezier(0.4, 0, 0.2, 1), opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deep-silence .heartbeat-pause {
+            background: var(--amber);
+        }
+
+        .heartbeat-pause.visible {
+            height: 8px;
+            opacity: 0.25;
+        }
+
+        /* Sound option - does something in another sense */
+        .sound-option {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.15em;
+        }
+
+        body:hover .sound-option { opacity: 0.12; }
+        .sound-option:hover { opacity: 0.25 !important; }
+
+        body.deep-silence .sound-option { color: rgba(255, 255, 255, 0.3); }
+
+        /* Sound activated state - visual "sound" */
+        .sound-wave {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: sound-wave-expand 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .sound-wave.wave-1 { border: 0.5px solid var(--slate); }
+        .sound-wave.wave-2 { border: 0.5px dashed var(--slate); animation-delay: 0.3s; }
+        .sound-wave.wave-3 { border: 0.5px solid var(--slate); animation-delay: 0.6s; }
+
+        body.deep-silence .sound-wave { border-color: var(--amber); }
+
+        @keyframes sound-wave-expand {
+            0% { width: 0; height: 0; opacity: 0; }
+            20% { opacity: 0.2; }
+            100% { width: 600px; height: 600px; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="silence-field" id="field"></div>
+    <div class="threshold" id="threshold"></div>
+    <div class="presence" id="presence"></div>
+    <div class="stillness-message" id="message"></div>
+    <div class="stillness-whisper" id="whisper"></div>
+    <div class="deep-poetry" id="deepPoetry"></div>
+    <div class="hidden-glyph" id="glyph"></div>
+    <div class="heartbeat-pause" id="heartbeatPause"></div>
+
+    <div class="corner-whisper top-left" id="cornerTopLeft"></div>
+    <div class="corner-whisper bottom-right" id="cornerBottomRight"></div>
+    <div class="corner-whisper top-right" id="cornerTopRight"></div>
+    <div class="corner-whisper bottom-left" id="cornerBottomLeft"></div>
+
+    <!-- Watchers - subtle presences at the edges -->
+    <div class="watcher" id="watcher1"></div>
+    <div class="watcher" id="watcher2"></div>
+    <div class="watcher" id="watcher3"></div>
+
+    <div class="time-marks" id="timeMarks">
+        <div class="time-mark"></div>
+        <div class="time-mark"></div>
+        <div class="time-mark"></div>
+        <div class="time-mark"></div>
+        <div class="time-mark"></div>
+        <div class="time-mark"></div>
+        <div class="time-mark"></div>
+    </div>
+
+    <div class="loudness">
+        <div class="loudness-fill" id="loudness"></div>
+    </div>
+
+    <p class="instruction" id="instruction">move to disturb. be still to listen.</p>
+    <div class="key-hint">
+        [space] call out<br>
+        [d] descend deeper<br>
+        [r] absorb
+    </div>
+
+    <div class="sound-option" id="soundOption">sound</div>
+
+    <script>
+        const field = document.getElementById('field');
+        const threshold = document.getElementById('threshold');
+        const presence = document.getElementById('presence');
+        const loudness = document.getElementById('loudness');
+        const message = document.getElementById('message');
+        const whisper = document.getElementById('whisper');
+        const deepPoetry = document.getElementById('deepPoetry');
+        const instruction = document.getElementById('instruction');
+        const glyph = document.getElementById('glyph');
+        const heartbeatPause = document.getElementById('heartbeatPause');
+        const timeMarks = document.querySelectorAll('.time-mark');
+        const cornerTopLeft = document.getElementById('cornerTopLeft');
+        const cornerBottomRight = document.getElementById('cornerBottomRight');
+        const cornerTopRight = document.getElementById('cornerTopRight');
+        const cornerBottomLeft = document.getElementById('cornerBottomLeft');
+        const soundOption = document.getElementById('soundOption');
+        const watchers = [
+            document.getElementById('watcher1'),
+            document.getElementById('watcher2'),
+            document.getElementById('watcher3')
+        ];
+
+        // Position watchers at edges
+        watchers[0].style.cssText = 'top: 15%; left: 8%;';
+        watchers[1].style.cssText = 'top: 70%; right: 12%;';
+        watchers[2].style.cssText = 'bottom: 25%; left: 18%;';
+
+        // Extended, more poetic messages - the paradox of presence in absence
+        const messages = [
+            'the silence was always here',
+            'waiting beneath your footsteps',
+            'you brought the noise with you',
+            'wrapped around your thoughts',
+            'but now you are learning to set it down',
+            'the room remembers what you forget',
+            'can you hear it?',
+            'the nothing between heartbeats',
+            'that is where you have always been',
+            'stillness is not empty',
+            'it is full of answers',
+            'to questions you stopped asking',
+            'the walls hold their breath for you',
+            'something here is listening back',
+            'and you have learned to listen in return'
+        ];
+
+        // Whispered secondary thoughts - quieter revelations
+        const whispers = [
+            '(it has always been listening)',
+            '(the walls hold their breath)',
+            '(time moves differently here)',
+            '(you are not alone in the quiet)',
+            '(every silence has a shape)',
+            '(this one is yours)',
+            '(rest now)',
+            '(the void knows your name)',
+            '(presence does not require sound)',
+            '(the threshold welcomes you)'
+        ];
+
+        // Deep poetry - for those who truly wait
+        const deepPoems = [
+            'before the word, there was this',
+            'the space between stars is not empty',
+            'you have always known how to be still',
+            'the longest pause holds the deepest truth',
+            'what speaks without speaking?'
+        ];
+
+        // Corner whispers that appear randomly - even smaller moments
+        const cornerTexts = {
+            topLeft: ['hush', 'listen', 'wait', 'here', 'now', '.'],
+            bottomRight: ['still', 'quiet', 'peace', 'rest', 'home', '...'],
+            topRight: ['yes', 'stay', '', 'almost', 'nearly'],
+            bottomLeft: ['there', 'soft', 'held', 'known', '']
+        };
+
+        // More varied echo words - calls into the void
+        const echoWords = [
+            '...',
+            'hello?',
+            'is anyone there?',
+            'echo',
+            'silence',
+            '       ',
+            'can you hear me?',
+            'nothing',
+            '...',
+            'where are you?',
+            'here',
+            '   ',
+            '(listening)',
+            '...',
+            'wait',
+            ''
+        ];
+
+        // Hidden glyph symbols - rewards for patience
+        const glyphSymbols = ['', '', '', '', '', '', '', ''];
+
+        let messageIndex = 0;
+        let whisperIndex = 0;
+        let deepPoetryIndex = 0;
+        let lastMove = Date.now();
+        let moveCount = 0;
+        let echoIndex = 0;
+        let glyphIndex = 0;
+        let totalStillTime = 0;
+        let secretSequence = [];
+        const secretCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown'];
+        let deepSilenceTime = 0;
+        let soundActivated = false;
+        let watcherPositions = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}];
+
+        // Prevent context menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Track mouse position for watchers
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+
+        // Mouse movement creates ripples
+        document.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+            const timeSinceLastMove = now - lastMove;
+            lastMove = now;
+            moveCount++;
+            totalStillTime = 0;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            // Create ripple with varying intensity based on movement speed
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+
+            // Gentler ripples for slow movement, breath ripples for very slow
+            if (timeSinceLastMove > 200) {
+                ripple.classList.add('breath');
+            } else if (timeSinceLastMove > 100) {
+                ripple.classList.add('gentle');
+            }
+
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            field.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 8000);
+
+            const recentMoves = Math.min(moveCount, 100);
+            loudness.style.width = recentMoves + '%';
+
+            // Hide stillness revelations
+            message.classList.remove('visible');
+            whisper.classList.remove('visible');
+            deepPoetry.classList.remove('visible');
+            presence.classList.remove('aware', 'deep-aware');
+            glyph.classList.remove('revealed');
+            cornerTopLeft.classList.remove('visible');
+            cornerBottomRight.classList.remove('visible');
+            cornerTopRight.classList.remove('visible');
+            cornerBottomLeft.classList.remove('visible');
+            threshold.classList.remove('visible');
+            heartbeatPause.classList.remove('visible');
+
+            // Hide watchers on movement
+            watchers.forEach(w => w.classList.remove('observing'));
+
+            // Reset time marks
+            timeMarks.forEach(mark => mark.classList.remove('filled'));
+
+            if (moveCount > 10) {
+                instruction.classList.add('hidden');
+            }
+        });
+
+        // Right-click creates anti-ripple (absorbs sound)
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                const antiRipple = document.createElement('div');
+                antiRipple.className = 'anti-ripple';
+                antiRipple.style.left = e.clientX + 'px';
+                antiRipple.style.top = e.clientY + 'px';
+                field.appendChild(antiRipple);
+                setTimeout(() => antiRipple.remove(), 3000);
+
+                // Absorb some noise
+                moveCount = Math.max(0, moveCount - 45);
+                loudness.style.width = Math.min(moveCount, 100) + '%';
+
+                // Create void particles in deep silence mode
+                if (document.body.classList.contains('deep-silence')) {
+                    for (let i = 0; i < 4; i++) {
+                        setTimeout(() => createVoidParticle(e.clientX, e.clientY), i * 150);
+                    }
+                }
+            }
+        });
+
+        function createVoidParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'void-particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.setProperty('--drift-x', (Math.random() - 0.5) * 120 + 'px');
+            particle.style.setProperty('--drift-y', (Math.random() - 0.5) * 120 + 'px');
+            field.appendChild(particle);
+            setTimeout(() => particle.remove(), 10000);
+        }
+
+        // Sound option - does something "in another sense"
+        soundOption.addEventListener('click', () => {
+            soundActivated = !soundActivated;
+            if (soundActivated) {
+                // Create visual "sound" waves
+                for (let i = 1; i <= 3; i++) {
+                    const wave = document.createElement('div');
+                    wave.className = `sound-wave wave-${i}`;
+                    document.body.appendChild(wave);
+                    setTimeout(() => wave.remove(), 4500);
+                }
+                soundOption.textContent = 'listening';
+                setTimeout(() => {
+                    soundOption.textContent = 'sound';
+                    soundActivated = false;
+                }, 4000);
+            }
+        });
+
+        // Keyboard interactions - hidden but discoverable
+        document.addEventListener('keydown', (e) => {
+            // Track secret sequence
+            secretSequence.push(e.code);
+            if (secretSequence.length > secretCode.length) {
+                secretSequence.shift();
+            }
+
+            // Check for secret activation
+            if (secretSequence.join(',') === secretCode.join(',')) {
+                activateSecret();
+                secretSequence = [];
+            }
+
+            // Spacebar creates echo - calling into the void
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const echo = document.createElement('div');
+                echo.className = 'echo';
+                echo.textContent = echoWords[echoIndex % echoWords.length];
+                echo.style.left = (Math.random() * 40 + 30) + '%';
+                echo.style.top = (Math.random() * 40 + 30) + '%';
+                document.body.appendChild(echo);
+                setTimeout(() => echo.remove(), 6000);
+                echoIndex++;
+                moveCount += 6;
+                lastMove = Date.now();
+            }
+
+            // D toggles deep silence mode - descending deeper
+            if (e.code === 'KeyD') {
+                document.body.classList.toggle('deep-silence');
+                if (document.body.classList.contains('deep-silence')) {
+                    deepSilenceTime = Date.now();
+                }
+            }
+
+            // R absorbs - instant reduction of noise
+            if (e.code === 'KeyR') {
+                moveCount = Math.max(0, moveCount - 30);
+                loudness.style.width = Math.min(moveCount, 100) + '%';
+                // Brief visual acknowledgment
+                const antiRipple = document.createElement('div');
+                antiRipple.className = 'anti-ripple';
+                antiRipple.style.left = '50%';
+                antiRipple.style.top = '50%';
+                field.appendChild(antiRipple);
+                setTimeout(() => antiRipple.remove(), 3000);
+            }
+
+            // S creates instant stillness
+            if (e.code === 'KeyS') {
+                moveCount = 0;
+                loudness.style.width = '0%';
+                presence.classList.add('aware');
+            }
+
+            // Hidden: H toggles hidden glyph manually
+            if (e.code === 'KeyH') {
+                glyph.textContent = glyphSymbols[glyphIndex % glyphSymbols.length];
+                glyph.classList.toggle('revealed');
+                glyphIndex++;
+            }
+
+            // Hidden: W reveals watchers
+            if (e.code === 'KeyW') {
+                watchers.forEach(w => w.classList.toggle('observing'));
+            }
+
+            // Hidden: T shows threshold
+            if (e.code === 'KeyT') {
+                threshold.classList.toggle('visible');
+            }
+
+            // Escape returns
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        function activateSecret() {
+            const secretEl = document.createElement('div');
+            secretEl.className = 'secret-activated';
+            secretEl.textContent = 'YOU FOUND THE QUIET';
+            document.body.appendChild(secretEl);
+            setTimeout(() => secretEl.remove(), 4000);
+
+            // Grant instant deep awareness
+            moveCount = 0;
+            loudness.style.width = '0%';
+            presence.classList.add('aware', 'deep-aware');
+            document.body.classList.add('deep-silence');
+
+            // Show all time marks
+            timeMarks.forEach(mark => mark.classList.add('filled'));
+
+            // Reveal watchers momentarily
+            watchers.forEach(w => w.classList.add('observing'));
+            setTimeout(() => {
+                watchers.forEach(w => w.classList.remove('observing'));
+            }, 5000);
+        }
+
+        // Decay loudness more gradually - patience in the system itself
+        setInterval(() => {
+            moveCount = Math.max(0, moveCount - 2);
+            loudness.style.width = Math.min(moveCount, 100) + '%';
+        }, 500);
+
+        // Check for stillness with more nuanced responses - deeper rewards for patience
+        setInterval(() => {
+            const timeSinceMove = Date.now() - lastMove;
+            totalStillTime = timeSinceMove;
+
+            // Update time marks based on stillness duration
+            const stillnessLevels = [3000, 6000, 10000, 15000, 22000, 30000, 45000];
+            stillnessLevels.forEach((threshold, index) => {
+                if (timeSinceMove > threshold && timeMarks[index]) {
+                    timeMarks[index].classList.add('filled');
+                }
+            });
+
+            if (timeSinceMove > 3000) {
+                // Show corner whispers occasionally - small gifts of attention
+                if (timeSinceMove > 5000 && Math.random() < 0.015) {
+                    const corners = [
+                        { el: cornerTopLeft, texts: cornerTexts.topLeft },
+                        { el: cornerBottomRight, texts: cornerTexts.bottomRight },
+                        { el: cornerTopRight, texts: cornerTexts.topRight },
+                        { el: cornerBottomLeft, texts: cornerTexts.bottomLeft }
+                    ];
+                    const corner = corners[Math.floor(Math.random() * corners.length)];
+                    corner.el.textContent = corner.texts[Math.floor(Math.random() * corner.texts.length)];
+                    corner.el.classList.add('visible');
+                    setTimeout(() => corner.el.classList.remove('visible'), 6000);
+                }
+
+                // Presence becomes aware
+                if (timeSinceMove > 5000) {
+                    presence.classList.add('aware');
+                }
+
+                // Deep awareness after extended stillness
+                if (timeSinceMove > 18000) {
+                    presence.classList.add('deep-aware');
+                }
+
+                // Watchers begin to observe
+                if (timeSinceMove > 8000 && Math.random() < 0.02) {
+                    const watcher = watchers[Math.floor(Math.random() * watchers.length)];
+                    watcher.classList.add('observing');
+                    setTimeout(() => watcher.classList.remove('observing'), 8000);
+                }
+
+                // Show threshold
+                if (timeSinceMove > 12000) {
+                    threshold.classList.add('visible');
+                }
+
+                // Heartbeat pause - the nothing between heartbeats
+                if (timeSinceMove > 10000) {
+                    heartbeatPause.classList.add('visible');
+                }
+
+                // Messages appear after stillness
+                if (timeSinceMove > 8000 && messageIndex < messages.length) {
+                    message.textContent = messages[messageIndex];
+                    message.classList.add('visible');
+
+                    // Show whisper after message
+                    if (timeSinceMove > 11000 && whisperIndex < whispers.length) {
+                        whisper.textContent = whispers[whisperIndex];
+                        whisper.classList.add('visible');
+                    }
+
+                    // Advance to next message
+                    if (timeSinceMove > 16000) {
+                        messageIndex = Math.min(messageIndex + 1, messages.length - 1);
+                        whisperIndex = Math.min(whisperIndex + 1, whispers.length - 1);
+                        lastMove = Date.now() - 8001;
+                    }
+                }
+
+                // Deep poetry after very extended stillness - rewards for true patience
+                if (timeSinceMove > 35000 && deepPoetryIndex < deepPoems.length) {
+                    deepPoetry.textContent = deepPoems[deepPoetryIndex];
+                    deepPoetry.classList.add('visible');
+
+                    if (timeSinceMove > 45000) {
+                        deepPoetryIndex = Math.min(deepPoetryIndex + 1, deepPoems.length - 1);
+                    }
+                }
+
+                // Show hidden glyph after extended stillness
+                if (timeSinceMove > 25000) {
+                    glyph.textContent = glyphSymbols[glyphIndex % glyphSymbols.length];
+                    glyph.classList.add('revealed');
+                }
+
+                // Create occasional void particles in deep silence during stillness
+                if (document.body.classList.contains('deep-silence') &&
+                    timeSinceMove > 12000 &&
+                    Math.random() < 0.02) {
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight;
+                    createVoidParticle(x, y);
+                }
+            }
+        }, 600);
+
+        // Watchers slowly drift toward mouse position when observing
+        setInterval(() => {
+            watchers.forEach((watcher, i) => {
+                if (watcher.classList.contains('observing')) {
+                    const rect = watcher.getBoundingClientRect();
+                    const dx = (mouseX - rect.left) * 0.002;
+                    const dy = (mouseY - rect.top) * 0.002;
+                    watcherPositions[i].x += dx;
+                    watcherPositions[i].y += dy;
+                    watcher.style.transform = `translate(${watcherPositions[i].x}px, ${watcherPositions[i].y}px)`;
+                }
+            });
+        }, 100);
+
+        // Easter egg: Double-click creates a momentary "void" effect
+        document.addEventListener('dblclick', (e) => {
+            const voidEl = document.createElement('div');
+            voidEl.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                width: 0;
+                height: 0;
+                background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, transparent 65%);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                pointer-events: none;
+                animation: void-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            `;
+            document.body.appendChild(voidEl);
+
+            // Absorb all nearby sound
+            moveCount = Math.max(0, moveCount - 55);
+            loudness.style.width = Math.min(moveCount, 100) + '%';
+
+            setTimeout(() => voidEl.remove(), 2500);
+        });
+
+        // Add void-pulse animation dynamically
+        const voidPulseStyle = document.createElement('style');
+        voidPulseStyle.textContent = `
+            @keyframes void-pulse {
+                0% { width: 0; height: 0; opacity: 0; }
+                25% { width: 180px; height: 180px; opacity: 0.9; }
+                100% { width: 350px; height: 350px; opacity: 0; }
+            }
+        `;
+        document.head.appendChild(voidPulseStyle);
+
+        // Console poetry - another room in the house
+        console.log('%c', 'font-size: 1px; padding: 60px;');
+        console.log('%csilence', 'font-size: 24px; color: #4a5568; font-weight: 100; letter-spacing: 0.6em;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%cis louder than you think', 'font-size: 11px; color: #718096; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%c', 'font-size: 1px; padding: 30px;');
+        console.log('%cthe nothing between heartbeats', 'font-size: 9px; color: #a0aec0; font-style: italic;');
+        console.log('%cthat is where you have always been', 'font-size: 9px; color: #a0aec0; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 25px;');
+        console.log('%c[space] call into the void', 'font-size: 8px; color: #cbd5e0; letter-spacing: 0.05em;');
+        console.log('%c[d] descend into deep silence', 'font-size: 8px; color: #cbd5e0; letter-spacing: 0.05em;');
+        console.log('%c[r] absorb the noise', 'font-size: 8px; color: #cbd5e0; letter-spacing: 0.05em;');
+        console.log('%c[s] instant stillness', 'font-size: 8px; color: #cbd5e0; letter-spacing: 0.05em;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%c(right-click absorbs)', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c(double-click creates void)', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c(something watches)', 'font-size: 7px; color: #e2e8f0;');
+        console.log('%c', 'font-size: 1px; padding: 20px;');
+        console.log('%ctry: %c\u2191 \u2191 \u2193 \u2193', 'font-size: 7px; color: #e2e8f0;', 'font-size: 8px; color: #d4a056;');
+        console.log('%c', 'font-size: 1px; padding: 25px;');
+        console.log('%cthe pause is where everything real lives', 'font-size: 8px; color: #cbd5e0; font-style: italic; letter-spacing: 0.08em;');
+    </script>
+</body>
+</html>

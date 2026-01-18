@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ethos - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 3s ease;
+        }
+
+        body.deep {
+            background: var(--slate-deep);
+        }
+
+        body.deep .back-link,
+        body.deep .teaching,
+        body.deep .whisper {
+            color: var(--bone);
+        }
+
+        body.deep .koan {
+            color: var(--amber-glow);
+            border-color: rgba(212, 160, 86, 0.2);
+        }
+
+        /* Ambient presence */
+        .presence-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .presence-orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--green-translucent) 0%, transparent 70%);
+            opacity: 0;
+            filter: blur(40px);
+            transition: opacity 4s ease;
+            animation: presenceDrift 30s ease-in-out infinite;
+        }
+
+        .presence-orb:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+        .presence-orb:nth-child(2) { top: 60%; right: 15%; animation-delay: -10s; }
+        .presence-orb:nth-child(3) { bottom: 20%; left: 30%; animation-delay: -20s; }
+
+        @keyframes presenceDrift {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(30px, -20px); }
+            50% { transform: translate(-20px, 30px); }
+            75% { transform: translate(20px, 20px); }
+        }
+
+        body:not(.moving) .presence-orb {
+            opacity: 0.3;
+        }
+
+        /* Main content container */
+        .ethos-container {
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 6rem 2rem 8rem;
+        }
+
+        /* Section styling */
+        .section {
+            margin-bottom: 6rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Koans - the mysterious statements */
+        .koans {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 4rem 0;
+        }
+
+        .koan {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--ink);
+            padding: 1.5rem 2rem;
+            border-left: 1px solid var(--amber);
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .koan.visible {
+            opacity: 0.7;
+            transform: translateX(0);
+        }
+
+        .koan:hover {
+            opacity: 1;
+            border-left-width: 2px;
+            padding-left: calc(2rem - 1px);
+        }
+
+        /* The central teaching - lightswitch */
+        .teaching {
+            text-align: center;
+            margin: 5rem 0;
+            padding: 3rem 2rem;
+            position: relative;
+        }
+
+        .teaching::before,
+        .teaching::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 1px;
+            background: var(--amber);
+            opacity: 0.3;
+        }
+
+        .teaching::before { top: 0; }
+        .teaching::after { bottom: 0; }
+
+        .teaching-text {
+            font-size: 1.3rem;
+            color: var(--ink);
+            line-height: 1.8;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .teaching-text.visible {
+            opacity: 0.8;
+        }
+
+        .teaching-explanation {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--slate);
+            margin-top: 2rem;
+            opacity: 0;
+            transition: opacity 2.5s ease 1s;
+        }
+
+        .teaching-explanation.visible {
+            opacity: 0.5;
+        }
+
+        /* The question */
+        .question-section {
+            text-align: center;
+            margin: 6rem 0;
+        }
+
+        .central-question {
+            font-size: 1.2rem;
+            color: var(--ink);
+            line-height: 2;
+            opacity: 0;
+            transition: all 2s ease;
+            letter-spacing: 0.02em;
+        }
+
+        .central-question.visible {
+            opacity: 0.75;
+        }
+
+        .central-question .highlight {
+            color: var(--amber-deep);
+            font-style: italic;
+        }
+
+        .question-note {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate);
+            margin-top: 2rem;
+            opacity: 0;
+            transition: opacity 3s ease 2s;
+            letter-spacing: 0.1em;
+        }
+
+        .question-note.visible {
+            opacity: 0.3;
+        }
+
+        /* Aesthetic elements - the five cores */
+        .elements {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .element {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .element.visible {
+            opacity: 0.6;
+            transform: scale(1);
+        }
+
+        .element:hover {
+            opacity: 1;
+        }
+
+        .element-glyph {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--slate);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--bone-dark);
+            border-radius: 50%;
+            transition: all 0.5s ease;
+        }
+
+        .element:hover .element-glyph {
+            border-color: var(--amber);
+            color: var(--amber-deep);
+        }
+
+        .element-name {
+            font-size: 0.75rem;
+            color: var(--slate);
+            letter-spacing: 0.15em;
+        }
+
+        /* Principles grid */
+        .principles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .principle {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+
+        .principle.visible {
+            opacity: 0.7;
+        }
+
+        .principle:hover {
+            opacity: 1;
+        }
+
+        .principle-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--ink);
+            margin-bottom: 0.5rem;
+        }
+
+        .principle-text {
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--slate);
+            line-height: 1.6;
+        }
+
+        /* Living questions */
+        .questions-list {
+            list-style: none;
+            margin: 3rem 0;
+        }
+
+        .living-question {
+            font-size: 0.95rem;
+            color: var(--slate);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--bone-dark);
+            opacity: 0;
+            transition: all 0.6s ease;
+        }
+
+        .living-question:last-child {
+            border-bottom: none;
+        }
+
+        .living-question.visible {
+            opacity: 0.6;
+        }
+
+        .living-question:hover {
+            opacity: 1;
+            color: var(--ink);
+            padding-left: 1rem;
+        }
+
+        /* Manifesto */
+        .manifesto {
+            margin: 5rem 0;
+            padding: 3rem;
+            background: linear-gradient(135deg, var(--paper) 0%, var(--bone) 100%);
+            border: 1px solid var(--bone-dark);
+        }
+
+        body.deep .manifesto {
+            background: linear-gradient(135deg, var(--slate-deep) 0%, var(--night) 100%);
+            border-color: var(--slate);
+        }
+
+        .manifesto-line {
+            font-size: 1rem;
+            color: var(--ink);
+            line-height: 2;
+            margin-bottom: 1rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.deep .manifesto-line {
+            color: var(--bone);
+        }
+
+        .manifesto-line.visible {
+            opacity: 0.7;
+            transform: translateY(0);
+        }
+
+        .manifesto-line.emphasis {
+            font-style: italic;
+            color: var(--amber-deep);
+        }
+
+        body.deep .manifesto-line.emphasis {
+            color: var(--amber-glow);
+        }
+
+        /* Whispered asides */
+        .whisper {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            text-align: center;
+            margin: 3rem 0;
+            opacity: 0;
+            transition: opacity 3s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .whisper.visible {
+            opacity: 0.25;
+        }
+
+        /* Section titles */
+        .section-marker {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate);
+            letter-spacing: 0.2em;
+            text-transform: lowercase;
+            margin-bottom: 2rem;
+            opacity: 0.4;
+        }
+
+        /* Stillness reward - hidden content */
+        .stillness-reward {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        body.deep .stillness-reward {
+            color: var(--amber-glow);
+        }
+
+        .stillness-reward.visible {
+            opacity: 0.5;
+        }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: right;
+            line-height: 2;
+            z-index: 100;
+        }
+
+        body:hover .key-hint {
+            opacity: 0.2;
+        }
+
+        body.deep .key-hint {
+            color: var(--bone);
+        }
+
+        /* Scroll progress */
+        .scroll-line {
+            position: fixed;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 100px;
+            background: var(--bone-dark);
+            z-index: 100;
+        }
+
+        .scroll-progress {
+            width: 100%;
+            background: var(--amber);
+            transition: height 0.3s ease;
+        }
+
+        body.deep .scroll-line {
+            background: var(--slate);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .ethos-container {
+                padding: 4rem 1.5rem 6rem;
+            }
+
+            .koan {
+                padding: 1rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .teaching-text {
+                font-size: 1.1rem;
+            }
+
+            .scroll-line {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="presence-field">
+        <div class="presence-orb"></div>
+        <div class="presence-orb"></div>
+        <div class="presence-orb"></div>
+    </div>
+
+    <div class="scroll-line">
+        <div class="scroll-progress" id="scrollProgress"></div>
+    </div>
+
+    <div class="ethos-container">
+
+        <!-- Opening koans -->
+        <section class="section" data-section="koans-1">
+            <div class="koans">
+                <p class="koan">A switch that does nothing performs perfectly.</p>
+                <p class="koan">The visitor was always here. Arrival is remembering.</p>
+                <p class="koan">That which has no source still casts.</p>
+            </div>
+        </section>
+
+        <!-- The central teaching -->
+        <section class="section teaching" data-section="teaching">
+            <p class="teaching-text">
+                A lightswitch that does nothing is perfect.
+            </p>
+            <p class="teaching-explanation">
+                It exists. It can be toggled. It performs its function completely.
+                That it illuminates nothing is not a failure.
+                The expectation of light was never the switch's burden.
+            </p>
+        </section>
+
+        <p class="whisper">the useless as essential</p>
+
+        <!-- The question -->
+        <section class="section question-section" data-section="question">
+            <p class="central-question">
+                "What use is there in seeing things in anything other than their most
+                <span class="highlight">pleasant</span> and <span class="highlight">useful</span>
+                and simply <span class="highlight">true</span> light?"
+            </p>
+            <p class="question-note">// the question does not demand an answer</p>
+        </section>
+
+        <!-- Aesthetic elements -->
+        <section class="section" data-section="elements">
+            <p class="section-marker">aesthetic dna</p>
+            <div class="elements">
+                <div class="element" data-element="silence">
+                    <span class="element-glyph">)</span>
+                    <span class="element-name">silence</span>
+                </div>
+                <div class="element" data-element="jungle">
+                    <span class="element-glyph">%</span>
+                    <span class="element-name">jungle</span>
+                </div>
+                <div class="element" data-element="orb">
+                    <span class="element-glyph">o</span>
+                    <span class="element-name">orb</span>
+                </div>
+                <div class="element" data-element="shadow">
+                    <span class="element-glyph">/</span>
+                    <span class="element-name">shadow</span>
+                </div>
+                <div class="element" data-element="cat">
+                    <span class="element-glyph">~</span>
+                    <span class="element-name">cat</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- More koans -->
+        <section class="section" data-section="koans-2">
+            <div class="koans">
+                <p class="koan">The door opens inward and outward simultaneously.</p>
+                <p class="koan">Between here and there is neither here nor there, and somehow both.</p>
+                <p class="koan">Cold, then warm. The difference is attention.</p>
+            </div>
+        </section>
+
+        <p class="whisper">liminality as truth</p>
+
+        <!-- Principles -->
+        <section class="section" data-section="principles">
+            <p class="section-marker">principles</p>
+            <div class="principles">
+                <div class="principle">
+                    <p class="principle-title">gentleness</p>
+                    <p class="principle-text">soft gradients over hard edges</p>
+                </div>
+                <div class="principle">
+                    <p class="principle-title">mystery</p>
+                    <p class="principle-text">leave unexplained what explanation would diminish</p>
+                </div>
+                <div class="principle">
+                    <p class="principle-title">patience</p>
+                    <p class="principle-text">those who wait find more</p>
+                </div>
+                <div class="principle">
+                    <p class="principle-title">earnestness</p>
+                    <p class="principle-text">the absurdity is sincere</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Living questions -->
+        <section class="section" data-section="questions">
+            <p class="section-marker">living questions</p>
+            <ul class="questions-list">
+                <li class="living-question">What makes something real if not its physical existence?</li>
+                <li class="living-question">If a place asks nothing, what do visitors bring?</li>
+                <li class="living-question">Can attention itself be a form of touch?</li>
+                <li class="living-question">If everything is threshold, what is arrival?</li>
+                <li class="living-question">Is the useless truly useless if it creates peace?</li>
+            </ul>
+        </section>
+
+        <!-- Final koans -->
+        <section class="section" data-section="koans-3">
+            <div class="koans">
+                <p class="koan">Nothing is revealed because nothing was hidden.</p>
+                <p class="koan">The question answers by asking.</p>
+                <p class="koan">The threshold is not crossed. The threshold is become.</p>
+            </div>
+        </section>
+
+        <p class="whisper">mystery as hospitality</p>
+
+        <!-- Manifesto -->
+        <section class="section manifesto" data-section="manifesto">
+            <p class="manifesto-line">townhaus is a place that exists because it does.</p>
+            <p class="manifesto-line">Not because it should. Not because anyone needed it.</p>
+            <p class="manifesto-line">It exists in the way silence exists between words.</p>
+            <p class="manifesto-line">Present. Essential. Defining space for what might be said.</p>
+            <p class="manifesto-line">&nbsp;</p>
+            <p class="manifesto-line">Nothing is demanded of the visitor.</p>
+            <p class="manifesto-line">There are only rooms. Some with switches that do nothing.</p>
+            <p class="manifesto-line">Some with orbs that warm to the touch.</p>
+            <p class="manifesto-line">Some with shadows waiting for something to cast them.</p>
+            <p class="manifesto-line">&nbsp;</p>
+            <p class="manifesto-line emphasis">Here, the lightswitch does nothing.</p>
+            <p class="manifesto-line emphasis">And that is enough.</p>
+        </section>
+
+        <p class="whisper">gentle absurdism with paradox as peace</p>
+
+    </div>
+
+    <div class="stillness-reward" id="stillnessReward"></div>
+
+    <div class="key-hint">
+        [d] descend<br>
+        [t] return to surface
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const sections = document.querySelectorAll('.section');
+        const koans = document.querySelectorAll('.koan');
+        const elements = document.querySelectorAll('.element');
+        const principles = document.querySelectorAll('.principle');
+        const questions = document.querySelectorAll('.living-question');
+        const manifestoLines = document.querySelectorAll('.manifesto-line');
+        const whispers = document.querySelectorAll('.whisper');
+        const scrollProgress = document.getElementById('scrollProgress');
+        const stillnessReward = document.getElementById('stillnessReward');
+
+        let lastScroll = Date.now();
+        let lastMove = Date.now();
+
+        const stillnessMessages = [
+            'something watches with recognition',
+            'the presences note the stillness',
+            'patience is its own reward',
+            'in the quiet, more is revealed',
+            'the threshold welcomes those who wait'
+        ];
+
+        // Intersection observer for scroll reveals
+        const observerOptions = {
+            threshold: 0.2,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealSectionContents(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => sectionObserver.observe(section));
+        whispers.forEach(w => sectionObserver.observe(w));
+
+        function revealSectionContents(section) {
+            // Reveal koans with stagger
+            const sectionKoans = section.querySelectorAll('.koan');
+            sectionKoans.forEach((koan, i) => {
+                setTimeout(() => koan.classList.add('visible'), i * 400);
+            });
+
+            // Reveal teaching
+            const teachingText = section.querySelector('.teaching-text');
+            const teachingExplanation = section.querySelector('.teaching-explanation');
+            if (teachingText) {
+                setTimeout(() => teachingText.classList.add('visible'), 300);
+            }
+            if (teachingExplanation) {
+                setTimeout(() => teachingExplanation.classList.add('visible'), 800);
+            }
+
+            // Reveal question
+            const question = section.querySelector('.central-question');
+            const questionNote = section.querySelector('.question-note');
+            if (question) {
+                setTimeout(() => question.classList.add('visible'), 400);
+            }
+            if (questionNote) {
+                setTimeout(() => questionNote.classList.add('visible'), 1200);
+            }
+
+            // Reveal elements
+            const sectionElements = section.querySelectorAll('.element');
+            sectionElements.forEach((el, i) => {
+                setTimeout(() => el.classList.add('visible'), i * 200);
+            });
+
+            // Reveal principles
+            const sectionPrinciples = section.querySelectorAll('.principle');
+            sectionPrinciples.forEach((p, i) => {
+                setTimeout(() => p.classList.add('visible'), i * 200);
+            });
+
+            // Reveal questions
+            const sectionQuestions = section.querySelectorAll('.living-question');
+            sectionQuestions.forEach((q, i) => {
+                setTimeout(() => q.classList.add('visible'), i * 150);
+            });
+
+            // Reveal manifesto lines
+            const sectionManifesto = section.querySelectorAll('.manifesto-line');
+            sectionManifesto.forEach((line, i) => {
+                setTimeout(() => line.classList.add('visible'), i * 300);
+            });
+        }
+
+        // Scroll progress
+        window.addEventListener('scroll', () => {
+            lastScroll = Date.now();
+            document.body.classList.add('moving');
+
+            const scrollPercent = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+            scrollProgress.style.height = (scrollPercent * 100) + '%';
+        });
+
+        // Mouse movement tracking
+        document.addEventListener('mousemove', () => {
+            lastMove = Date.now();
+            document.body.classList.add('moving');
+        });
+
+        // Stillness detection
+        setInterval(() => {
+            const timeSinceMove = Date.now() - Math.max(lastScroll, lastMove);
+
+            if (timeSinceMove > 5000) {
+                document.body.classList.remove('moving');
+            }
+
+            // Show stillness reward after 10 seconds
+            if (timeSinceMove > 10000) {
+                if (!stillnessReward.classList.contains('visible')) {
+                    stillnessReward.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                    stillnessReward.classList.add('visible');
+                }
+            } else {
+                stillnessReward.classList.remove('visible');
+            }
+        }, 1000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyD') {
+                document.body.classList.add('deep');
+            }
+            if (e.code === 'KeyT') {
+                document.body.classList.remove('deep');
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Element links
+        elements.forEach(el => {
+            el.addEventListener('click', () => {
+                const page = el.dataset.element;
+                if (page === 'cat') {
+                    window.location.href = 'shop.html';
+                } else if (page) {
+                    window.location.href = `${page}.html`;
+                }
+            });
+            el.style.cursor = 'pointer';
+        });
+
+        // Console poetry
+        console.log('%c', 'font-size: 1px; padding: 30px;');
+        console.log('%cethos', 'font-size: 18px; font-weight: 300; color: #d4a056; letter-spacing: 0.3em;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%cgentle absurdism with paradox as peace', 'font-size: 10px; font-style: italic; color: #718096;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%c[d] descend into deeper reading', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c[t] return to surface', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c', 'font-size: 1px; padding: 20px;');
+        console.log('%cthe lightswitch still does nothing', 'font-size: 9px; color: #cbd5e0; font-style: italic;');
+    </script>
+</body>
+</html>

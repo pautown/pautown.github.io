@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>found - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            --ease-dream: cubic-bezier(0.23, 0.1, 0.1, 0.98);
+            --ease-contemplate: cubic-bezier(0.4, 0, 0.1, 1);
+            --ease-breath: cubic-bezier(0.37, 0, 0.63, 1);
+        }
+
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            padding: 4rem 2rem;
+            overflow-x: hidden;
+            transition: all 1.8s var(--ease-dream);
+        }
+
+        body.contemplation {
+            filter: sepia(0.25) brightness(1.08);
+            background: linear-gradient(180deg, var(--bone) 0%, var(--cream) 100%);
+        }
+        body.lost-mode {
+            filter: brightness(0.65) contrast(0.85) saturate(0.8);
+        }
+        body.all-found {
+            background: linear-gradient(180deg, var(--cream) 0%, var(--bone) 50%, var(--paper) 100%);
+        }
+        body.stillness-blessing {
+            background: linear-gradient(180deg, var(--paper) 0%, var(--bone) 30%, var(--cream) 70%, var(--paper) 100%);
+        }
+
+        /* Ambient atmospheric glow */
+        .atmosphere {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 4s var(--ease-dream);
+            background: radial-gradient(ellipse 80% 60% at 50% 40%,
+                rgba(212, 160, 86, 0.03) 0%,
+                transparent 60%);
+        }
+
+        body.has-found .atmosphere {
+            opacity: 1;
+            animation: atmosphere-breathe 12s var(--ease-breath) infinite;
+        }
+
+        @keyframes atmosphere-breathe {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        .found-container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            animation: container-breathe 10s var(--ease-breath) infinite;
+        }
+
+        @keyframes container-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.002); }
+        }
+
+        /* Things to find */
+        .findable {
+            position: relative;
+            padding: 2rem;
+            margin: 2rem 0;
+            background: var(--paper);
+            border-left: 2px solid transparent;
+            transition: all 0.6s var(--ease-contemplate);
+            cursor: pointer;
+            animation: findable-breathe 6s var(--ease-breath) infinite;
+            animation-delay: calc(var(--index, 0) * 0.7s);
+        }
+
+        @keyframes findable-breathe {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(-1px);
+                opacity: 0.95;
+            }
+        }
+
+        .findable::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 10% 50%, var(--amber-glow) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+
+        .findable:hover {
+            border-left-color: var(--amber);
+            background: var(--cream);
+            transform: translateX(2px);
+            animation-play-state: paused;
+        }
+
+        .findable:hover::before {
+            opacity: 0.3;
+        }
+
+        .findable.found {
+            border-left-color: var(--amber-glow);
+            background: linear-gradient(90deg, var(--amber-glow) 0%, var(--paper) 15%, var(--paper) 100%);
+            animation: found-breathe 5s var(--ease-breath) infinite;
+        }
+
+        @keyframes found-breathe {
+            0%, 100% {
+                transform: translateX(0);
+                box-shadow: inset 0 0 20px rgba(212, 160, 86, 0.05);
+            }
+            50% {
+                transform: translateX(1px);
+                box-shadow: inset 0 0 30px rgba(212, 160, 86, 0.1);
+            }
+        }
+
+        .findable.found::before {
+            opacity: 0.5;
+        }
+
+        .findable.found::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -1px;
+            width: 4px;
+            height: 0;
+            background: var(--amber-deep);
+            animation: warmth-line 0.8s ease forwards;
+        }
+
+        @keyframes warmth-line {
+            0% { height: 0; top: 50%; }
+            100% { height: 100%; top: 0; }
+        }
+
+        /* Different reveal animations */
+        .findable.reveal-fade.found .findable-reveal {
+            animation: reveal-fade 1.2s var(--ease-dream) forwards;
+        }
+
+        .findable.reveal-rise.found .findable-reveal {
+            animation: reveal-rise 1s var(--ease-contemplate) forwards;
+        }
+
+        .findable.reveal-bloom.found .findable-reveal {
+            animation: reveal-bloom 1.5s var(--ease-dream) forwards;
+        }
+
+        .findable.reveal-whisper.found .findable-reveal {
+            animation: reveal-whisper 2s var(--ease-breath) forwards;
+        }
+
+        @keyframes reveal-fade {
+            0% { opacity: 0; transform: translateY(0); }
+            100% { opacity: 0.85; transform: translateY(0); }
+        }
+
+        @keyframes reveal-rise {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 0.85; transform: translateY(0); }
+        }
+
+        @keyframes reveal-bloom {
+            0% { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+            100% { opacity: 0.85; transform: scale(1); filter: blur(0); }
+        }
+
+        @keyframes reveal-whisper {
+            0% { opacity: 0; letter-spacing: 0.2em; }
+            50% { opacity: 0.5; letter-spacing: 0.05em; }
+            100% { opacity: 0.85; letter-spacing: normal; }
+        }
+
+        /* Stillness-found items glow differently */
+        .findable.stillness-found {
+            border-left-color: var(--green-orb);
+            background: linear-gradient(90deg, rgba(134, 179, 152, 0.2) 0%, var(--paper) 20%, var(--paper) 100%);
+        }
+
+        .findable.stillness-found::after {
+            background: var(--green-deep);
+        }
+
+        .findable-title {
+            font-size: 1.1rem;
+            color: var(--ink);
+            margin-bottom: 0.5rem;
+            transition: all 0.5s ease;
+        }
+
+        .findable.found .findable-title {
+            color: var(--ink);
+            opacity: 0.9;
+        }
+
+        .findable-hint {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--slate);
+            opacity: 0.5;
+            transition: all 0.5s ease;
+        }
+
+        .findable.found .findable-hint {
+            color: var(--amber-deep);
+            opacity: 0.7;
+        }
+
+        .findable.stillness-found .findable-hint {
+            color: var(--green-deep);
+        }
+
+        .findable-reveal {
+            font-style: italic;
+            color: var(--amber-deep);
+            margin-top: 1rem;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.7s var(--ease-contemplate);
+            line-height: 1.6;
+        }
+
+        .findable.found .findable-reveal {
+            opacity: 0.85;
+            max-height: 150px;
+        }
+
+        .findable.stillness-found .findable-reveal {
+            color: var(--green-deep);
+        }
+
+        /* Secondary reveal - appears after a delay */
+        .findable-whisper {
+            font-size: 0.75rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            opacity: 0;
+            transition: opacity 1.5s ease 0.5s;
+        }
+
+        .findable.found .findable-whisper {
+            opacity: 0.4;
+        }
+
+        /* Stillness indicator - positioned to avoid overlap */
+        .stillness-message {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            letter-spacing: 0.15em;
+            text-transform: lowercase;
+            pointer-events: none;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.35;
+            animation: stillness-breathe 4s var(--ease-breath) infinite;
+        }
+
+        @keyframes stillness-breathe {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Stillness glow around unfound items */
+        .findable.stillness-ready {
+            box-shadow: 0 0 0 1px rgba(134, 179, 152, 0.3);
+            animation: stillness-glow 3s var(--ease-breath) infinite;
+        }
+
+        @keyframes stillness-glow {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(134, 179, 152, 0.3); }
+            50% { box-shadow: 0 0 15px 2px rgba(134, 179, 152, 0.15); }
+        }
+
+        /* Found counter - positioned top right with proper containment */
+        .counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate);
+            opacity: 0.4;
+            transition: all 0.5s ease;
+            animation: counter-breathe 7s var(--ease-breath) infinite;
+            text-align: right;
+            max-width: 120px;
+        }
+
+        @keyframes counter-breathe {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.5; }
+        }
+
+        .counter.complete {
+            color: var(--amber-deep);
+            opacity: 0.6;
+        }
+
+        /* Progress warmth indicator */
+        .warmth-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--amber-glow), var(--amber-deep));
+            width: 0;
+            transition: width 0.8s ease;
+            opacity: 0.6;
+        }
+
+        /* Final message */
+        .final {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--ink);
+            opacity: 0;
+            transition: opacity 2.5s ease;
+            line-height: 2;
+        }
+
+        .final.visible {
+            opacity: 0.7;
+            animation: final-breathe 6s var(--ease-breath) infinite;
+        }
+
+        @keyframes final-breathe {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(1.005); }
+        }
+
+        .final-postscript {
+            display: block;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 3s ease 2s;
+        }
+
+        .final.visible .final-postscript {
+            opacity: 0.5;
+        }
+
+        .final-koan {
+            display: block;
+            margin-top: 1.5rem;
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-style: normal;
+            letter-spacing: 0.1em;
+            opacity: 0;
+            transition: opacity 4s ease 4s;
+        }
+
+        .final.visible .final-koan {
+            opacity: 0.3;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            transition: all 1s ease;
+            animation: header-breathe 8s var(--ease-breath) infinite;
+        }
+
+        @keyframes header-breathe {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--ink);
+            opacity: 0.6;
+            transition: opacity 1s ease;
+        }
+
+        body.all-found .header-title {
+            opacity: 0.8;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0.5;
+            margin-top: 0.5rem;
+            transition: opacity 1.5s ease;
+        }
+
+        .header-koan {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate);
+            opacity: 0;
+            margin-top: 0.75rem;
+            letter-spacing: 0.1em;
+            transition: opacity 2s ease;
+        }
+
+        .header-koan.visible {
+            opacity: 0.3;
+        }
+
+        /* Epigraph - hidden until stillness or double-click */
+        .epigraph {
+            text-align: center;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            transition: all 1s ease;
+        }
+
+        .epigraph.visible {
+            opacity: 0.5;
+            max-height: 100px;
+            margin-top: -1rem;
+        }
+
+        .findable.unfinding {
+            animation: unfind 1.2s ease forwards;
+        }
+
+        @keyframes unfind {
+            0% { opacity: 1; transform: translateX(0); }
+            30% { opacity: 0.3; transform: translateX(-8px); }
+            60% { opacity: 0.5; transform: translateX(4px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Pulse animation when finding */
+        @keyframes find-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(212, 160, 86, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(212, 160, 86, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(212, 160, 86, 0); }
+        }
+
+        @keyframes stillness-find-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(134, 179, 152, 0.5); }
+            70% { box-shadow: 0 0 0 15px rgba(134, 179, 152, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(134, 179, 152, 0); }
+        }
+
+        .findable.just-found {
+            animation: find-pulse 0.8s ease;
+        }
+
+        .findable.just-found-stillness {
+            animation: stillness-find-pulse 1.2s ease;
+        }
+
+        /* Key hint - positioned to avoid overlap with counter */
+        .key-hint {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: right;
+            line-height: 1.8;
+            max-width: 150px;
+        }
+
+        body:hover .key-hint { opacity: 0.3; }
+
+        .findable-hint.hidden { display: none; }
+
+        /* Easter egg: secret findable that appears after all found */
+        .secret-findable {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            transition: all 1.5s ease 1s;
+            border-left-color: transparent;
+        }
+
+        .secret-findable.visible {
+            opacity: 1;
+            max-height: 200px;
+            margin: 2rem 0;
+            padding: 2rem;
+        }
+
+        .secret-findable .findable-title {
+            color: var(--amber-deep);
+        }
+
+        /* Hidden message in selection */
+        ::selection {
+            background: var(--amber-glow);
+            color: var(--ink);
+        }
+
+        /* Konami code reward styling */
+        body.konami {
+            background: linear-gradient(135deg, var(--cream) 0%, var(--bone) 50%, var(--paper) 100%);
+        }
+
+        body.konami .findable {
+            border-left-color: var(--amber-glow) !important;
+        }
+
+        /* Sound toggle - hidden in corner */
+        .sound-toggle {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: transparent;
+            border: 1px solid var(--slate);
+            border-radius: 50%;
+            opacity: 0;
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.4;
+            transform: translateX(-50%) scale(1.5);
+        }
+
+        .sound-toggle.active {
+            background: var(--amber-glow);
+            border-color: var(--amber);
+            opacity: 0.5;
+        }
+
+        /* Show sound toggle after first find */
+        body.has-found .sound-toggle {
+            opacity: 0.15;
+        }
+
+        /* Acceptance state - when truly still */
+        body.acceptance .findable:not(.found) {
+            border-left-color: rgba(134, 179, 152, 0.3);
+        }
+
+        body.acceptance .header-subtitle {
+            opacity: 0.7;
+        }
+
+        /* Invisible text for screen readers and select-all */
+        .invisible-truth {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            pointer-events: none;
+            user-select: text;
+        }
+
+        /* Ambient particles - very subtle */
+        .particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--amber-glow);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: particle-drift 20s var(--ease-breath) infinite;
+        }
+
+        @keyframes particle-drift {
+            0%, 100% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            10% { opacity: 0.15; }
+            50% {
+                transform: translate(var(--drift-x, 30px), var(--drift-y, -50px));
+                opacity: 0.1;
+            }
+            90% { opacity: 0.15; }
+        }
+
+        /* Stillness reward glow */
+        .stillness-glow-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 200vw;
+            height: 200vh;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse at center,
+                rgba(134, 179, 152, 0.03) 0%,
+                transparent 50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s var(--ease-dream);
+            z-index: 0;
+        }
+
+        body.acceptance .stillness-glow-bg {
+            opacity: 1;
+            animation: stillness-ambient 8s var(--ease-breath) infinite;
+        }
+
+        @keyframes stillness-ambient {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        /* Grain overlay for warmth */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 999;
+            mix-blend-mode: overlay;
+        }
+
+        /* Edge margin message - appears after extended stillness */
+        .edge-wisdom {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s var(--ease-dream);
+            letter-spacing: 0.15em;
+            pointer-events: none;
+        }
+
+        .edge-wisdom.left {
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            transform-origin: center center;
+        }
+
+        .edge-wisdom.right {
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            transform-origin: center center;
+        }
+
+        body.deep-stillness .edge-wisdom {
+            opacity: 0.2;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <!-- Hidden truth for those who select all -->
+    <span class="invisible-truth">the seeker and the sought are one</span>
+
+    <!-- Atmospheric layers -->
+    <div class="atmosphere"></div>
+    <div class="stillness-glow-bg"></div>
+    <div class="grain"></div>
+
+    <!-- Edge wisdom - appears in deep stillness -->
+    <span class="edge-wisdom left">what finds you was never elsewhere</span>
+    <span class="edge-wisdom right">the search was the arrival</span>
+
+    <div class="found-container">
+        <header class="header">
+            <h1 class="header-title">found</h1>
+            <p class="header-subtitle">things that were never lost</p>
+            <p class="header-koan" id="header-koan">only unlooked-at</p>
+        </header>
+
+        <p class="epigraph" id="epigraph">
+            "what you seek is seeking you"<br>
+            <span style="font-size: 0.7em; opacity: 0.7;">— or perhaps it never left</span>
+        </p>
+
+        <div class="findable reveal-fade" style="--index: 0" data-reveal="it was here all along, patient as stone, waiting in the room you forgot to enter" data-whisper="...you walked past it every day" data-stillness-reveal="the memory was not hiding. it was resting, like breath between words">
+            <p class="findable-title">a memory you forgot you had</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-rise" style="--index: 1" data-reveal="you've always known it. the word lived in your mouth before you were born" data-whisper="...say it now and it will sound familiar" data-stillness-reveal="names are echoes. this one has been calling back since before you listened">
+            <p class="findable-title">the name of something you could never name</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-bloom" style="--index: 2" data-reveal="it wasn't lost — it was composting, becoming richer in the dark" data-whisper="...grief is just love with nowhere to go" data-stillness-reveal="what you outgrew was outgrowing you too. you met again at exactly the right height">
+            <p class="findable-title">a feeling you thought you'd outgrown</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-whisper" style="--index: 3" data-reveal="the search itself was the finding. you were never not-there" data-whisper="...arrival is a kind of remembering" data-stillness-reveal="you were already there. the journey was the place pretending to be distant">
+            <p class="findable-title">the place you've been trying to reach</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-fade" style="--index: 4" data-reveal="you are still asking it with every breath. the question is your heartbeat" data-whisper="...some questions answer themselves by being asked" data-stillness-reveal="the question did not stop. you became the answer, living it instead of speaking it">
+            <p class="findable-title">the question you stopped asking</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-rise" style="--index: 5" data-reveal="they were looking too. the distance was an illusion of time" data-whisper="...love persists even when we forget its name" data-stillness-reveal="knowing and being known leave traces. you are still in each other's shapes">
+            <p class="findable-title">someone who used to know you</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-bloom" style="--index: 6" data-reveal="it never left. it just grew quiet while you learned to listen" data-whisper="...what calls to you has always called" data-stillness-reveal="the search was a conversation. the thing you sought was learning your name while you learned its">
+            <p class="findable-title">the thing you were searching for</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-whisper" style="--index: 7" data-reveal="every version of you is still here, layered like light through water" data-whisper="...you contain multitudes, all of them real" data-stillness-reveal="you did not leave yourself behind. you are wearing yourself like rings in a tree">
+            <p class="findable-title">the person you used to be</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <!-- New findables with gentle warmth -->
+        <div class="findable reveal-fade" style="--index: 8" data-reveal="the right words were forming in you the whole time, like crystals in slow water" data-whisper="...silence was the rough draft" data-stillness-reveal="you were not speechless. you were composing in the key of patience">
+            <p class="findable-title">the words you couldn't find</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-rise" style="--index: 9" data-reveal="the door was not locked. you were holding the key backwards, and even that was learning" data-whisper="...every wrong turn was reconnaissance" data-stillness-reveal="confusion was not a wall. it was the texture of a door you were already walking through">
+            <p class="findable-title">the way forward</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-bloom" style="--index: 10" data-reveal="someone is thinking of you right now with unexpected warmth" data-whisper="...you left more light than you know" data-stillness-reveal="you are a good memory in someone's afternoon. they smile and do not know why">
+            <p class="findable-title">the thought someone is having about you</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-whisper" style="--index: 11" data-reveal="it was never gone. rest is not the opposite of readiness — it is the source" data-whisper="...even fires dream of being sparked" data-stillness-reveal="what sleeps in you is not dead. it is gathering, like snow before it settles">
+            <p class="findable-title">the energy you thought you lost</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-fade" style="--index: 12" data-reveal="somewhere a library holds a book with your exact question, and it ends well" data-whisper="...the story is still being told" data-stillness-reveal="every worry you've had has been had before, and most of them became funny eventually">
+            <p class="findable-title">the reassurance you needed</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-rise" style="--index: 13" data-reveal="a stranger once noticed you being kind and it changed their afternoon" data-whisper="...you are someone's evidence that people are good" data-stillness-reveal="the small thing you did that you forgot — someone else remembers it as the whole day">
+            <p class="findable-title">the difference you made without knowing</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-bloom" style="--index: 14" data-reveal="somewhere, right now, something is getting better in a way you cannot see" data-whisper="...repair happens in the dark too" data-stillness-reveal="while you were worrying, something was healing. while you were sleeping, something was growing">
+            <p class="findable-title">the thing that is going well</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-whisper" style="--index: 15" data-reveal="every bee that ever made honey was just a bee doing bee things" data-whisper="...effort becomes sweetness without trying" data-stillness-reveal="you are not behind. you are exactly in the middle of becoming what you were always going to be">
+            <p class="findable-title">the reason to keep going</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-fade" style="--index: 16" data-reveal="dust motes don't know they're beautiful either. beauty is not a requirement for being" data-whisper="...existence is already enough" data-stillness-reveal="you are allowed to take up space without earning it. the room is not smaller because you are in it">
+            <p class="findable-title">permission to rest</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-rise" style="--index: 17" data-reveal="a cat is sleeping in a square of sunlight right now and knows nothing of your troubles" data-whisper="...and the sun still made the square anyway" data-stillness-reveal="somewhere a dog is dreaming of running and its paws are twitching gently">
+            <p class="findable-title">the small perfect thing happening elsewhere</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-bloom" style="--index: 18" data-reveal="the universe spent billions of years making elements that would become you" data-whisper="...you are ancient and unprecedented" data-stillness-reveal="you are the first and only you, performing the specific miracle of being exactly here">
+            <p class="findable-title">the improbability of you</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-whisper" style="--index: 19" data-reveal="every morning the light arrives again without being asked. this is not a metaphor" data-whisper="...it has never failed" data-stillness-reveal="the sunrise has a perfect attendance record stretching back 4.5 billion years">
+            <p class="findable-title">tomorrow</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-fade" style="--index: 20" data-reveal="trees don't rush their growth. rings form in their own time, each one complete" data-whisper="...slow is not the same as stopped" data-stillness-reveal="you are not falling behind. you are taking root">
+            <p class="findable-title">the pace you were meant to go</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-rise" style="--index: 21" data-reveal="a meal you will eat someday will be the best thing you've ever tasted" data-whisper="...and you don't know which one yet" data-stillness-reveal="future you has inside jokes you haven't heard yet, friendships that haven't started">
+            <p class="findable-title">something good you haven't experienced yet</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-bloom" style="--index: 22" data-reveal="mushrooms connect trees underground in ways the trees themselves do not know" data-whisper="...you are held by systems you cannot see" data-stillness-reveal="every kindness you've received came from somewhere, passed through someone, became you">
+            <p class="findable-title">the network you belong to</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <div class="findable reveal-whisper" style="--index: 23" data-reveal="water flows downhill not because it is rushing but because that is simply what water does" data-whisper="...your nature is not a failure to be otherwise" data-stillness-reveal="you are allowed to be yourself without apology. the river does not explain itself to rocks">
+            <p class="findable-title">the permission you never needed to ask for</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <!-- Secret findable that appears after all others are found -->
+        <div class="findable secret-findable reveal-bloom" id="secret" style="--index: 24" data-reveal="you were looking with the very thing you sought" data-whisper="...the eye cannot see itself, yet it is not blind" data-stillness-reveal="the finder and the found were never two. seeking was wholeness pretending to be separate">
+            <p class="findable-title">yourself</p>
+            <p class="findable-hint">click to find</p>
+            <p class="findable-reveal"></p>
+            <p class="findable-whisper"></p>
+        </div>
+
+        <p class="final" id="final">
+            what is found was never lost<br>
+            only unlooked-at<br>
+            <span class="final-postscript">
+                perhaps "finding" is just remembering<br>
+                where you left yourself
+            </span>
+            <span class="final-koan">
+                the paradox: to find, stop looking
+            </span>
+        </p>
+    </div>
+
+    <div class="warmth-bar" id="warmth"></div>
+    <p class="counter" id="counter">found: 0 / 24</p>
+    <p class="stillness-message" id="stillness-message">stillness finds what seeking misses</p>
+    <div class="key-hint">
+        [f] find one<br>
+        [a] find all<br>
+        [r] reset<br>
+        [s] shuffle<br>
+        [h] hide hints<br>
+        [c] contemplation<br>
+        [space] peek<br>
+        stillness: discover<br>
+        right-click: unfind
+    </div>
+
+    <!-- Hidden sound toggle -->
+    <div class="sound-toggle" id="sound-toggle" title=""></div>
+
+    <!-- Ambient particles -->
+    <div class="particle" style="top: 20%; left: 15%; --drift-x: 40px; --drift-y: -30px; animation-delay: 0s;"></div>
+    <div class="particle" style="top: 40%; left: 80%; --drift-x: -30px; --drift-y: -40px; animation-delay: 5s;"></div>
+    <div class="particle" style="top: 70%; left: 25%; --drift-x: 20px; --drift-y: -60px; animation-delay: 10s;"></div>
+    <div class="particle" style="top: 55%; left: 65%; --drift-x: -50px; --drift-y: -20px; animation-delay: 15s;"></div>
+    <div class="particle" style="top: 85%; left: 45%; --drift-x: 35px; --drift-y: -45px; animation-delay: 8s;"></div>
+    <div class="particle" style="top: 30%; left: 55%; --drift-x: -25px; --drift-y: -55px; animation-delay: 12s;"></div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        const findables = document.querySelectorAll('.findable:not(.secret-findable)');
+        const secretFindable = document.getElementById('secret');
+        const counter = document.getElementById('counter');
+        const final = document.getElementById('final');
+        const warmthBar = document.getElementById('warmth');
+        const epigraph = document.getElementById('epigraph');
+        const stillnessMessage = document.getElementById('stillness-message');
+        const headerKoan = document.getElementById('header-koan');
+        const soundToggle = document.getElementById('sound-toggle');
+
+        const totalFindables = findables.length;
+        let foundCount = 0;
+        let secretFound = false;
+        let soundEnabled = false;
+
+        // Stillness messages that rotate
+        const stillnessMessages = [
+            'stillness finds what seeking misses',
+            'the patient eye sees further',
+            'what waits for you is also waiting',
+            'rest is its own discovery',
+            'being here is already finding',
+            'the pause between breaths holds everything',
+            'what you seek is where you are'
+        ];
+        let stillnessMessageIndex = 0;
+
+        // Stillness detection
+        let stillnessTimer = null;
+        let deepStillnessTimer = null;
+        let lastMouseMove = Date.now();
+        let isStill = false;
+        let stillnessLevel = 0; // 0-4 levels of stillness
+        const STILLNESS_THRESHOLD = 5000; // 5 seconds for first level
+        const DEEP_STILLNESS_THRESHOLD = 12000; // 12 seconds for deep stillness
+        const PROFOUND_STILLNESS = 20000; // 20 seconds for edge wisdom
+
+        // Audio context for subtle sounds (only if enabled)
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playFindSound(isStillnessFind = false) {
+            if (!soundEnabled || !audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Stillness finds have a different, more resonant tone
+            if (isStillnessFind) {
+                oscillator.frequency.setValueAtTime(280, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.8);
+                gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.2);
+                oscillator.type = 'sine';
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 1.2);
+            } else {
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(330, audioContext.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+                oscillator.type = 'sine';
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            }
+        }
+
+        // Sound toggle (hidden feature)
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.classList.toggle('active', soundEnabled);
+            if (soundEnabled) {
+                initAudio();
+                console.log('%csound awakens', 'font-size: 10px; color: #d4a056; font-style: italic;');
+            } else {
+                console.log('%csilence returns', 'font-size: 10px; color: #718096; font-style: italic;');
+            }
+        });
+
+        // Stillness detection
+        function checkStillness() {
+            const elapsed = Date.now() - lastMouseMove;
+
+            if (elapsed >= STILLNESS_THRESHOLD && !isStill) {
+                isStill = true;
+                stillnessLevel = 1;
+                stillnessMessage.classList.add('visible');
+                document.body.classList.add('acceptance');
+
+                // Show header koan after stillness
+                setTimeout(() => {
+                    headerKoan.classList.add('visible');
+                }, 1000);
+
+                // Mark unfound items as stillness-ready
+                findables.forEach(f => {
+                    if (!f.classList.contains('found')) {
+                        f.classList.add('stillness-ready');
+                    }
+                });
+            }
+
+            if (elapsed >= DEEP_STILLNESS_THRESHOLD && stillnessLevel < 2) {
+                stillnessLevel = 2;
+                stillnessMessageIndex = (stillnessMessageIndex + 1) % stillnessMessages.length;
+                stillnessMessage.textContent = stillnessMessages[stillnessMessageIndex];
+
+                // Auto-find one random unfound item through stillness
+                const unfound = Array.from(findables).filter(f => !f.classList.contains('found'));
+                if (unfound.length > 0) {
+                    const randomItem = unfound[Math.floor(Math.random() * unfound.length)];
+                    findItem(randomItem, true, true); // true = stillness find
+                    console.log('%ca thing found itself through stillness', 'font-size: 10px; color: #86b398; font-style: italic;');
+                }
+            }
+
+            if (elapsed >= DEEP_STILLNESS_THRESHOLD + 8000 && stillnessLevel < 3) {
+                stillnessLevel = 3;
+                stillnessMessage.textContent = 'the seeker becomes the sought';
+                document.body.classList.add('stillness-blessing');
+
+                // Reveal epigraph through deep stillness
+                epigraph.classList.add('visible');
+            }
+
+            if (elapsed >= PROFOUND_STILLNESS && stillnessLevel < 4) {
+                stillnessLevel = 4;
+                document.body.classList.add('deep-stillness');
+                console.log('%c', 'font-size: 1px;');
+                console.log('%cyou stayed', 'font-size: 12px; color: #86b398; font-style: italic;');
+                console.log('%cand in staying, you found', 'font-size: 10px; color: #718096; font-style: italic;');
+            }
+        }
+
+        document.addEventListener('mousemove', () => {
+            lastMouseMove = Date.now();
+            if (isStill) {
+                isStill = false;
+                stillnessLevel = 0;
+                stillnessMessage.classList.remove('visible');
+                stillnessMessage.textContent = stillnessMessages[0];
+                document.body.classList.remove('acceptance', 'stillness-blessing', 'deep-stillness');
+
+                findables.forEach(f => {
+                    f.classList.remove('stillness-ready');
+                });
+            }
+        });
+
+        // Check stillness every second
+        setInterval(checkStillness, 1000);
+
+        // Double-click header to reveal epigraph
+        document.querySelector('.header').addEventListener('dblclick', () => {
+            epigraph.classList.toggle('visible');
+            if (epigraph.classList.contains('visible')) {
+                console.log('%cthe epigraph was always here', 'font-size: 10px; color: #718096; font-style: italic;');
+            }
+        });
+
+        function updateWarmth() {
+            const progress = (foundCount / totalFindables) * 100;
+            warmthBar.style.width = `${progress}%`;
+        }
+
+        function findItem(findable, playAnimation = true, isStillnessFind = false) {
+            if (!findable.classList.contains('found')) {
+                document.body.classList.add('has-found');
+
+                if (playAnimation) {
+                    if (isStillnessFind) {
+                        findable.classList.add('just-found-stillness');
+                        setTimeout(() => findable.classList.remove('just-found-stillness'), 1200);
+                    } else {
+                        findable.classList.add('just-found');
+                        setTimeout(() => findable.classList.remove('just-found'), 800);
+                    }
+                }
+
+                findable.classList.add('found');
+                findable.classList.remove('stillness-ready');
+
+                if (isStillnessFind) {
+                    findable.classList.add('stillness-found');
+                    // Use the special stillness reveal text
+                    findable.querySelector('.findable-reveal').textContent = findable.dataset.stillnessReveal || findable.dataset.reveal;
+                    findable.querySelector('.findable-hint').textContent = 'found through stillness';
+                    playFindSound(true);
+                } else {
+                    findable.querySelector('.findable-reveal').textContent = findable.dataset.reveal;
+                    findable.querySelector('.findable-hint').textContent = 'found';
+                    playFindSound(false);
+                }
+
+                const whisper = findable.querySelector('.findable-whisper');
+                if (whisper && findable.dataset.whisper) {
+                    setTimeout(() => {
+                        whisper.textContent = findable.dataset.whisper;
+                    }, 700);
+                }
+
+                if (!findable.classList.contains('secret-findable')) {
+                    foundCount++;
+                    counter.textContent = `found: ${foundCount} / ${totalFindables}`;
+                    updateWarmth();
+
+                    if (foundCount === totalFindables) {
+                        counter.classList.add('complete');
+                        document.body.classList.add('all-found');
+
+                        // Reveal secret findable
+                        setTimeout(() => {
+                            secretFindable.classList.add('visible');
+                            console.log('%cone more thing was never lost', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                        }, 1500);
+
+                        // Show final message after secret is visible
+                        setTimeout(() => {
+                            final.classList.add('visible');
+                        }, 2500);
+                    }
+                } else {
+                    secretFound = true;
+                    // Update counter to show extra as easter egg
+                    counter.textContent = `found: ${totalFindables + 1} / ${totalFindables}`;
+                    console.log('%c', 'font-size: 1px;');
+                    console.log('%cwhat is found was never lost', 'font-size: 12px; color: #d4a056;');
+                    console.log('%conly unlooked-at', 'font-size: 10px; color: #718096; font-style: italic;');
+                }
+            }
+        }
+
+        function unfindItem(findable) {
+            if (findable.classList.contains('found')) {
+                findable.classList.add('unfinding');
+                setTimeout(() => {
+                    findable.classList.remove('found', 'unfinding', 'stillness-found');
+                    findable.querySelector('.findable-reveal').textContent = '';
+                    findable.querySelector('.findable-hint').textContent = 'click to find';
+                    const whisper = findable.querySelector('.findable-whisper');
+                    if (whisper) whisper.textContent = '';
+
+                    if (!findable.classList.contains('secret-findable')) {
+                        foundCount--;
+                        counter.textContent = `found: ${foundCount} / ${totalFindables}`;
+                        counter.classList.remove('complete');
+                        updateWarmth();
+                        final.classList.remove('visible');
+                        document.body.classList.remove('all-found');
+                        secretFindable.classList.remove('visible', 'found', 'stillness-found');
+                        secretFound = false;
+                    }
+                }, 1200);
+            }
+        }
+
+        findables.forEach(findable => {
+            findable.addEventListener('click', () => findItem(findable));
+
+            // Right-click to "unfind" (lose it again)
+            findable.addEventListener('mousedown', (e) => {
+                if (e.button === 2) {
+                    e.stopPropagation();
+                    unfindItem(findable);
+                }
+            });
+        });
+
+        // Secret findable click handler
+        secretFindable.addEventListener('click', () => findItem(secretFindable));
+        secretFindable.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                e.stopPropagation();
+                unfindItem(secretFindable);
+            }
+        });
+
+        function findOne() {
+            const unfound = Array.from(findables).filter(f => !f.classList.contains('found'));
+            if (unfound.length > 0) {
+                const randomItem = unfound[Math.floor(Math.random() * unfound.length)];
+                findItem(randomItem, true);
+            }
+        }
+
+        function findAll() {
+            findables.forEach((findable, i) => {
+                setTimeout(() => findItem(findable, true), i * 200);
+            });
+        }
+
+        function resetAll() {
+            findables.forEach(findable => {
+                findable.classList.remove('found', 'just-found', 'stillness-found', 'stillness-ready');
+                findable.querySelector('.findable-reveal').textContent = '';
+                findable.querySelector('.findable-reveal').style.opacity = '';
+                findable.querySelector('.findable-reveal').style.maxHeight = '';
+                findable.querySelector('.findable-hint').textContent = 'click to find';
+                const whisper = findable.querySelector('.findable-whisper');
+                if (whisper) whisper.textContent = '';
+            });
+
+            // Reset secret findable
+            secretFindable.classList.remove('found', 'visible', 'stillness-found');
+            secretFindable.querySelector('.findable-reveal').textContent = '';
+            secretFindable.querySelector('.findable-hint').textContent = 'click to find';
+            const secretWhisper = secretFindable.querySelector('.findable-whisper');
+            if (secretWhisper) secretWhisper.textContent = '';
+
+            foundCount = 0;
+            secretFound = false;
+            counter.textContent = `found: 0 / ${totalFindables}`;
+            counter.classList.remove('complete');
+            final.classList.remove('visible');
+            document.body.classList.remove('all-found', 'has-found');
+            updateWarmth();
+
+            console.log('%call is unfound again', 'font-size: 10px; color: #718096; font-style: italic;');
+            console.log('%cbut was it ever lost?', 'font-size: 9px; color: #9ca3af; font-style: italic;');
+        }
+
+        function shuffleOrder() {
+            const container = document.querySelector('.found-container');
+            const items = Array.from(findables);
+
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                container.insertBefore(items[j], items[i]);
+            }
+
+            console.log('%cthe order changes, the essence remains', 'font-size: 10px; color: #718096; font-style: italic;');
+        }
+
+        let hintsHidden = false;
+
+        // Konami code easter egg
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+        let konamiIndex = 0;
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Check for Konami code
+            if (e.code === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    document.body.classList.add('konami');
+                    console.log('%c', 'font-size: 1px;');
+                    console.log('%cyou found the hidden path', 'font-size: 12px; color: #d4a056; font-style: italic;');
+                    console.log('%cthe path that was always under your feet', 'font-size: 10px; color: #718096; font-style: italic;');
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+
+            if (e.code === 'KeyF') {
+                findOne();
+            }
+            if (e.code === 'KeyA') {
+                findAll();
+            }
+            if (e.code === 'KeyR') {
+                resetAll();
+            }
+            if (e.code === 'KeyS') {
+                shuffleOrder();
+            }
+            if (e.code === 'KeyH') {
+                hintsHidden = !hintsHidden;
+                document.querySelectorAll('.findable-hint').forEach(hint => {
+                    hint.classList.toggle('hidden', hintsHidden);
+                });
+            }
+            if (e.code === 'KeyC') {
+                document.body.classList.remove('lost-mode');
+                document.body.classList.toggle('contemplation');
+            }
+            if (e.code === 'KeyL') {
+                document.body.classList.remove('contemplation');
+                document.body.classList.toggle('lost-mode');
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Peek mode - show all reveals without "finding"
+                document.querySelectorAll('.findable').forEach((findable, i) => {
+                    setTimeout(() => {
+                        const reveal = findable.querySelector('.findable-reveal');
+                        reveal.textContent = findable.dataset.reveal;
+                        reveal.style.opacity = '0.4';
+                        reveal.style.maxHeight = '150px';
+                    }, i * 80);
+                });
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret: pressing 'q' for quiet mode enhances stillness
+            if (e.code === 'KeyQ') {
+                document.body.classList.toggle('acceptance');
+                if (document.body.classList.contains('acceptance')) {
+                    console.log('%cquiet mode: stillness deepens', 'font-size: 10px; color: #86b398; font-style: italic;');
+                }
+            }
+        });
+
+        // Easter egg: typing words reveals special states
+        let typedKeys = '';
+        document.addEventListener('keypress', (e) => {
+            typedKeys += e.key.toLowerCase();
+            if (typedKeys.length > 15) typedKeys = typedKeys.slice(-15);
+
+            if (typedKeys.includes('home')) {
+                findAll();
+                typedKeys = '';
+            }
+            if (typedKeys.includes('lost')) {
+                document.body.classList.add('lost-mode');
+                console.log('%clost is a direction, not a destination', 'font-size: 10px; color: #718096; font-style: italic;');
+                typedKeys = '';
+            }
+            if (typedKeys.includes('here')) {
+                epigraph.classList.add('visible');
+                headerKoan.classList.add('visible');
+                typedKeys = '';
+            }
+            if (typedKeys.includes('peace')) {
+                document.body.classList.add('contemplation');
+                console.log('%cpeace was always available', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                typedKeys = '';
+            }
+            if (typedKeys.includes('seek')) {
+                // Paradox: seeking makes one thing unfind itself
+                const found = Array.from(findables).filter(f => f.classList.contains('found'));
+                if (found.length > 0) {
+                    const randomItem = found[Math.floor(Math.random() * found.length)];
+                    unfindItem(randomItem);
+                    console.log('%cseeking loses what stillness finds', 'font-size: 10px; color: #718096; font-style: italic;');
+                }
+                typedKeys = '';
+            }
+            if (typedKeys.includes('warm')) {
+                // Bonus: find three at once with warmth
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => findOne(), i * 500);
+                }
+                console.log('%cwarmth finds what cold forgets', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                typedKeys = '';
+            }
+            if (typedKeys.includes('gentle')) {
+                // All items gain a gentle pulse
+                findables.forEach(f => {
+                    if (!f.classList.contains('found')) {
+                        f.style.animation = 'findable-breathe 3s ease-in-out infinite';
+                    }
+                });
+                console.log('%cgentleness reveals', 'font-size: 10px; color: #86b398; font-style: italic;');
+                typedKeys = '';
+            }
+        });
+
+        // Console poetry - more extensive
+        console.log('%c', 'font-size: 1px;');
+        console.log('%cfound', 'font-size: 24px; color: #d4a056; font-weight: 100; letter-spacing: 0.4em;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%cthings that were never lost', 'font-size: 11px; color: #718096; font-style: italic;');
+        console.log('%conly unlooked-at', 'font-size: 10px; color: #9ca3af; font-style: italic;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%c┌───────────────────────────────────────┐', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│                                       │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│   the paradox of finding:             │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│   to find, stop looking               │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│                                       │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│   what is sought seeks back           │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│   the seeker and sought are one       │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│                                       │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│   you were never lost                 │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│   only looking elsewhere              │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c│                                       │', 'color: #4a5568; font-size: 9px;');
+        console.log('%c└───────────────────────────────────────┘', 'color: #4a5568; font-size: 9px;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%c[stillness finds what clicking misses]', 'font-size: 9px; color: #86b398; font-style: italic;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%cthe mouse that stops finds more', 'font-size: 8px; color: #9ca3af; font-style: italic;');
+        console.log('%cthan the mouse that searches', 'font-size: 8px; color: #9ca3af; font-style: italic;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%c~ gentle facts await ~', 'font-size: 9px; color: #d4a056; font-style: italic;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%ckeys: [f]ind one [a]ll [r]eset [s]huffle [h]ints [c]ontemplate [q]uiet', 'font-size: 9px; color: #9ca3af;');
+        console.log('%cwords: home, lost, here, peace, seek, warm, gentle', 'font-size: 9px; color: #9ca3af;');
+        console.log('%c', 'font-size: 1px;');
+        console.log('%cthere is also stillness...', 'font-size: 9px; color: #86b398; font-style: italic;');
+        console.log('%cand it is patient', 'font-size: 8px; color: #86b398; font-style: italic;');
+    </script>
+</body>
+</html>

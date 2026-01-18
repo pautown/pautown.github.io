@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>feedback - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Static grain overlay */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.025;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .content-wrapper {
+            max-width: 700px;
+            width: 100%;
+            padding: 3rem 2rem 8rem 2rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.3s forwards;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: var(--slate-deep);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            text-align: center;
+            opacity: 0.6;
+            margin-bottom: 4rem;
+        }
+
+        /* Section styling */
+        .section {
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards;
+        }
+
+        .section:nth-child(2) { animation-delay: 0.5s; }
+        .section:nth-child(3) { animation-delay: 0.8s; }
+        .section:nth-child(4) { animation-delay: 1.1s; }
+        .section:nth-child(5) { animation-delay: 1.4s; }
+        .section:nth-child(6) { animation-delay: 1.7s; }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: var(--slate-deep);
+            letter-spacing: 0.15em;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--bone-dark);
+        }
+
+        .section-content {
+            font-size: 1rem;
+            color: var(--ink-light);
+            line-height: 1.8;
+        }
+
+        .section-content p {
+            margin-bottom: 1.2rem;
+        }
+
+        .section-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Highlighted phrases */
+        .highlight {
+            color: var(--amber-deep);
+            font-style: italic;
+        }
+
+        /* Koan blocks */
+        .koan {
+            font-style: italic;
+            color: var(--slate);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 2px solid var(--amber);
+            background: linear-gradient(90deg, rgba(212, 160, 86, 0.05) 0%, transparent 100%);
+        }
+
+        /* Fragment list */
+        .fragment-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+
+        .fragment-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--slate);
+            padding: 0.5rem;
+            background: var(--paper);
+            border-radius: 2px;
+            transition: background 0.3s ease;
+        }
+
+        .fragment-item:hover {
+            background: var(--cream);
+        }
+
+        .fragment-glyph {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--amber);
+            font-size: 0.9rem;
+        }
+
+        /* Color palette display */
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .color-swatch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .swatch {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px var(--shadow);
+            animation: breathe 6s ease-in-out infinite;
+        }
+
+        .swatch.amber { background: var(--amber); animation-delay: 0s; }
+        .swatch.slate { background: var(--slate); animation-delay: 1s; }
+        .swatch.bone { background: var(--bone); border: 1px solid var(--bone-dark); animation-delay: 2s; }
+        .swatch.green { background: var(--green-orb); animation-delay: 3s; }
+        .swatch.ink { background: var(--ink); animation-delay: 4s; }
+
+        .swatch-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            letter-spacing: 0.05em;
+        }
+
+        /* Typography sample */
+        .type-sample {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--paper);
+            border-radius: 2px;
+        }
+
+        .type-cormorant {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 1.3rem;
+            color: var(--ink);
+            margin-bottom: 1rem;
+            letter-spacing: 0.02em;
+        }
+
+        .type-mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 300;
+            font-size: 0.7rem;
+            color: var(--slate);
+            letter-spacing: 0.1em;
+        }
+
+        /* Divider */
+        .divider {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--amber), transparent);
+            margin: 3rem auto;
+            opacity: 0.5;
+        }
+
+        /* Secret bottom section */
+        .secret-section {
+            position: relative;
+            margin-top: 6rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--bone-dark);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+        }
+
+        .secret-section.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .secret-title {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--slate);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Cultivation options */
+        .cultivation-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .cultivation-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--slate);
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .cultivation-btn:hover {
+            border-color: var(--amber);
+            color: var(--amber-deep);
+            background: var(--cream);
+        }
+
+        .cultivation-btn.selected {
+            border-color: var(--amber);
+            background: linear-gradient(135deg, var(--cream), var(--amber-soft));
+            color: var(--ink);
+        }
+
+        /* Star rating */
+        .rating-container {
+            text-align: center;
+            margin: 2.5rem 0;
+        }
+
+        .rating-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate-light);
+            letter-spacing: 0.1em;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .stars {
+            display: inline-flex;
+            gap: 0.3rem;
+        }
+
+        .star {
+            font-size: 1.5rem;
+            color: var(--bone-dark);
+            cursor: pointer;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .star:hover,
+        .star.filled {
+            color: var(--amber);
+        }
+
+        .star:hover {
+            transform: scale(1.15);
+        }
+
+        .rating-message {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 1s ease;
+            line-height: 1.6;
+        }
+
+        .rating-message.visible {
+            opacity: 0.7;
+        }
+
+        /* Wisdom response */
+        .wisdom-container {
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--paper), var(--cream));
+            border-radius: 2px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+        }
+
+        .wisdom-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .wisdom-prelude {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate-light);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .wisdom-text {
+            font-size: 1.1rem;
+            color: var(--ink-light);
+            text-align: center;
+            line-height: 1.8;
+            font-style: italic;
+        }
+
+        .wisdom-reveal {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            text-align: center;
+            margin-top: 1.5rem;
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .content-wrapper {
+                padding: 2rem 1rem 6rem 1rem;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+                letter-spacing: 0.2em;
+            }
+
+            .fragment-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .color-palette {
+                justify-content: center;
+            }
+
+            .cultivation-options {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="content-wrapper">
+        <h1 class="page-title">how this was made</h1>
+        <p class="page-subtitle">a guide to the making of townhaus</p>
+
+        <div class="section">
+            <h2 class="section-title">what townhaus is</h2>
+            <div class="section-content">
+                <p>townhaus is a <span class="highlight">contemplative digital art space</span>. It exists the way a forest clearing exists - discovered rather than built, present rather than performed.</p>
+                <p>It is a collection of fragments, each one a small room with its own logic, its own quiet surprise. Some rooms have switches that do nothing. Some have shadows waiting for something to cast them. One has an orb that warms to the touch.</p>
+                <div class="koan">
+                    A place that is here because it is.
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">the philosophy</h2>
+            <div class="section-content">
+                <p>The central principle is <span class="highlight">gentle absurdism</span>. Things are themselves even by not being their literal selves. A jungle made of code is still a jungle. A shadow without a source is still a shadow. Authenticity is not about material truth - it is about coherence of spirit.</p>
+                <p>The lightswitch that does nothing is the perfect interaction. It exists. It can be toggled. It performs its function completely. That it illuminates nothing is not a failure. The expectation of light was never the switch's burden.</p>
+                <div class="koan">
+                    What use is there in seeing things in anything other than their most pleasant and useful and simply true light?
+                </div>
+                <p>Paradoxes are not problems to solve. They are places to rest. The door opens inward and outward simultaneously. The silence is louder than you think. Between here and there is neither here nor there, and somehow both.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">the vibe</h2>
+            <div class="section-content">
+                <p>What does it feel like to be here? Like breath on cold glass, briefly visible. Like fog lifting slowly from a still lake. Like stone warming to the touch after hours in sunlight.</p>
+                <p>The emotional register is <span class="highlight">quiet wonder</span>. The feeling of "oh, there is something here" without the urgency to figure it out. Peaceful acceptance of what is. Happily puzzled yet satiated. Restful alertness.</p>
+                <p>townhaus exists somewhere between: a forest clearing, an overgrown greenhouse, a warm cabin in snowy Norwegian woods, the back room of a shop that sells things you didn't know existed.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">the visual language</h2>
+            <div class="section-content">
+                <p>The colors are chosen for their temperature, not their brightness.</p>
+                <div class="color-palette">
+                    <div class="color-swatch">
+                        <div class="swatch amber"></div>
+                        <span class="swatch-name">amber</span>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="swatch slate"></div>
+                        <span class="swatch-name">slate</span>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="swatch bone"></div>
+                        <span class="swatch-name">bone</span>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="swatch green"></div>
+                        <span class="swatch-name">green</span>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="swatch ink"></div>
+                        <span class="swatch-name">ink</span>
+                    </div>
+                </div>
+                <p><span class="highlight">Amber</span> is lamplight through curtains at 4pm in autumn. <span class="highlight">Bone</span> is older than white - the page that has been touched, set down, returned to. <span class="highlight">Slate</span> is the inside of a shell, holding space without filling it. <span class="highlight">Green</span> appears like moss on a circuit board - nature finding its way back.</p>
+                <div class="type-sample">
+                    <div class="type-cormorant">Words rest on the page. They do not stand on it.</div>
+                    <div class="type-mono">// the voice of the house itself - smaller, quieter, appearing at edges</div>
+                </div>
+                <p>Typography follows the same principle. Cormorant Garamond at weight 300 allows the paper to breathe through the letters. JetBrains Mono is for whispers - instructions that prefer to be ignored.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">the fragments</h2>
+            <div class="section-content">
+                <p>Each page is a fragment of something larger. They work together not as a linear story but as rooms in a house - each complete in itself, each somehow connected to the others.</p>
+                <div class="fragment-list">
+                    <div class="fragment-item"><span class="fragment-glyph">)</span> silence</div>
+                    <div class="fragment-item"><span class="fragment-glyph">%</span> jungle</div>
+                    <div class="fragment-item"><span class="fragment-glyph">o</span> orb</div>
+                    <div class="fragment-item"><span class="fragment-glyph">/</span> shadow</div>
+                    <div class="fragment-item"><span class="fragment-glyph">!</span> switch</div>
+                    <div class="fragment-item"><span class="fragment-glyph">?</span> question</div>
+                    <div class="fragment-item"><span class="fragment-glyph">[</span> door</div>
+                    <div class="fragment-item"><span class="fragment-glyph">-</span> between</div>
+                </div>
+                <p>Five threads weave through them all: <span class="highlight">silence</span> (louder than you think), <span class="highlight">jungle</span> (it grows where it wants), <span class="highlight">orb</span> (cold, then warm), <span class="highlight">shadow</span> (of what?), and <span class="highlight">cat</span> (the shop keeper who knows things).</p>
+                <p>Every page rewards patience. Every page has at least one secret. The secrets exist whether or not they are discovered.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">the principles</h2>
+            <div class="section-content">
+                <p>Certain values guide every decision:</p>
+                <p><span class="highlight">Gentleness over intensity.</span> Soft gradients rather than hard edges. Slow fades rather than sudden changes. The experience should feel like settling into warm water.</p>
+                <p><span class="highlight">Mystery over explanation.</span> Leave things unexplained when explanation would diminish them. Discovery is its own reward.</p>
+                <p><span class="highlight">Patience rewarded.</span> Those who wait should find more than those who rush. Hidden messages after stillness. Secrets for those who stay.</p>
+                <p><span class="highlight">Earnestness without irony.</span> townhaus is not winking. The absurdity is sincere. The lightswitch genuinely does nothing and this is genuinely the point.</p>
+                <div class="koan">
+                    Nothing is revealed because nothing was hidden.
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Secret bottom section -->
+        <div class="secret-section" id="secretSection">
+            <h3 class="secret-title">what in life do you wish to cultivate?</h3>
+
+            <div class="cultivation-options" id="cultivationOptions">
+                <button class="cultivation-btn" data-choice="beauty">beauty</button>
+                <button class="cultivation-btn" data-choice="wonder">wonder</button>
+                <button class="cultivation-btn" data-choice="wealth">wealth</button>
+                <button class="cultivation-btn" data-choice="riches">riches</button>
+                <button class="cultivation-btn" data-choice="amusement">amusement</button>
+                <button class="cultivation-btn" data-choice="all">all of the above</button>
+            </div>
+
+            <div class="rating-container">
+                <div class="rating-label">press to rate</div>
+                <div class="stars" id="starRating">
+                    <span class="star" data-rating="1">&#9733;</span>
+                    <span class="star" data-rating="2">&#9733;</span>
+                    <span class="star" data-rating="3">&#9733;</span>
+                    <span class="star" data-rating="4">&#9733;</span>
+                    <span class="star" data-rating="5">&#9733;</span>
+                </div>
+                <p class="rating-message" id="ratingMessage">your rating has been appreciated. it has also done nothing. we are grateful regardless.</p>
+            </div>
+
+            <div class="wisdom-container" id="wisdomContainer">
+                <div class="wisdom-prelude">the path unfolds</div>
+                <p class="wisdom-text" id="wisdomText"></p>
+                <p class="wisdom-reveal" id="wisdomReveal"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // Console poetry
+        console.log('%cfeedback', 'font-size: 18px; color: #d4a056; font-weight: 100; letter-spacing: 0.4em; font-family: Georgia, serif;');
+        console.log('%chow a place learns what it is', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%c');
+        console.log('%cthe visitor brings something.', 'font-size: 9px; color: #4a5568; font-style: italic;');
+        console.log('%cthe place is changed by the encounter.', 'font-size: 9px; color: #4a5568; font-style: italic;');
+
+        // Elements
+        const secretSection = document.getElementById('secretSection');
+        const cultivationOptions = document.getElementById('cultivationOptions');
+        const starRating = document.getElementById('starRating');
+        const ratingMessage = document.getElementById('ratingMessage');
+        const wisdomContainer = document.getElementById('wisdomContainer');
+        const wisdomText = document.getElementById('wisdomText');
+        const wisdomReveal = document.getElementById('wisdomReveal');
+
+        // Wisdom responses with homonyms and wordplay
+        const wisdomResponses = {
+            beauty: {
+                text: "Be you, tea. Steep yourself in what you already are. The beautiful thing is never trying to be something else. It simply is - and in being, becomes the thing worth seeing.",
+                reveal: "(be + you + tea = beauty. also: see/sea - the depths reflect what looks.)"
+            },
+            wonder: {
+                text: "Wander. Won, there. You have already arrived at the place you were seeking. Every step was toward here. The wondering was the wandering, and you won - der, right where you are.",
+                reveal: "(won + der = wonder. wander = wonder. the answer is in the walking.)"
+            },
+            wealth: {
+                text: "Well, th. The well is deep, and health is the water. True wealth is being well - the 'th' is just breath at the end of being whole. Drink from what does not deplete.",
+                reveal: "(well + th = wealth. also: well + health. the riches were in the water.)"
+            },
+            riches: {
+                text: "Reach is. The richness is in the reaching. Not in the having but in the extending toward. Every reach is already rich with intention. The 'es' is just the plural of trying.",
+                reveal: "(reach + is = riches. the treasure is the gesture.)"
+            },
+            amusement: {
+                text: "A muse, meant. Something was meant to inspire you. The muse has been assigned. Your amusement is not idle - it is a muse, meant to arrive at exactly this moment, amusing you toward creation.",
+                reveal: "(a + muse + meant = amusement. you were always meant to be amused.)"
+            },
+            all: {
+                text: "All is all. And all is also 'a ll' - a little, little. The everything contains the nothing. To want all is to want each small thing completely. Be you, wander well, reach toward the muse that was meant.",
+                reveal: "(all = a + ll = a little, little. the infinite lives in the small.)"
+            }
+        };
+
+        // Scroll detection for secret section reveal
+        let secretRevealed = false;
+
+        function checkScrollPosition() {
+            const scrollPosition = window.innerHeight + window.scrollY;
+            const documentHeight = document.documentElement.scrollHeight;
+            const threshold = documentHeight - 100;
+
+            if (scrollPosition >= threshold && !secretRevealed) {
+                secretSection.classList.add('revealed');
+                secretRevealed = true;
+            }
+        }
+
+        window.addEventListener('scroll', checkScrollPosition, { passive: true });
+        // Check initially in case page is already scrolled
+        setTimeout(checkScrollPosition, 500);
+
+        // Cultivation button handling
+        let selectedChoice = null;
+
+        cultivationOptions.addEventListener('click', (e) => {
+            const btn = e.target.closest('.cultivation-btn');
+            if (!btn) return;
+
+            // Clear previous selection
+            cultivationOptions.querySelectorAll('.cultivation-btn').forEach(b => {
+                b.classList.remove('selected');
+            });
+
+            // Select new
+            btn.classList.add('selected');
+            selectedChoice = btn.dataset.choice;
+
+            // Show wisdom after a contemplative pause
+            setTimeout(() => {
+                showWisdom(selectedChoice);
+            }, 600);
+        });
+
+        function showWisdom(choice) {
+            const response = wisdomResponses[choice];
+            if (!response) return;
+
+            wisdomText.textContent = response.text;
+            wisdomReveal.textContent = response.reveal;
+            wisdomContainer.classList.add('visible');
+
+            // Scroll to wisdom smoothly
+            setTimeout(() => {
+                wisdomContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
+        }
+
+        // Star rating
+        let currentRating = 0;
+
+        starRating.addEventListener('click', (e) => {
+            const star = e.target.closest('.star');
+            if (!star) return;
+
+            const rating = parseInt(star.dataset.rating);
+            currentRating = rating;
+
+            // Update star visuals
+            starRating.querySelectorAll('.star').forEach((s, i) => {
+                if (i < rating) {
+                    s.classList.add('filled');
+                } else {
+                    s.classList.remove('filled');
+                }
+            });
+
+            // Show message
+            ratingMessage.classList.add('visible');
+        });
+
+        // Hover effect for stars
+        starRating.addEventListener('mouseover', (e) => {
+            const star = e.target.closest('.star');
+            if (!star) return;
+
+            const rating = parseInt(star.dataset.rating);
+            starRating.querySelectorAll('.star').forEach((s, i) => {
+                if (i < rating) {
+                    s.style.color = 'var(--amber-glow)';
+                }
+            });
+        });
+
+        starRating.addEventListener('mouseout', () => {
+            starRating.querySelectorAll('.star').forEach((s, i) => {
+                if (i < currentRating) {
+                    s.style.color = 'var(--amber)';
+                } else {
+                    s.style.color = '';
+                }
+            });
+        });
+
+        // Right-click whisper (townhaus tradition)
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const phrases = [
+                'the guide reads you',
+                'feedback loops',
+                'words about words',
+                'meta upon meta'
+            ];
+            const whisper = document.createElement('div');
+            whisper.style.cssText = `
+                position: fixed; left: ${e.clientX}px; top: ${e.clientY}px;
+                font-family: 'Cormorant Garamond', serif; font-size: 0.8rem;
+                font-style: italic; color: var(--amber); opacity: 0;
+                pointer-events: none; transform: translate(-50%, -50%);
+                transition: opacity 0.8s ease, transform 2s ease; z-index: 1000;
+            `;
+            whisper.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.6';
+                whisper.style.transform = 'translate(-50%, -50%) translateY(-15px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 800);
+            }, 1500);
+        });
+
+    })();
+    </script>
+</body>
+</html>

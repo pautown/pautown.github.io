@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glyph - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .glyph {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: clamp(14rem, 22vw, 20rem);
+            font-weight: 200;
+            color: var(--slate-deep);
+            cursor: pointer;
+            user-select: none;
+            opacity: 0;
+            animation: glyphAppear 1.5s ease forwards;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        @keyframes glyphAppear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 0.7; transform: translateY(0); }
+        }
+
+        .glyph:hover {
+            transform: scale(1.01);
+            opacity: 0.8;
+        }
+
+        .glyph.changing {
+            animation: glyphSlide 0.5s ease;
+        }
+
+        @keyframes glyphSlide {
+            0% { opacity: 0.7; transform: translateY(0); }
+            50% { opacity: 0; transform: translateY(-8px); }
+            100% { opacity: 0.7; transform: translateY(0); }
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            letter-spacing: 0.2em;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .hint.visible {
+            opacity: 0.2;
+        }
+
+        .back-link {
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="glyph" id="glyph">3</div>
+
+    <div class="hint" id="hint">counting</div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // Number-focused pool
+        const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        const symbols = ['∞', '≈', '∴'];
+        const pool = [...numbers, ...numbers, ...numbers, ...symbols]; // Weight toward numbers
+
+        const glyph = document.getElementById('glyph');
+        const hint = document.getElementById('hint');
+
+        let current = '3';
+        let lastActivity = Date.now();
+        let autoChangeTimeout = null;
+
+        function getRandomGlyph() {
+            let next;
+            do {
+                next = pool[Math.floor(Math.random() * pool.length)];
+            } while (next === current && pool.length > 1);
+            return next;
+        }
+
+        function changeGlyph() {
+            current = getRandomGlyph();
+            glyph.classList.add('changing');
+            setTimeout(() => {
+                glyph.textContent = current;
+                glyph.classList.remove('changing');
+            }, 250);
+        }
+
+        function scheduleAutoChange() {
+            clearTimeout(autoChangeTimeout);
+            const delay = 8000 + Math.random() * 7000; // 8-15 seconds
+            autoChangeTimeout = setTimeout(() => {
+                const elapsed = Date.now() - lastActivity;
+                if (elapsed > 6000) {
+                    changeGlyph();
+                }
+                scheduleAutoChange();
+            }, delay);
+        }
+
+        function resetActivity() {
+            lastActivity = Date.now();
+        }
+
+        // Click to change
+        glyph.addEventListener('click', () => {
+            changeGlyph();
+            resetActivity();
+        });
+
+        // Track activity
+        document.addEventListener('mousemove', resetActivity, { passive: true });
+        document.addEventListener('keydown', (e) => {
+            resetActivity();
+            if (e.code === 'Space') {
+                e.preventDefault();
+                changeGlyph();
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Show hint after delay
+        setTimeout(() => hint.classList.add('visible'), 4000);
+
+        // Start auto-change timer
+        scheduleAutoChange();
+
+        // Console
+        console.log('%c3', 'font-size: 20px; font-family: Georgia, serif; color: #4a5568;');
+        console.log('%cnumbers drift in stillness', 'font-size: 9px; font-style: italic; color: #718096;');
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stone - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #5a5a5a 0%, #3a3a3a 50%, #4a4a4a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: filter 1.5s ease, background 2s ease;
+        }
+
+        body.ancient {
+            filter: sepia(0.35) contrast(1.1) brightness(0.95);
+            background: linear-gradient(135deg, #6a5a4a 0%, #4a3a2a 50%, #5a4a3a 100%);
+        }
+        body.frozen {
+            filter: saturate(0.4) brightness(1.15) hue-rotate(200deg);
+            background: linear-gradient(135deg, #5a6a7a 0%, #3a4a5a 50%, #4a5a6a 100%);
+        }
+        body.awakened {
+            filter: sepia(0.2) contrast(1.2) brightness(1.05);
+            background: linear-gradient(135deg, #7a6a5a 0%, #5a4a3a 50%, #6a5a4a 100%);
+        }
+        body.dreaming {
+            filter: saturate(0.6) brightness(0.9) hue-rotate(15deg);
+            background: linear-gradient(135deg, #5a5060 0%, #3a3040 50%, #4a4050 100%);
+        }
+        body.listening {
+            filter: contrast(1.05) brightness(1.02);
+        }
+
+        .stone-wall {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 3px;
+            padding: 3px;
+            background: #1a1a1a;
+            animation: wall-breathe 12s ease-in-out infinite;
+        }
+
+        @keyframes wall-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.003); }
+        }
+
+        body.deep-stillness .stone-wall {
+            animation: wall-breathe-deep 8s ease-in-out infinite;
+        }
+
+        @keyframes wall-breathe-deep {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.006); }
+        }
+
+        .stone-block {
+            background: linear-gradient(
+                145deg,
+                #6a6a6a 0%,
+                #5a5a5a 20%,
+                #4a4a4a 40%,
+                #555555 60%,
+                #4a4a4a 80%,
+                #5a5a5a 100%
+            );
+            position: relative;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            border-radius: 1px;
+        }
+
+        /* Each stone breathes at its own pace */
+        .stone-block {
+            animation: stone-idle-breathe var(--breathe-duration, 15s) ease-in-out infinite;
+            animation-delay: var(--breathe-delay, 0s);
+        }
+
+        @keyframes stone-idle-breathe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.97; }
+        }
+
+        /* Natural stone texture overlay */
+        .stone-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at var(--pulse-x, 50%) var(--pulse-y, 50%),
+                    rgba(212, 160, 86, 0.4) 0%,
+                    rgba(180, 120, 60, 0.2) 30%,
+                    transparent 60%),
+                radial-gradient(circle at 30% 70%, rgba(0,0,0,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 40%);
+            opacity: 0;
+            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Subtle surface variations */
+        .stone-block::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 50%, transparent 100%),
+                linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 30%, rgba(0,0,0,0.05) 100%);
+            pointer-events: none;
+        }
+
+        .stone-block.pulsing::before {
+            opacity: 1;
+            animation: stone-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        @keyframes stone-pulse {
+            0% { opacity: 0; transform: scale(0.8); }
+            20% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.2); }
+        }
+
+        .stone-block:hover {
+            background: linear-gradient(
+                145deg,
+                #7a7a7a 0%,
+                #6a6a6a 20%,
+                #5a5a5a 40%,
+                #656565 60%,
+                #5a5a5a 80%,
+                #6a6a6a 100%
+            );
+            transform: scale(1.01);
+        }
+
+        .stone-block.touched {
+            background: linear-gradient(
+                145deg,
+                #7a6a5a 0%,
+                #6a5a4a 20%,
+                #5a4a3a 40%,
+                #655545 60%,
+                #5a4a3a 80%,
+                #6a5a4a 100%
+            );
+        }
+
+        .stone-block.warm {
+            background: linear-gradient(
+                145deg,
+                #8a7a6a 0%,
+                #7a6a5a 20%,
+                #6a5a4a 40%,
+                #756555 60%,
+                #6a5a4a 80%,
+                #7a6a5a 100%
+            );
+            box-shadow:
+                inset 0 0 40px rgba(212, 160, 86, 0.25),
+                inset 0 0 80px rgba(180, 120, 60, 0.1);
+            animation: warm-stone-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes warm-stone-breathe {
+            0%, 100% {
+                box-shadow:
+                    inset 0 0 40px rgba(212, 160, 86, 0.25),
+                    inset 0 0 80px rgba(180, 120, 60, 0.1);
+            }
+            50% {
+                box-shadow:
+                    inset 0 0 50px rgba(212, 160, 86, 0.35),
+                    inset 0 0 100px rgba(180, 120, 60, 0.15);
+            }
+        }
+
+        .stone-block.hot {
+            background: linear-gradient(
+                145deg,
+                #9a8a7a 0%,
+                #8a7a6a 20%,
+                #7a6a5a 40%,
+                #857565 60%,
+                #7a6a5a 80%,
+                #8a7a6a 100%
+            );
+            box-shadow:
+                inset 0 0 50px rgba(212, 160, 86, 0.35),
+                inset 0 0 100px rgba(180, 120, 60, 0.15),
+                0 0 15px rgba(212, 160, 86, 0.1);
+            animation: hot-stone-breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes hot-stone-breathe {
+            0%, 100% {
+                box-shadow:
+                    inset 0 0 50px rgba(212, 160, 86, 0.35),
+                    inset 0 0 100px rgba(180, 120, 60, 0.15),
+                    0 0 15px rgba(212, 160, 86, 0.1);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow:
+                    inset 0 0 60px rgba(212, 160, 86, 0.45),
+                    inset 0 0 120px rgba(180, 120, 60, 0.2),
+                    0 0 20px rgba(212, 160, 86, 0.15);
+                transform: scale(1.005);
+            }
+        }
+
+        /* Deep warmth - after extended attention */
+        .stone-block.radiant {
+            background: linear-gradient(
+                145deg,
+                #aa9a8a 0%,
+                #9a8a7a 20%,
+                #8a7a6a 40%,
+                #958575 60%,
+                #8a7a6a 80%,
+                #9a8a7a 100%
+            );
+            box-shadow:
+                inset 0 0 60px rgba(212, 160, 86, 0.5),
+                inset 0 0 120px rgba(180, 120, 60, 0.25),
+                0 0 25px rgba(212, 160, 86, 0.2),
+                0 0 50px rgba(212, 160, 86, 0.1);
+            animation: radiant-stone-breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes radiant-stone-breathe {
+            0%, 100% {
+                box-shadow:
+                    inset 0 0 60px rgba(212, 160, 86, 0.5),
+                    inset 0 0 120px rgba(180, 120, 60, 0.25),
+                    0 0 25px rgba(212, 160, 86, 0.2),
+                    0 0 50px rgba(212, 160, 86, 0.1);
+            }
+            50% {
+                box-shadow:
+                    inset 0 0 70px rgba(212, 160, 86, 0.6),
+                    inset 0 0 140px rgba(180, 120, 60, 0.3),
+                    0 0 35px rgba(212, 160, 86, 0.25),
+                    0 0 70px rgba(212, 160, 86, 0.15);
+            }
+        }
+
+        /* Cracked stones - more realistic fracture pattern */
+        .stone-block.cracked .crack-line {
+            position: absolute;
+            background: #1a1a1a;
+            transform-origin: center;
+            pointer-events: none;
+        }
+
+        .stone-block.cracked .crack-main {
+            top: 45%;
+            left: 15%;
+            width: 70%;
+            height: 2px;
+            transform: rotate(-12deg);
+        }
+
+        .stone-block.cracked .crack-branch-1 {
+            top: 40%;
+            left: 35%;
+            width: 25%;
+            height: 1px;
+            transform: rotate(-45deg);
+        }
+
+        .stone-block.cracked .crack-branch-2 {
+            top: 55%;
+            left: 50%;
+            width: 20%;
+            height: 1px;
+            transform: rotate(30deg);
+        }
+
+        /* Listening state - stone responds to stillness */
+        .stone-block.listening {
+            animation: listening-pulse 5s ease-in-out infinite;
+        }
+
+        @keyframes listening-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.92; }
+        }
+
+        /* Subtle listening shimmer - the wall's acknowledgment */
+        body.listening .stone-block::after {
+            animation: listening-shimmer 8s ease-in-out infinite;
+        }
+
+        @keyframes listening-shimmer {
+            0%, 100% { background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 50%, transparent 100%), linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 30%, rgba(0,0,0,0.05) 100%); }
+            50% { background: linear-gradient(90deg, transparent 0%, rgba(212,160,86,0.08) 50%, transparent 100%), linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%, rgba(212,160,86,0.06) 100%); }
+        }
+
+        /* Inscribed rune - refined styling */
+        .stone-block .rune {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 1.5s ease, text-shadow 1s ease;
+            text-shadow: 0 0 10px rgba(212, 160, 86, 0.3);
+            pointer-events: none;
+        }
+
+        .stone-block.inscribed .rune {
+            opacity: 0.7;
+            animation: rune-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes rune-glow {
+            0%, 100% {
+                opacity: 0.5;
+                text-shadow: 0 0 8px rgba(212, 160, 86, 0.2);
+            }
+            50% {
+                opacity: 0.8;
+                text-shadow: 0 0 15px rgba(212, 160, 86, 0.5);
+            }
+        }
+
+        /* Moss effect for ancient mode */
+        .stone-block .moss {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            background: linear-gradient(to top, rgba(60, 80, 50, 0.3), transparent);
+            transition: height 3s ease;
+            pointer-events: none;
+        }
+
+        body.ancient .stone-block .moss {
+            height: 30%;
+        }
+
+        /* Frost effect for frozen mode */
+        .stone-block .frost {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(200, 220, 255, 0.15), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(180, 200, 240, 0.1), transparent 40%);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        body.frozen .stone-block .frost {
+            opacity: 1;
+        }
+
+        /* Enhanced texture overlay */
+        .texture {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            z-index: 10;
+            mix-blend-mode: overlay;
+        }
+
+        /* Secondary grain texture */
+        .texture-grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+            z-index: 11;
+        }
+
+        .heartbeat {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, var(--amber) 0%, rgba(212, 160, 86, 0.5) 50%, transparent 100%);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .heartbeat.visible {
+            opacity: 0.7;
+            animation: heartbeat 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .heartbeat.strong {
+            animation: heartbeat-strong 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .heartbeat.luminous {
+            width: 10px;
+            height: 10px;
+            animation: heartbeat-luminous 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+            15% { transform: translate(-50%, -50%) scale(2); opacity: 0.7; }
+            30% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.4; }
+            45% { transform: translate(-50%, -50%) scale(1.8); opacity: 0.6; }
+            60%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+        }
+
+        @keyframes heartbeat-strong {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            10% { transform: translate(-50%, -50%) scale(3); opacity: 0.9; }
+            20% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.6; }
+            30% { transform: translate(-50%, -50%) scale(2.5); opacity: 0.8; }
+            40%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+        }
+
+        @keyframes heartbeat-luminous {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+            8% { transform: translate(-50%, -50%) scale(4); opacity: 1; }
+            16% { transform: translate(-50%, -50%) scale(2); opacity: 0.8; }
+            24% { transform: translate(-50%, -50%) scale(3.5); opacity: 0.95; }
+            32%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+        }
+
+        /* Warmth ripple effect */
+        .warmth-ripple {
+            position: fixed;
+            border-radius: 50%;
+            border: 1px solid rgba(212, 160, 86, 0.3);
+            pointer-events: none;
+            z-index: 15;
+            animation: ripple-expand 2s cubic-bezier(0, 0.5, 0.5, 1) forwards;
+        }
+
+        @keyframes ripple-expand {
+            0% { transform: scale(0); opacity: 0.6; }
+            100% { transform: scale(4); opacity: 0; }
+        }
+
+        /* Stillness indicator - appears when not moving */
+        .stillness-indicator {
+            position: fixed;
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, 50%);
+            width: 100px;
+            height: 100px;
+            border: 1px solid rgba(212, 160, 86, 0);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 18;
+            transition: all 3s ease;
+        }
+
+        .stillness-indicator.active {
+            border-color: rgba(212, 160, 86, 0.15);
+            animation: stillness-breathe 6s ease-in-out infinite;
+        }
+
+        .stillness-indicator.deep {
+            border-color: rgba(212, 160, 86, 0.25);
+            width: 150px;
+            height: 150px;
+            animation: stillness-breathe-deep 4s ease-in-out infinite;
+        }
+
+        @keyframes stillness-breathe {
+            0%, 100% { transform: translate(-50%, 50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%, 50%) scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes stillness-breathe-deep {
+            0%, 100% { transform: translate(-50%, 50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, 50%) scale(1.15); opacity: 1; }
+        }
+
+        /* Sound visualization - visual representation of the wall's voice */
+        .sound-wave {
+            position: fixed;
+            left: 50%;
+            bottom: 45%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+            z-index: 19;
+        }
+
+        .sound-wave.visible {
+            opacity: 0.4;
+        }
+
+        .sound-wave span {
+            width: 2px;
+            background: var(--amber);
+            border-radius: 1px;
+            animation: wave-pulse 1.5s ease-in-out infinite;
+        }
+
+        .sound-wave span:nth-child(1) { height: 8px; animation-delay: 0s; }
+        .sound-wave span:nth-child(2) { height: 15px; animation-delay: 0.1s; }
+        .sound-wave span:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+        .sound-wave span:nth-child(4) { height: 18px; animation-delay: 0.3s; }
+        .sound-wave span:nth-child(5) { height: 12px; animation-delay: 0.4s; }
+        .sound-wave span:nth-child(6) { height: 6px; animation-delay: 0.5s; }
+        .sound-wave span:nth-child(7) { height: 14px; animation-delay: 0.6s; }
+
+        @keyframes wave-pulse {
+            0%, 100% { transform: scaleY(1); opacity: 0.6; }
+            50% { transform: scaleY(1.5); opacity: 1; }
+        }
+
+        .message {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            z-index: 30;
+            pointer-events: none;
+            max-width: 80%;
+            line-height: 1.6;
+        }
+
+        .message.visible { opacity: 0.6; }
+
+        /* Hidden whisper message */
+        .whisper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            z-index: 25;
+            pointer-events: none;
+            letter-spacing: 0.3em;
+        }
+
+        .whisper.visible { opacity: 0.25; }
+
+        /* Stillness message - different from regular whispers */
+        .stillness-message {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.6rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 5s ease;
+            text-align: center;
+            z-index: 24;
+            pointer-events: none;
+            letter-spacing: 0.5em;
+            text-transform: lowercase;
+        }
+
+        .stillness-message.visible { opacity: 0.3; }
+
+        /* Extended patience reward */
+        .patience-reward {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 8s ease;
+            text-align: center;
+            z-index: 35;
+            pointer-events: none;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 30px rgba(212, 160, 86, 0.3);
+        }
+
+        .patience-reward.visible { opacity: 0.5; }
+
+        .counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--bone);
+            opacity: 0.3;
+            z-index: 30;
+            transition: opacity 1s ease, color 1s ease;
+        }
+
+        .counter.warm-counter {
+            color: var(--amber);
+            opacity: 0.5;
+        }
+
+        .counter.hot-counter {
+            color: #e8a030;
+            opacity: 0.7;
+            text-shadow: 0 0 10px rgba(212, 160, 86, 0.3);
+        }
+
+        .counter.radiant-counter {
+            color: #f0b040;
+            opacity: 0.85;
+            text-shadow: 0 0 15px rgba(212, 160, 86, 0.4);
+            animation: counter-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes counter-glow {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.95; }
+        }
+
+        /* Presence indicator - subtle sign the wall is aware */
+        .presence-indicator {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            opacity: 0;
+            transition: all 2s ease;
+            pointer-events: none;
+        }
+
+        .presence-indicator.watching {
+            background: rgba(212, 160, 86, 0.3);
+            opacity: 1;
+            animation: presence-pulse 4s ease-in-out infinite;
+        }
+
+        .presence-indicator.attentive {
+            background: rgba(212, 160, 86, 0.5);
+            width: 8px;
+            height: 8px;
+            animation: presence-pulse-strong 3s ease-in-out infinite;
+        }
+
+        @keyframes presence-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        @keyframes presence-pulse-strong {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.4); opacity: 1; }
+        }
+
+        .key-hint {
+            position: fixed;
+            top: 5rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: right;
+            line-height: 1.8;
+            z-index: 30;
+        }
+
+        body:hover .key-hint { opacity: 0.3; }
+
+        /* Memory indicator - shows accumulated visits */
+        .memory-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--bone);
+            opacity: 0;
+            transition: opacity 2s ease, transform 2s ease;
+        }
+
+        .memory-indicator.remembered {
+            opacity: 0.2;
+        }
+
+        .memory-indicator.familiar {
+            opacity: 0.35;
+            width: 6px;
+            height: 6px;
+        }
+
+        .memory-indicator.known {
+            opacity: 0.5;
+            width: 8px;
+            height: 8px;
+            background: var(--amber);
+            animation: memory-glow 5s ease-in-out infinite;
+        }
+
+        @keyframes memory-glow {
+            0%, 100% { opacity: 0.4; box-shadow: none; }
+            50% { opacity: 0.6; box-shadow: 0 0 10px rgba(212, 160, 86, 0.3); }
+        }
+
+        .back-link { color: var(--bone); z-index: 30; }
+
+        /* Easter egg: pattern detection indicator */
+        .pattern-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, rgba(212, 160, 86, 0.1), transparent 50%);
+            opacity: 0;
+            transition: opacity 3s ease;
+            z-index: 5;
+        }
+
+        .pattern-glow.active { opacity: 1; }
+
+        /* Secret symbol reveal */
+        .secret-symbol {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 5s ease;
+            z-index: 40;
+            pointer-events: none;
+            text-shadow: 0 0 30px rgba(212, 160, 86, 0.5);
+        }
+
+        .secret-symbol.revealed { opacity: 0.6; }
+
+        /* Deep stillness veil */
+        .stillness-veil {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(26, 26, 26, 0.3) 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 8;
+            transition: opacity 5s ease;
+        }
+
+        .stillness-veil.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="stone-wall" id="wall"></div>
+    <div class="texture"></div>
+    <div class="texture-grain"></div>
+    <div class="heartbeat" id="heartbeat"></div>
+    <div class="pattern-glow" id="patternGlow"></div>
+    <div class="secret-symbol" id="secretSymbol"></div>
+    <div class="stillness-indicator" id="stillnessIndicator"></div>
+    <div class="stillness-veil" id="stillnessVeil"></div>
+    <div class="presence-indicator" id="presenceIndicator"></div>
+
+    <div class="sound-wave" id="soundWave">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <p class="message" id="message"></p>
+    <p class="whisper" id="whisper"></p>
+    <p class="stillness-message" id="stillnessMessage"></p>
+    <p class="patience-reward" id="patienceReward"></p>
+    <p class="counter" id="counter">warmth: 0%</p>
+    <div class="memory-indicator" id="memoryIndicator"></div>
+    <div class="key-hint">
+        [a] ancient<br>
+        [f] frozen<br>
+        [d] dream<br>
+        [r] reset<br>
+        [i] inscribe<br>
+        [s] sound<br>
+        right-click: crack<br>
+        hold: sustain
+    </div>
+
+    <script>
+        const wall = document.getElementById('wall');
+        const heartbeat = document.getElementById('heartbeat');
+        const message = document.getElementById('message');
+        const whisper = document.getElementById('whisper');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const patienceReward = document.getElementById('patienceReward');
+        const counter = document.getElementById('counter');
+        const patternGlow = document.getElementById('patternGlow');
+        const secretSymbol = document.getElementById('secretSymbol');
+        const memoryIndicator = document.getElementById('memoryIndicator');
+        const stillnessIndicator = document.getElementById('stillnessIndicator');
+        const stillnessVeil = document.getElementById('stillnessVeil');
+        const presenceIndicator = document.getElementById('presenceIndicator');
+        const soundWave = document.getElementById('soundWave');
+
+        const blocks = [];
+        let totalWarmth = 0;
+        let touchCount = 0;
+        let touchSequence = [];
+        let holdTimer = null;
+        let isHolding = false;
+        let lastTouchTime = 0;
+        let rapidTouchCount = 0;
+
+        // Stillness tracking
+        let lastMovementTime = Date.now();
+        let stillnessLevel = 0;
+        let stillnessTimer = null;
+        let deepStillnessReached = false;
+        let profoundStillnessReached = false;
+        let transcendentStillnessReached = false;
+
+        // Sustained attention tracking
+        let sustainedWarmthStart = null;
+        let sustainedWarmthThreshold = 90;
+
+        // Sound mode (visual representation)
+        let soundMode = false;
+
+        // Ancient runes with meanings
+        const runes = [
+            { symbol: '\u16A0', meaning: 'wealth' },
+            { symbol: '\u16A2', meaning: 'strength' },
+            { symbol: '\u16A6', meaning: 'protection' },
+            { symbol: '\u16A8', meaning: 'wisdom' },
+            { symbol: '\u16B1', meaning: 'journey' },
+            { symbol: '\u16B2', meaning: 'fire' },
+            { symbol: '\u16B7', meaning: 'gift' },
+            { symbol: '\u16B9', meaning: 'joy' },
+            { symbol: '\u16BA', meaning: 'ice' },
+            { symbol: '\u16BE', meaning: 'harvest' },
+            { symbol: '\u16C1', meaning: 'sun' },
+            { symbol: '\u16C9', meaning: 'growth' }
+        ];
+
+        // Messages that progress with interaction depth
+        const messages = [
+            'cool to the touch, but not lifeless',
+            'there is something underneath the surface',
+            'it remembers hands that came before',
+            'if you wait, you can feel it breathing',
+            'warmth rises from somewhere deep',
+            'the stone has always been here',
+            'it knows your name, though you never spoke it',
+            'some things are older than memory',
+            'listen closely... can you hear it?',
+            'the warmth spreads like a secret being shared',
+            'this was a door once, or will be',
+            'ancient warmth, patient and true'
+        ];
+
+        // Stillness messages - appear when not moving
+        const stillnessMessages = [
+            'the wall notices your stillness',
+            'it is listening now',
+            'patience is its own language',
+            'something stirs in the quiet',
+            'the stones remember those who wait'
+        ];
+
+        // Deep stillness messages
+        const deepStillnessMessages = [
+            'you have found the rhythm',
+            'the wall breathes with you now',
+            'in stillness, the stone speaks',
+            'time moves differently here'
+        ];
+
+        // Profound stillness - the reward for extended patience
+        const profoundStillnessMessages = [
+            'you understand',
+            'the threshold opens',
+            'what was hidden becomes clear',
+            'the wall holds you in return'
+        ];
+
+        // Secret whispers for special interactions
+        const whispers = [
+            'you found the rhythm',
+            'the pattern remembers',
+            'it has been waiting',
+            'the wall speaks in warmth',
+            'you understand now'
+        ];
+
+        // Console poetry - layered messages for the curious
+        console.log('%c', 'padding: 20px');
+        console.log('%cstone', 'font-size: 24px; color: #d4a056; font-family: "Cormorant Garamond", serif; font-weight: 300;');
+        console.log('%c', 'padding: 5px');
+        console.log('%ctouch to warm', 'font-size: 12px; color: #718096; font-style: italic;');
+        console.log('%cwarmth spreads', 'font-size: 12px; color: #718096; font-style: italic;');
+        console.log('%cenough warmth and the wall pulses like a heartbeat', 'font-size: 12px; color: #718096; font-style: italic;');
+        console.log('%c', 'padding: 10px');
+        console.log('%cthe wall remembers those who touch it with patience', 'font-size: 11px; color: #4a5568;');
+        console.log('%c', 'padding: 5px');
+        console.log('%c~', 'font-size: 14px; color: #d4a056;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cbe still. the stone is listening.', 'font-size: 10px; color: #4a5568; font-style: italic;');
+
+        // Track visits using localStorage
+        let visitCount = parseInt(localStorage.getItem('stone_visits') || '0');
+        let totalTimeSpent = parseInt(localStorage.getItem('stone_time') || '0');
+        let deepestWarmth = parseInt(localStorage.getItem('stone_warmth') || '0');
+        visitCount++;
+        localStorage.setItem('stone_visits', visitCount.toString());
+
+        // Show memory indicator for returning visitors
+        if (visitCount > 1) {
+            memoryIndicator.classList.add('remembered');
+            if (visitCount >= 5) {
+                memoryIndicator.classList.add('familiar');
+            }
+            if (visitCount >= 10 || deepestWarmth > 80) {
+                memoryIndicator.classList.add('known');
+            }
+        }
+
+        // The presence notices you after a moment
+        setTimeout(() => {
+            presenceIndicator.classList.add('watching');
+            if (visitCount > 3) {
+                console.log('%cthe wall recognizes you', 'font-size: 10px; color: #d4a056; font-style: italic;');
+            }
+        }, 3000);
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Create stone blocks with unique characteristics
+        for (let i = 0; i < 48; i++) {
+            const block = document.createElement('div');
+            block.className = 'stone-block';
+            block.dataset.warmth = 0;
+            block.dataset.index = i;
+            block.dataset.touched = 0;
+            block.dataset.heldTime = 0;
+
+            // Each stone has subtle unique properties
+            const uniqueHue = (Math.random() - 0.5) * 12;
+            const uniqueBrightness = 0.95 + Math.random() * 0.1;
+            const uniqueContrast = 0.95 + Math.random() * 0.1;
+            block.style.filter = `hue-rotate(${uniqueHue}deg) brightness(${uniqueBrightness}) contrast(${uniqueContrast})`;
+
+            // Slight size variations for organic feel
+            const scaleVariation = 0.99 + Math.random() * 0.02;
+            block.style.transform = `scale(${scaleVariation})`;
+
+            // Each stone breathes at its own pace
+            const breatheDuration = 12 + Math.random() * 8;
+            const breatheDelay = Math.random() * -breatheDuration;
+            block.style.setProperty('--breathe-duration', `${breatheDuration}s`);
+            block.style.setProperty('--breathe-delay', `${breatheDelay}s`);
+
+            block.innerHTML = `
+                <span class="rune"></span>
+                <div class="moss"></div>
+                <div class="frost"></div>
+                <div class="crack-line crack-main"></div>
+                <div class="crack-line crack-branch-1"></div>
+                <div class="crack-line crack-branch-2"></div>
+            `;
+
+            wall.appendChild(block);
+            blocks.push(block);
+        }
+
+        // Secret: certain stones are "special" and have deeper warmth potential
+        const specialStones = [11, 20, 27, 36];
+        specialStones.forEach(i => {
+            if (blocks[i]) blocks[i].dataset.special = 'true';
+        });
+
+        // Center stone is the heart
+        const heartStone = blocks[19];
+        if (heartStone) heartStone.dataset.heart = 'true';
+
+        function createWarmthRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'warmth-ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = '50px';
+            ripple.style.height = '50px';
+            ripple.style.marginLeft = '-25px';
+            ripple.style.marginTop = '-25px';
+            document.body.appendChild(ripple);
+
+            setTimeout(() => ripple.remove(), 2000);
+        }
+
+        function touchStone(block, x, y, clientX, clientY) {
+            // Reset stillness when interacting
+            lastMovementTime = Date.now();
+
+            const warmth = parseInt(block.dataset.warmth) || 0;
+            const isSpecial = block.dataset.special === 'true';
+            const isHeart = block.dataset.heart === 'true';
+            let warmthIncrease = isSpecial ? 25 : (isHeart ? 30 : 20);
+
+            // Rapid touch detection
+            const now = Date.now();
+            if (now - lastTouchTime < 300) {
+                rapidTouchCount++;
+                if (rapidTouchCount >= 5) {
+                    showWhisper('patience reveals more than haste');
+                    rapidTouchCount = 0;
+                }
+            } else {
+                rapidTouchCount = 0;
+            }
+            lastTouchTime = now;
+
+            // Track how many times this specific stone has been touched
+            block.dataset.touched = parseInt(block.dataset.touched || 0) + 1;
+            const touchedTimes = parseInt(block.dataset.touched);
+
+            // Stones that are touched repeatedly become more responsive
+            if (touchedTimes > 5) {
+                warmthIncrease = Math.min(warmthIncrease * 1.5, 40);
+            }
+
+            if (warmth < 100) {
+                const newWarmth = Math.min(100, warmth + warmthIncrease);
+                block.dataset.warmth = newWarmth;
+                block.classList.add('touched');
+
+                if (newWarmth >= 60) {
+                    block.classList.add('warm');
+                }
+
+                if (newWarmth >= 90) {
+                    block.classList.add('hot');
+                }
+
+                // New radiant state for maximum warmth held over time
+                if (newWarmth >= 100 && parseInt(block.dataset.heldTime || 0) > 3) {
+                    block.classList.add('radiant');
+                }
+
+                block.style.setProperty('--pulse-x', x + '%');
+                block.style.setProperty('--pulse-y', y + '%');
+                block.classList.add('pulsing');
+                setTimeout(() => block.classList.remove('pulsing'), 2500);
+
+                // Create warmth ripple effect
+                createWarmthRipple(clientX, clientY);
+
+                // Sound mode visual feedback
+                if (soundMode) {
+                    soundWave.classList.add('visible');
+                    setTimeout(() => soundWave.classList.remove('visible'), 1500);
+                }
+
+                // Warmth spreads to neighbors with distance-based falloff
+                spreadWarmth(block);
+
+                updateWarmth();
+            }
+
+            // Track touch sequence for pattern detection
+            touchSequence.push(parseInt(block.dataset.index));
+            if (touchSequence.length > 10) touchSequence.shift();
+            checkPatterns();
+
+            touchCount++;
+            showMessage();
+
+            // The presence becomes more attentive with interaction
+            if (touchCount > 10) {
+                presenceIndicator.classList.add('attentive');
+            }
+        }
+
+        function spreadWarmth(block) {
+            const index = parseInt(block.dataset.index);
+            const row = Math.floor(index / 8);
+            const col = index % 8;
+
+            const neighbors = [];
+            for (let dr = -2; dr <= 2; dr++) {
+                for (let dc = -2; dc <= 2; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = row + dr;
+                    const nc = col + dc;
+                    if (nr >= 0 && nr < 6 && nc >= 0 && nc < 8) {
+                        const ni = nr * 8 + nc;
+                        const distance = Math.sqrt(dr * dr + dc * dc);
+                        neighbors.push({ index: ni, distance });
+                    }
+                }
+            }
+
+            neighbors.sort((a, b) => a.distance - b.distance);
+
+            neighbors.forEach((neighbor, i) => {
+                setTimeout(() => {
+                    if (blocks[neighbor.index]) {
+                        const nWarmth = parseInt(blocks[neighbor.index].dataset.warmth) || 0;
+                        const warmthTransfer = Math.max(0, Math.round(10 / neighbor.distance));
+                        if (nWarmth < 60 && warmthTransfer > 0) {
+                            blocks[neighbor.index].dataset.warmth = nWarmth + warmthTransfer;
+                            if (nWarmth + warmthTransfer >= 20) {
+                                blocks[neighbor.index].classList.add('touched');
+                            }
+                            blocks[neighbor.index].classList.add('pulsing');
+                            setTimeout(() => blocks[neighbor.index].classList.remove('pulsing'), 2500);
+                        }
+                    }
+                }, i * 80 + neighbor.distance * 50);
+            });
+        }
+
+        function checkPatterns() {
+            // Check if user touched all special stones
+            const touchedSpecial = specialStones.filter(i =>
+                touchSequence.includes(i)
+            );
+
+            if (touchedSpecial.length === specialStones.length) {
+                patternGlow.classList.add('active');
+                showWhisper(whispers[Math.floor(Math.random() * whispers.length)]);
+                setTimeout(() => patternGlow.classList.remove('active'), 5000);
+                touchSequence = [];
+
+                // Log to console for the curious
+                console.log('%cpattern recognized', 'font-size: 11px; color: #d4a056; font-style: italic;');
+            }
+
+            // Easter egg: touching corners in sequence
+            const corners = [0, 7, 40, 47];
+            const lastFour = touchSequence.slice(-4);
+            if (corners.every(c => lastFour.includes(c))) {
+                revealSecret();
+            }
+
+            // Heart stone special interaction
+            if (touchSequence.slice(-3).every(i => i === 19)) {
+                showWhisper('the heart of the wall responds');
+                heartbeat.classList.add('luminous');
+                setTimeout(() => heartbeat.classList.remove('luminous'), 5000);
+            }
+        }
+
+        function revealSecret() {
+            secretSymbol.textContent = '\u2728';
+            secretSymbol.classList.add('revealed');
+            document.body.classList.add('awakened');
+
+            console.log('%c\u2728', 'font-size: 20px;');
+            console.log('%cthe wall opens itself to you', 'font-size: 11px; color: #d4a056; font-style: italic;');
+
+            // Warm all stones gradually
+            blocks.forEach((b, i) => {
+                setTimeout(() => {
+                    b.dataset.warmth = 100;
+                    b.classList.add('touched', 'warm', 'hot');
+                }, i * 50);
+            });
+
+            setTimeout(() => {
+                secretSymbol.classList.remove('revealed');
+                updateWarmth();
+            }, 8000);
+        }
+
+        function crackStone(block) {
+            block.classList.toggle('cracked');
+
+            // Cracking a warm stone releases some warmth to neighbors
+            if (block.classList.contains('cracked') && parseInt(block.dataset.warmth) > 50) {
+                const index = parseInt(block.dataset.index);
+                const neighbors = [index - 1, index + 1, index - 8, index + 8]
+                    .filter(i => i >= 0 && i < 48);
+
+                neighbors.forEach((ni, delay) => {
+                    setTimeout(() => {
+                        if (blocks[ni]) {
+                            const nWarmth = parseInt(blocks[ni].dataset.warmth) || 0;
+                            blocks[ni].dataset.warmth = Math.min(100, nWarmth + 15);
+                            blocks[ni].classList.add('touched', 'pulsing');
+                            if (nWarmth + 15 >= 60) blocks[ni].classList.add('warm');
+                            setTimeout(() => blocks[ni].classList.remove('pulsing'), 2500);
+                        }
+                    }, delay * 150);
+                });
+
+                updateWarmth();
+
+                // Sound mode feedback
+                if (soundMode) {
+                    soundWave.classList.add('visible');
+                    setTimeout(() => soundWave.classList.remove('visible'), 2000);
+                }
+            }
+        }
+
+        function inscribeRune(block) {
+            if (!block.classList.contains('inscribed')) {
+                block.classList.add('inscribed');
+                const rune = runes[Math.floor(Math.random() * runes.length)];
+                const runeSpan = block.querySelector('.rune');
+                runeSpan.textContent = rune.symbol;
+                runeSpan.title = rune.meaning;
+
+                // Inscribing adds warmth
+                const warmth = parseInt(block.dataset.warmth) || 0;
+                block.dataset.warmth = Math.min(100, warmth + 10);
+                if (warmth + 10 >= 20) block.classList.add('touched');
+                updateWarmth();
+
+                // Console poetry for inscriptions
+                console.log(`%c${rune.symbol}`, 'font-size: 18px; color: #d4a056;');
+                console.log(`%c${rune.meaning}`, 'font-size: 10px; color: #718096; font-style: italic;');
+            }
+        }
+
+        function updateWarmth() {
+            totalWarmth = blocks.reduce((sum, b) => sum + (parseInt(b.dataset.warmth) || 0), 0);
+            const percentage = Math.round(totalWarmth / 48);
+            counter.textContent = `warmth: ${percentage}%`;
+
+            // Track deepest warmth for returning visitors
+            if (percentage > deepestWarmth) {
+                deepestWarmth = percentage;
+                localStorage.setItem('stone_warmth', deepestWarmth.toString());
+            }
+
+            // Update counter styling based on warmth
+            counter.classList.remove('warm-counter', 'hot-counter', 'radiant-counter');
+            if (percentage >= 90) {
+                counter.classList.add('radiant-counter');
+            } else if (percentage >= 70) {
+                counter.classList.add('hot-counter');
+            } else if (percentage >= 40) {
+                counter.classList.add('warm-counter');
+            }
+
+            // Heartbeat visibility and intensity
+            if (percentage > 30) {
+                heartbeat.classList.add('visible');
+                if (percentage > 85) {
+                    heartbeat.classList.add('luminous');
+                    heartbeat.classList.remove('strong');
+                } else if (percentage > 70) {
+                    heartbeat.classList.add('strong');
+                    heartbeat.classList.remove('luminous');
+                } else {
+                    heartbeat.classList.remove('strong', 'luminous');
+                }
+            } else {
+                heartbeat.classList.remove('visible', 'strong', 'luminous');
+            }
+
+            // Background shifts with warmth
+            if (percentage >= 80) {
+                document.body.classList.add('awakened');
+            } else {
+                document.body.classList.remove('awakened');
+            }
+
+            // Track sustained high warmth
+            if (percentage >= sustainedWarmthThreshold) {
+                if (!sustainedWarmthStart) {
+                    sustainedWarmthStart = Date.now();
+                } else {
+                    const duration = (Date.now() - sustainedWarmthStart) / 1000;
+                    if (duration > 30 && !document.body.classList.contains('sustained-warmth')) {
+                        document.body.classList.add('sustained-warmth');
+                        showPatienceReward('the wall holds your warmth');
+                        console.log('%cthe warmth sustains', 'font-size: 11px; color: #d4a056; font-style: italic;');
+                    }
+                    if (duration > 60) {
+                        // Extended warmth reward - some stones become radiant
+                        const hotStones = blocks.filter(b => parseInt(b.dataset.warmth) >= 90);
+                        hotStones.forEach(b => b.classList.add('radiant'));
+                    }
+                }
+            } else {
+                sustainedWarmthStart = null;
+            }
+        }
+
+        function showMessage() {
+            const messageIndex = Math.min(
+                Math.floor(touchCount / 4),
+                messages.length - 1
+            );
+            message.textContent = messages[messageIndex];
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), 4000);
+        }
+
+        function showWhisper(text) {
+            whisper.textContent = text;
+            whisper.classList.add('visible');
+            setTimeout(() => whisper.classList.remove('visible'), 6000);
+        }
+
+        function showStillnessMessage(text) {
+            stillnessMessage.textContent = text;
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 8000);
+        }
+
+        function showPatienceReward(text) {
+            patienceReward.textContent = text;
+            patienceReward.classList.add('visible');
+            setTimeout(() => patienceReward.classList.remove('visible'), 12000);
+        }
+
+        // Stillness detection
+        function checkStillness() {
+            const now = Date.now();
+            const stillnessDuration = (now - lastMovementTime) / 1000;
+
+            if (stillnessDuration > 5) {
+                stillnessIndicator.classList.add('active');
+                document.body.classList.add('listening');
+
+                // Stones start listening
+                blocks.forEach(b => b.classList.add('listening'));
+            }
+
+            if (stillnessDuration > 10 && !deepStillnessReached) {
+                deepStillnessReached = true;
+                stillnessIndicator.classList.add('deep');
+                document.body.classList.add('deep-stillness');
+                stillnessVeil.classList.add('active');
+                showStillnessMessage(stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)]);
+                console.log('%cthe wall senses your stillness', 'font-size: 10px; color: #718096; font-style: italic;');
+            }
+
+            if (stillnessDuration > 20 && !profoundStillnessReached) {
+                profoundStillnessReached = true;
+                showStillnessMessage(deepStillnessMessages[Math.floor(Math.random() * deepStillnessMessages.length)]);
+
+                // The wall responds to stillness with subtle warmth
+                const centerStones = [18, 19, 20, 26, 27, 28];
+                centerStones.forEach((i, delay) => {
+                    setTimeout(() => {
+                        if (blocks[i]) {
+                            const warmth = parseInt(blocks[i].dataset.warmth) || 0;
+                            blocks[i].dataset.warmth = Math.min(100, warmth + 10);
+                            if (warmth + 10 >= 20) blocks[i].classList.add('touched');
+                            blocks[i].classList.add('pulsing');
+                            setTimeout(() => blocks[i].classList.remove('pulsing'), 2500);
+                        }
+                    }, delay * 500);
+                });
+                setTimeout(updateWarmth, 3000);
+            }
+
+            if (stillnessDuration > 45 && !transcendentStillnessReached) {
+                transcendentStillnessReached = true;
+                showPatienceReward(profoundStillnessMessages[Math.floor(Math.random() * profoundStillnessMessages.length)]);
+
+                // Console poetry for the patient
+                console.log('%c', 'padding: 10px');
+                console.log('%cin stillness', 'font-size: 14px; color: #d4a056; font-style: italic;');
+                console.log('%cthe stone reveals', 'font-size: 14px; color: #d4a056; font-style: italic;');
+                console.log('%cwhat haste would miss', 'font-size: 14px; color: #d4a056; font-style: italic;');
+                console.log('%c', 'padding: 10px');
+
+                // Show sound wave as if the wall is speaking
+                if (!soundMode) {
+                    soundWave.classList.add('visible');
+                    setTimeout(() => soundWave.classList.remove('visible'), 5000);
+                }
+            }
+        }
+
+        // Reset stillness tracking on movement
+        function resetStillness() {
+            lastMovementTime = Date.now();
+            deepStillnessReached = false;
+            profoundStillnessReached = false;
+            transcendentStillnessReached = false;
+
+            stillnessIndicator.classList.remove('active', 'deep');
+            stillnessVeil.classList.remove('active');
+            document.body.classList.remove('listening', 'deep-stillness');
+            blocks.forEach(b => b.classList.remove('listening'));
+        }
+
+        // Track mouse movement for stillness
+        document.addEventListener('mousemove', resetStillness);
+        document.addEventListener('touchstart', resetStillness);
+
+        // Check stillness periodically
+        setInterval(checkStillness, 1000);
+
+        // Click to warm
+        wall.addEventListener('click', (e) => {
+            if (e.target.classList.contains('stone-block') ||
+                e.target.closest('.stone-block')) {
+                const block = e.target.classList.contains('stone-block')
+                    ? e.target
+                    : e.target.closest('.stone-block');
+                const rect = block.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                touchStone(block, x, y, e.clientX, e.clientY);
+            }
+        });
+
+        // Hold to warm continuously
+        wall.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && (e.target.classList.contains('stone-block') ||
+                e.target.closest('.stone-block'))) {
+                const block = e.target.classList.contains('stone-block')
+                    ? e.target
+                    : e.target.closest('.stone-block');
+                isHolding = true;
+                let holdDuration = 0;
+
+                holdTimer = setInterval(() => {
+                    if (isHolding) {
+                        holdDuration++;
+                        block.dataset.heldTime = holdDuration;
+
+                        const warmth = parseInt(block.dataset.warmth) || 0;
+                        if (warmth < 100) {
+                            // Warmth increases faster with sustained hold
+                            const holdBonus = Math.min(holdDuration / 5, 3);
+                            block.dataset.warmth = Math.min(100, warmth + 5 + holdBonus);
+                            block.classList.add('touched');
+                            if (warmth + 5 >= 60) block.classList.add('warm');
+                            if (warmth + 5 >= 90) block.classList.add('hot');
+
+                            // Long hold creates radiant stone
+                            if (warmth + 5 >= 100 && holdDuration > 10) {
+                                block.classList.add('radiant');
+                            }
+
+                            updateWarmth();
+                        }
+
+                        // Message for sustained holding
+                        if (holdDuration === 10) {
+                            showWhisper('your patience warms it');
+                        }
+                        if (holdDuration === 25) {
+                            showWhisper('the stone remembers this');
+                            console.log('%csustained warmth', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                        }
+                    }
+                }, 200);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isHolding = false;
+            if (holdTimer) {
+                clearInterval(holdTimer);
+                holdTimer = null;
+            }
+        });
+
+        // Right-click to crack
+        wall.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                const block = e.target.classList.contains('stone-block')
+                    ? e.target
+                    : e.target.closest('.stone-block');
+                if (block) crackStone(block);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Reset stillness on key press
+            resetStillness();
+
+            if (e.code === 'KeyA') {
+                document.body.classList.remove('frozen', 'awakened', 'dreaming');
+                document.body.classList.toggle('ancient');
+                if (document.body.classList.contains('ancient')) {
+                    console.log('%cancient mode', 'font-size: 10px; color: #6a5a4a;');
+                    console.log('%cmoss grows on memory', 'font-size: 9px; color: #718096; font-style: italic;');
+                }
+            }
+            if (e.code === 'KeyF') {
+                document.body.classList.remove('ancient', 'awakened', 'dreaming');
+                document.body.classList.toggle('frozen');
+                if (document.body.classList.contains('frozen')) {
+                    console.log('%cfrozen mode', 'font-size: 10px; color: #5a6a7a;');
+                    console.log('%ctime crystallizes', 'font-size: 9px; color: #718096; font-style: italic;');
+                }
+            }
+            if (e.code === 'KeyD') {
+                document.body.classList.remove('ancient', 'awakened', 'frozen');
+                document.body.classList.toggle('dreaming');
+                if (document.body.classList.contains('dreaming')) {
+                    console.log('%cdream mode', 'font-size: 10px; color: #5a5060;');
+                    console.log('%cthe wall sleeps, and dreams of warmth', 'font-size: 9px; color: #718096; font-style: italic;');
+                }
+            }
+            if (e.code === 'KeyR') {
+                blocks.forEach(b => {
+                    b.dataset.warmth = 0;
+                    b.dataset.touched = 0;
+                    b.dataset.heldTime = 0;
+                    b.classList.remove('touched', 'warm', 'hot', 'radiant', 'cracked', 'inscribed', 'listening');
+                    b.querySelector('.rune').textContent = '';
+                });
+                totalWarmth = 0;
+                touchCount = 0;
+                touchSequence = [];
+                sustainedWarmthStart = null;
+                counter.textContent = 'warmth: 0%';
+                counter.classList.remove('warm-counter', 'hot-counter', 'radiant-counter');
+                heartbeat.classList.remove('visible', 'strong', 'luminous');
+                document.body.classList.remove('awakened', 'sustained-warmth');
+                presenceIndicator.classList.remove('attentive');
+                console.log('%creset', 'font-size: 10px; color: #718096;');
+                console.log('%cthe stones cool, waiting again', 'font-size: 9px; color: #4a5568; font-style: italic;');
+            }
+            if (e.code === 'KeyI') {
+                // Inscribe random rune on random stone
+                const uninscribed = blocks.filter(b => !b.classList.contains('inscribed'));
+                if (uninscribed.length > 0) {
+                    const randomBlock = uninscribed[Math.floor(Math.random() * uninscribed.length)];
+                    inscribeRune(randomBlock);
+                }
+            }
+            if (e.code === 'KeyS') {
+                // Toggle sound mode (visual representation)
+                soundMode = !soundMode;
+                if (soundMode) {
+                    soundWave.classList.add('visible');
+                    console.log('%csound mode', 'font-size: 10px; color: #d4a056;');
+                    console.log('%cthe wall speaks in warmth, not words', 'font-size: 9px; color: #718096; font-style: italic;');
+                } else {
+                    soundWave.classList.remove('visible');
+                }
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Warm all stones gradually
+                blocks.forEach((b, i) => {
+                    setTimeout(() => {
+                        b.dataset.warmth = 100;
+                        b.classList.add('touched', 'warm', 'hot');
+                        if (i === blocks.length - 1) updateWarmth();
+                    }, i * 30);
+                });
+                console.log('%cawaken', 'font-size: 12px; color: #d4a056;');
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret: press 'w' to see the wall whisper
+            if (e.code === 'KeyW') {
+                showWhisper('the stones remember you');
+            }
+            // Secret: press 'h' for heartbeat
+            if (e.code === 'KeyH') {
+                heartbeat.classList.add('visible', 'strong');
+                setTimeout(() => {
+                    if (totalWarmth < 800) {
+                        heartbeat.classList.remove('visible', 'strong');
+                    }
+                }, 5000);
+            }
+            // Secret: press 'p' for presence
+            if (e.code === 'KeyP') {
+                presenceIndicator.classList.toggle('attentive');
+                if (presenceIndicator.classList.contains('attentive')) {
+                    console.log('%cthe wall sees you', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                }
+            }
+        });
+
+        // Ambient pulse - warm stones occasionally pulse together
+        setInterval(() => {
+            if (totalWarmth > 800) {
+                const warmBlocks = blocks.filter(b => parseInt(b.dataset.warmth) > 50);
+                if (warmBlocks.length > 0) {
+                    const pulseCount = Math.min(3, Math.floor(totalWarmth / 1500) + 1);
+                    for (let i = 0; i < pulseCount; i++) {
+                        const randomBlock = warmBlocks[Math.floor(Math.random() * warmBlocks.length)];
+                        setTimeout(() => {
+                            randomBlock.classList.add('pulsing');
+                            setTimeout(() => randomBlock.classList.remove('pulsing'), 2500);
+                        }, i * 200);
+                    }
+                }
+            }
+        }, 4000);
+
+        // Very slow warmth decay over time (stones cool if untouched)
+        setInterval(() => {
+            let changed = false;
+            blocks.forEach(b => {
+                const warmth = parseInt(b.dataset.warmth) || 0;
+                // Radiant stones cool slower
+                const coolChance = b.classList.contains('radiant') ? 0.05 : 0.1;
+                if (warmth > 0 && Math.random() < coolChance) {
+                    b.dataset.warmth = warmth - 1;
+                    if (warmth - 1 < 100) b.classList.remove('radiant');
+                    if (warmth - 1 < 90) b.classList.remove('hot');
+                    if (warmth - 1 < 60) b.classList.remove('warm');
+                    if (warmth - 1 < 20) b.classList.remove('touched');
+                    changed = true;
+                }
+            });
+            if (changed) updateWarmth();
+        }, 10000);
+
+        // Easter egg: double-click reveals stone's "age"
+        wall.addEventListener('dblclick', (e) => {
+            const block = e.target.classList.contains('stone-block')
+                ? e.target
+                : e.target.closest('.stone-block');
+            if (block) {
+                const index = parseInt(block.dataset.index);
+                const age = Math.floor(Math.random() * 10000) + 1000;
+                showWhisper(`this stone has waited ${age.toLocaleString()} years`);
+            }
+        });
+
+        // Track time spent on page
+        let pageStartTime = Date.now();
+        window.addEventListener('beforeunload', () => {
+            const timeSpent = Math.floor((Date.now() - pageStartTime) / 1000);
+            totalTimeSpent += timeSpent;
+            localStorage.setItem('stone_time', totalTimeSpent.toString());
+        });
+
+        // Returning visitor special message
+        if (visitCount > 1) {
+            setTimeout(() => {
+                if (visitCount < 5) {
+                    showWhisper('the wall remembers your warmth');
+                } else if (visitCount < 10) {
+                    showWhisper('you have returned many times');
+                } else {
+                    showWhisper('the stones know you well');
+                }
+            }, 2000);
+        }
+
+        // Extended patience: after 2 minutes of presence (with some interaction)
+        setTimeout(() => {
+            if (touchCount > 5 && totalWarmth > 500) {
+                showPatienceReward('you have stayed');
+                console.log('%c', 'padding: 10px');
+                console.log('%cpatience', 'font-size: 16px; color: #d4a056; font-family: "Cormorant Garamond", serif;');
+                console.log('%cis its own warmth', 'font-size: 12px; color: #718096; font-style: italic;');
+            }
+        }, 120000);
+
+        // Three minute reward
+        setTimeout(() => {
+            if (touchCount > 10) {
+                showPatienceReward('the wall opens to those who stay');
+                // Subtle visual shift
+                document.body.style.transition = 'filter 10s ease';
+                document.body.style.filter = 'contrast(1.05) brightness(1.02)';
+            }
+        }, 180000);
+    </script>
+</body>
+</html>

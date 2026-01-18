@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eight ball - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, #1a1a2e 0%, #2d1f3d 30%, #1a1a2e 70%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 8vh;
+            overflow-x: hidden;
+        }
+
+        .back-link { color: var(--amber-glow); }
+
+        /* Ambient mystical particles */
+        .mystical-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0.4;
+        }
+
+        .mote {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(212, 160, 86, 0.5);
+            border-radius: 50%;
+            animation: float-mote 20s infinite linear;
+        }
+
+        .mote:nth-child(odd) {
+            background: rgba(180, 140, 200, 0.4);
+        }
+
+        @keyframes float-mote {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* The space where divination lives */
+        .divination-space {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .divination-space.awakened {
+            opacity: 1;
+        }
+
+        .divination-thread {
+            position: absolute;
+            width: 1px;
+            height: 0;
+            background: linear-gradient(180deg, transparent, rgba(180, 160, 220, 0.1), transparent);
+            transition: height 4s ease;
+        }
+
+        .divination-space.awakened .divination-thread {
+            height: 100%;
+        }
+
+        /* Question area */
+        .question-area {
+            text-align: center;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.5s forwards;
+            z-index: 10;
+        }
+
+        .question-prompt {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--amber-soft);
+            margin-bottom: 1.5rem;
+            opacity: 0.7;
+            letter-spacing: 0.05em;
+            transition: all 1s ease;
+        }
+
+        .question-prompt.sensing {
+            opacity: 1;
+            text-shadow: 0 0 20px rgba(212, 160, 86, 0.3);
+        }
+
+        /* The question becoming */
+        .question-becoming {
+            font-size: 0.75rem;
+            font-style: italic;
+            color: rgba(180, 160, 220, 0.5);
+            margin-bottom: 0.5rem;
+            height: 1.2em;
+            transition: all 0.8s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .question-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(212, 160, 86, 0.2);
+            border-radius: 4px;
+            padding: 0.8rem 1.2rem;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--bone);
+            width: min(400px, 80vw);
+            text-align: center;
+            outline: none;
+            transition: all 0.5s ease;
+        }
+
+        .question-input::placeholder {
+            color: rgba(245, 240, 230, 0.3);
+        }
+
+        .question-input:focus {
+            border-color: rgba(212, 160, 86, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 30px rgba(212, 160, 86, 0.1);
+        }
+
+        .question-input.has-weight {
+            box-shadow: 0 0 40px rgba(180, 160, 220, 0.15);
+        }
+
+        /* Question energy indicator */
+        .question-energy {
+            width: min(300px, 60vw);
+            height: 2px;
+            margin: 1rem auto 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+
+        .question-energy-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,
+                rgba(180, 160, 220, 0.3),
+                rgba(212, 160, 86, 0.5),
+                rgba(180, 160, 220, 0.3)
+            );
+            transition: width 0.3s ease;
+        }
+
+        .ask-button {
+            margin-top: 1.5rem;
+            padding: 0.7rem 2rem;
+            background: transparent;
+            border: 1px solid rgba(212, 160, 86, 0.3);
+            color: var(--amber-glow);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            text-transform: lowercase;
+        }
+
+        .ask-button:hover {
+            background: rgba(212, 160, 86, 0.1);
+            border-color: rgba(212, 160, 86, 0.6);
+            box-shadow: 0 0 20px rgba(212, 160, 86, 0.15);
+        }
+
+        .ask-button:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        /* Eight balls container */
+        .balls-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            max-width: 600px;
+            padding: 1rem;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        .balls-container.revealed {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        @media (max-width: 600px) {
+            .balls-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+
+        /* Individual eight ball - with personality */
+        .eight-ball {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                #3a3a4a 0%,
+                #1a1a2a 50%,
+                #0a0a14 100%
+            );
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(0, 0, 0, 0.5),
+                0 5px 15px rgba(0, 0, 0, 0.4);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+        }
+
+        /* Personality variations */
+        .eight-ball[data-personality="ancient"] {
+            background: radial-gradient(circle at 30% 30%,
+                #3a3a4a 0%,
+                #1a1a28 50%,
+                #0a0a12 100%
+            );
+        }
+
+        .eight-ball[data-personality="nervous"] {
+            animation: subtle-wobble 4s ease-in-out infinite;
+        }
+
+        .eight-ball[data-personality="eager"] {
+            transform-origin: center bottom;
+        }
+
+        .eight-ball[data-personality="dreaming"] {
+            filter: blur(0.3px);
+        }
+
+        @keyframes subtle-wobble {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-1px) rotate(0.5deg); }
+            75% { transform: translateY(1px) rotate(-0.5deg); }
+        }
+
+        .eight-ball.appear {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .eight-ball:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.8),
+                0 0 30px rgba(140, 100, 180, 0.3),
+                0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Personality-specific hover states */
+        .eight-ball[data-personality="nervous"]:hover {
+            animation: nervous-hover 0.3s ease-in-out;
+        }
+
+        .eight-ball[data-personality="eager"]:hover {
+            transform: translateY(-8px) scale(1.08);
+        }
+
+        .eight-ball[data-personality="reluctant"]:hover {
+            transform: translateY(-2px) scale(1.02);
+            transition-duration: 1.2s;
+        }
+
+        @keyframes nervous-hover {
+            0%, 100% { transform: translateY(-5px) scale(1.05); }
+            25% { transform: translateY(-6px) scale(1.05) rotate(1deg); }
+            75% { transform: translateY(-4px) scale(1.05) rotate(-1deg); }
+        }
+
+        .eight-ball.chosen {
+            transform: scale(1.1);
+            box-shadow:
+                inset 0 0 30px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(212, 160, 86, 0.4),
+                0 0 60px rgba(140, 100, 180, 0.2);
+            animation: none;
+        }
+
+        /* Reactions when another ball is chosen */
+        .eight-ball.not-chosen {
+            opacity: 0.6;
+            transform: scale(0.95);
+            transition: all 1.5s ease;
+        }
+
+        .eight-ball.not-chosen[data-personality="eager"] {
+            transform: scale(0.92) translateY(3px);
+        }
+
+        .eight-ball.not-chosen[data-personality="nervous"] {
+            opacity: 0.7;
+        }
+
+        .eight-ball.not-chosen[data-personality="relieved"] {
+            opacity: 0.5;
+            transform: scale(0.93);
+        }
+
+        .eight-ball.not-chosen[data-personality="ancient"] {
+            opacity: 0.65;
+        }
+
+        /* Highlight on ball */
+        .eight-ball::before {
+            content: '';
+            position: absolute;
+            top: 8%;
+            left: 15%;
+            width: 30%;
+            height: 20%;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: rotate(-15deg);
+        }
+
+        /* Answer window in center - the depth from which answers rise */
+        .answer-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                #1a1a3a 0%,
+                #0f0f2a 50%,
+                #08081a 100%
+            );
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* The depth indicator - answers rising */
+        .answer-depth {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 120%,
+                rgba(180, 160, 220, 0.1) 0%,
+                transparent 60%
+            );
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1.5s ease;
+        }
+
+        .answer-depth.rising {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .answer-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: transparent;
+            text-align: center;
+            padding: 0.3rem;
+            line-height: 1.3;
+            letter-spacing: 0.02em;
+            transition: all 1s ease;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+        }
+
+        .answer-text.visible {
+            color: rgba(180, 160, 220, 0.9);
+            text-shadow: 0 0 10px rgba(180, 160, 220, 0.5);
+        }
+
+        /* Confidence variations in answer display */
+        .answer-text[data-confidence="certain"] {
+            color: rgba(200, 180, 230, 0.95);
+            text-shadow: 0 0 15px rgba(200, 180, 230, 0.6);
+        }
+
+        .answer-text[data-confidence="hesitant"] {
+            color: rgba(160, 140, 200, 0.75);
+            font-size: 0.38rem;
+        }
+
+        .answer-text[data-confidence="dreaming"] {
+            color: rgba(180, 160, 220, 0.7);
+            filter: blur(0.2px);
+        }
+
+        /* Choose prompt */
+        .choose-prompt {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--amber-soft);
+            opacity: 0;
+            margin-top: 2rem;
+            transition: opacity 2s ease;
+            letter-spacing: 0.05em;
+            z-index: 10;
+        }
+
+        .choose-prompt.visible {
+            opacity: 0.6;
+        }
+
+        /* The choosing whisper */
+        .choosing-whisper {
+            font-size: 0.7rem;
+            font-style: italic;
+            color: rgba(180, 160, 220, 0.4);
+            opacity: 0;
+            margin-top: 0.5rem;
+            transition: opacity 1.5s ease;
+            letter-spacing: 0.1em;
+            z-index: 10;
+        }
+
+        .choosing-whisper.visible {
+            opacity: 1;
+        }
+
+        /* Perfect choice message */
+        .perfect-message {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--amber-glow);
+            opacity: 0;
+            margin-top: 2rem;
+            transition: all 2s ease;
+            letter-spacing: 0.08em;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .perfect-message.visible {
+            opacity: 0.8;
+            animation: gentle-glow 3s ease-in-out infinite;
+        }
+
+        /* Consensus message - when all agree from the start */
+        .consensus-message {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: rgba(180, 160, 220, 0.7);
+            opacity: 0;
+            margin-top: 1rem;
+            transition: all 2s ease;
+            letter-spacing: 0.05em;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .consensus-message.visible {
+            opacity: 1;
+        }
+
+        @keyframes gentle-glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(212, 160, 86, 0.3); }
+            50% { text-shadow: 0 0 20px rgba(212, 160, 86, 0.5), 0 0 30px rgba(180, 140, 200, 0.2); }
+        }
+
+        /* Fade out elements */
+        .fade-out {
+            opacity: 0 !important;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        /* Animation for balls syncing - the agreement */
+        .eight-ball.syncing .answer-text {
+            animation: sync-pulse 0.8s ease;
+        }
+
+        .eight-ball.agreeing {
+            animation: agreement-pulse 1.5s ease;
+        }
+
+        @keyframes sync-pulse {
+            0% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes agreement-pulse {
+            0% { box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.5); }
+            50% { box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 35px rgba(180, 160, 220, 0.3); }
+            100% { box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.5); }
+        }
+
+        /* Ambient glow behind balls */
+        .ambient-orb {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle,
+                rgba(140, 100, 180, 0.08) 0%,
+                rgba(212, 160, 86, 0.03) 40%,
+                transparent 70%
+            );
+            pointer-events: none;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: ambient-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes ambient-breathe {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Decorative eight symbol */
+        .decorative-eight {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30rem;
+            color: rgba(140, 100, 180, 0.02);
+            pointer-events: none;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 300;
+            z-index: 0;
+            transition: color 3s ease;
+        }
+
+        .decorative-eight.aligned {
+            color: rgba(212, 160, 86, 0.03);
+        }
+
+        /* The mirror - what divination really is */
+        .mirror-text {
+            position: fixed;
+            bottom: 10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-style: italic;
+            color: rgba(180, 160, 220, 0.3);
+            opacity: 0;
+            transition: opacity 4s ease;
+            letter-spacing: 0.1em;
+            text-align: center;
+            max-width: 80vw;
+            z-index: 10;
+        }
+
+        .mirror-text.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="mystical-particles" id="particles"></div>
+    <div class="divination-space" id="divinationSpace"></div>
+    <div class="ambient-orb"></div>
+    <div class="decorative-eight" id="decorativeEight">8</div>
+
+    <div class="question-area" id="questionArea">
+        <p class="question-prompt" id="questionPrompt">what would you ask of the eight?</p>
+        <p class="question-becoming" id="questionBecoming"></p>
+        <input type="text" class="question-input" id="questionInput" placeholder="speak your question..." maxlength="200">
+        <div class="question-energy">
+            <div class="question-energy-fill" id="questionEnergy"></div>
+        </div>
+        <br>
+        <button class="ask-button" id="askButton">ask the eight</button>
+    </div>
+
+    <div class="balls-container" id="ballsContainer"></div>
+
+    <p class="choose-prompt" id="choosePrompt">which answer was already yours?</p>
+    <p class="choosing-whisper" id="choosingWhisper"></p>
+    <p class="perfect-message" id="perfectMessage"></p>
+    <p class="consensus-message" id="consensusMessage"></p>
+    <p class="mirror-text" id="mirrorText"></p>
+
+    <script>
+        // Console poetry - the space where divination lives
+        console.log('%c' + `
+
+    ·  ·  ·  ·  eight  ·  ·  ·  ·
+
+`, 'font-size: 14px; color: #d4a056; font-family: serif;');
+
+        console.log('%ceight answers for one question', 'font-size: 11px; color: #8c64b4; font-style: italic;');
+        console.log('%cor perhaps: one answer wearing eight faces', 'font-size: 10px; color: #6a5488; font-style: italic;');
+        console.log(' ');
+        console.log('%cthe question was always the answer', 'font-size: 10px; color: #4a5568; font-style: italic;');
+        console.log('%cdivination: permission to know what you already know', 'font-size: 9px; color: #333; font-style: italic;');
+
+        // The answers exist before questions find them
+        // Some are certain, some hesitant, some dreaming
+        const answers = [
+            { text: "it is certain", confidence: "certain", weight: 3 },
+            { text: "it is decidedly so", confidence: "certain", weight: 3 },
+            { text: "without a doubt", confidence: "certain", weight: 3 },
+            { text: "yes definitely", confidence: "certain", weight: 2 },
+            { text: "you may rely on it", confidence: "steady", weight: 2 },
+            { text: "as I see it, yes", confidence: "hesitant", weight: 1 },
+            { text: "most likely", confidence: "hesitant", weight: 1 },
+            { text: "outlook good", confidence: "steady", weight: 2 },
+            { text: "yes", confidence: "certain", weight: 3 },
+            { text: "signs point to yes", confidence: "dreaming", weight: 1 },
+            { text: "reply hazy try again", confidence: "dreaming", weight: 0 },
+            { text: "ask again later", confidence: "reluctant", weight: 0 },
+            { text: "better not tell you now", confidence: "reluctant", weight: 0 },
+            { text: "cannot predict now", confidence: "hesitant", weight: 0 },
+            { text: "concentrate and ask again", confidence: "dreaming", weight: 0 },
+            { text: "don't count on it", confidence: "reluctant", weight: -1 },
+            { text: "my reply is no", confidence: "certain", weight: -2 },
+            { text: "my sources say no", confidence: "hesitant", weight: -1 },
+            { text: "outlook not so good", confidence: "reluctant", weight: -2 },
+            { text: "very doubtful", confidence: "dreaming", weight: -2 }
+        ];
+
+        // Ball personalities - each one has character
+        const personalities = [
+            { type: "ancient", trait: "has seen every question before", revealDelay: 800 },
+            { type: "eager", trait: "wants to be chosen", revealDelay: 300 },
+            { type: "nervous", trait: "worries about being wrong", revealDelay: 600 },
+            { type: "reluctant", trait: "speaks only when necessary", revealDelay: 1200 },
+            { type: "dreaming", trait: "sees through time", revealDelay: 1000 },
+            { type: "steady", trait: "never wavers", revealDelay: 500 },
+            { type: "playful", trait: "enjoys the asking", revealDelay: 400 },
+            { type: "relieved", trait: "glad when another is chosen", revealDelay: 700 }
+        ];
+
+        // What the question becomes as you type
+        const questionBecomings = [
+            "the question takes shape...",
+            "something stirs in the depths...",
+            "the eight begin to listen...",
+            "a question finds its form...",
+            "the asking has weight now...",
+            "something wants to answer...",
+            "the silence shapes itself around this...",
+            "you already know, don't you?"
+        ];
+
+        // The choosing whispers - what appears as you hover
+        const choosingWhispers = [
+            "this one has been waiting",
+            "some answers want to be found",
+            "trust the pull",
+            "the choosing is also a knowing",
+            "it chose you first",
+            "permission to believe what you already believe"
+        ];
+
+        // Perfect choice messages - expanded with more depth
+        const perfectMessages = [
+            "you knew all along",
+            "the eight agree",
+            "magic recognizes magic",
+            "perfectly chosen",
+            "the universe nods",
+            "it was always this one",
+            "the others bow",
+            "truth finds its speaker",
+            "you heard what you needed",
+            "the answer chose you back",
+            "resonance",
+            "so it is written",
+            "the circle completes",
+            "the mirror reflects",
+            "permission granted"
+        ];
+
+        // Consensus messages - when the universe aligns
+        const consensusMessages = [
+            "the eight speak as one",
+            "all paths converge here",
+            "the universe has made its voice singular",
+            "consensus in the void",
+            "when eight become one, truth becomes simple",
+            "the answer was never in doubt"
+        ];
+
+        // Mirror texts - what divination really is
+        const mirrorTexts = [
+            "divination: asking permission to know what you already know",
+            "the ball holds no magic. the asking does.",
+            "every question contains its answer, waiting",
+            "you came here to be told what you would tell yourself",
+            "the universe is a mirror, and you looked",
+            "permission to trust the knowing you carried in"
+        ];
+
+        // Create divination space - threads of possibility
+        function createDivinationSpace() {
+            const space = document.getElementById('divinationSpace');
+            for (let i = 0; i < 8; i++) {
+                const thread = document.createElement('div');
+                thread.className = 'divination-thread';
+                thread.style.left = (10 + i * 11) + '%';
+                thread.style.transitionDelay = (i * 0.2) + 's';
+                space.appendChild(thread);
+            }
+        }
+        createDivinationSpace();
+
+        // Create mystical particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const mote = document.createElement('div');
+                mote.className = 'mote';
+                mote.style.left = Math.random() * 100 + '%';
+                mote.style.animationDelay = Math.random() * 20 + 's';
+                mote.style.animationDuration = (15 + Math.random() * 15) + 's';
+                container.appendChild(mote);
+            }
+        }
+        createParticles();
+
+        const questionArea = document.getElementById('questionArea');
+        const questionInput = document.getElementById('questionInput');
+        const questionPrompt = document.getElementById('questionPrompt');
+        const questionBecoming = document.getElementById('questionBecoming');
+        const questionEnergy = document.getElementById('questionEnergy');
+        const askButton = document.getElementById('askButton');
+        const ballsContainer = document.getElementById('ballsContainer');
+        const choosePrompt = document.getElementById('choosePrompt');
+        const choosingWhisper = document.getElementById('choosingWhisper');
+        const perfectMessage = document.getElementById('perfectMessage');
+        const consensusMessage = document.getElementById('consensusMessage');
+        const mirrorText = document.getElementById('mirrorText');
+        const divinationSpace = document.getElementById('divinationSpace');
+        const decorativeEight = document.getElementById('decorativeEight');
+
+        let balls = [];
+        let ballData = [];
+        let hasChosen = false;
+        let chosenAnswer = '';
+        let questionWeight = 0;
+        let becomingIndex = 0;
+        let lastBecomingTime = 0;
+
+        // Prevent right-click context menu
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // The question changes as you type - the asking becomes meaningful
+        questionInput.addEventListener('input', (e) => {
+            const text = e.target.value;
+            const length = text.length;
+
+            // Calculate question weight based on length and punctuation
+            questionWeight = Math.min(100, length * 2);
+            if (text.includes('?')) questionWeight += 15;
+            if (text.includes('...')) questionWeight += 10;
+            if (text.match(/why|how|when|what|should|will|can/i)) questionWeight += 20;
+
+            questionEnergy.style.width = Math.min(100, questionWeight) + '%';
+
+            // The prompt responds to the question taking shape
+            if (length > 0) {
+                questionPrompt.classList.add('sensing');
+                questionInput.classList.add('has-weight');
+
+                // Show becoming text at intervals
+                const now = Date.now();
+                if (now - lastBecomingTime > 2000 && length > 5) {
+                    questionBecoming.textContent = questionBecomings[becomingIndex % questionBecomings.length];
+                    becomingIndex++;
+                    lastBecomingTime = now;
+                }
+            } else {
+                questionPrompt.classList.remove('sensing');
+                questionInput.classList.remove('has-weight');
+                questionBecoming.textContent = '';
+            }
+
+            // Awaken the divination space as the question gains weight
+            if (questionWeight > 30) {
+                divinationSpace.classList.add('awakened');
+            }
+        });
+
+        // Get answers influenced by question energy
+        function getAnswersForQuestion(count, weight) {
+            let pool = [...answers];
+
+            // Weight influences which answers surface
+            // High weight questions attract more certain answers
+            // Low weight questions attract more ambiguous ones
+            if (weight > 60) {
+                pool = pool.filter(a => a.confidence !== 'reluctant');
+            } else if (weight < 20) {
+                pool = pool.filter(a => a.confidence !== 'certain' || Math.random() > 0.5);
+            }
+
+            // Shuffle and select
+            pool = pool.sort(() => Math.random() - 0.5);
+            return pool.slice(0, count);
+        }
+
+        // Create eight balls with personalities
+        function createEightBalls() {
+            const selectedAnswers = getAnswersForQuestion(8, questionWeight);
+            const shuffledPersonalities = [...personalities].sort(() => Math.random() - 0.5);
+
+            // Check for consensus - rare and meaningful
+            const hasConsensus = Math.random() < 0.05; // 5% chance
+            if (hasConsensus) {
+                const consensusAnswer = selectedAnswers[0];
+                selectedAnswers.fill(consensusAnswer);
+
+                setTimeout(() => {
+                    consensusMessage.textContent = consensusMessages[Math.floor(Math.random() * consensusMessages.length)];
+                    consensusMessage.classList.add('visible');
+                    console.log('%cthe eight speak as one', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                }, 2500);
+            }
+
+            for (let i = 0; i < 8; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'eight-ball';
+                ball.dataset.index = i;
+
+                const personality = shuffledPersonalities[i];
+                ball.dataset.personality = personality.type;
+
+                const answer = selectedAnswers[i];
+
+                ballData.push({
+                    answer: answer,
+                    personality: personality,
+                    element: ball
+                });
+
+                const answerWindow = document.createElement('div');
+                answerWindow.className = 'answer-window';
+
+                const depth = document.createElement('div');
+                depth.className = 'answer-depth';
+
+                const text = document.createElement('div');
+                text.className = 'answer-text';
+                text.textContent = answer.text;
+                text.dataset.confidence = answer.confidence;
+
+                answerWindow.appendChild(depth);
+                answerWindow.appendChild(text);
+                ball.appendChild(answerWindow);
+                ballsContainer.appendChild(ball);
+                balls.push(ball);
+
+                // Click handler
+                ball.addEventListener('click', () => chooseBall(i));
+
+                // Hover handler - show choosing whisper
+                ball.addEventListener('mouseenter', () => {
+                    if (!hasChosen) {
+                        const whisper = choosingWhispers[Math.floor(Math.random() * choosingWhispers.length)];
+                        choosingWhisper.textContent = whisper;
+                        choosingWhisper.classList.add('visible');
+                    }
+                });
+
+                ball.addEventListener('mouseleave', () => {
+                    choosingWhisper.classList.remove('visible');
+                });
+
+                // Staggered appearance with personality-based timing
+                setTimeout(() => {
+                    ball.classList.add('appear');
+                    // Answer rises from depth - timing based on personality
+                    setTimeout(() => {
+                        depth.classList.add('rising');
+                        setTimeout(() => {
+                            text.classList.add('visible');
+                        }, 400);
+                    }, personality.revealDelay);
+                }, 200 + i * 150);
+            }
+        }
+
+        // Ask button handler
+        askButton.addEventListener('click', () => {
+            const question = questionInput.value.trim();
+
+            if (question.length === 0) {
+                questionInput.placeholder = 'even silence is a question...';
+            }
+
+            // Fade out question area
+            questionArea.classList.add('fade-out');
+
+            // Reveal balls container
+            setTimeout(() => {
+                ballsContainer.classList.add('revealed');
+                createEightBalls();
+
+                // Show choose prompt after all balls appear
+                setTimeout(() => {
+                    choosePrompt.classList.add('visible');
+                }, 1800);
+            }, 800);
+
+            console.log('%cthe question: ' + (question || '(the silence between thoughts)'), 'font-size: 9px; color: #8c64b4; font-style: italic;');
+            console.log('%cquestion weight: ' + questionWeight, 'font-size: 8px; color: #4a5568;');
+        });
+
+        // Also trigger on Enter key
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askButton.click();
+            }
+        });
+
+        // Choose a ball - the moment of divination
+        function chooseBall(index) {
+            if (hasChosen) return;
+            hasChosen = true;
+
+            const chosen = ballData[index];
+            chosenAnswer = chosen.answer.text;
+
+            // Hide prompts
+            choosePrompt.classList.remove('visible');
+            choosingWhisper.classList.remove('visible');
+
+            // Highlight chosen ball, fade others with personality-appropriate reactions
+            balls.forEach((ball, i) => {
+                if (i === index) {
+                    ball.classList.add('chosen');
+                } else {
+                    ball.classList.add('not-chosen');
+                }
+            });
+
+            console.log('%cchosen: ' + chosenAnswer, 'font-size: 10px; color: #d4a056; font-style: italic;');
+            console.log('%cspoken by: the ' + chosen.personality.type + ' one', 'font-size: 9px; color: #6a5488; font-style: italic;');
+            console.log('%c(' + chosen.personality.trait + ')', 'font-size: 8px; color: #4a5568; font-style: italic;');
+
+            // The agreement - all balls sync to the chosen answer
+            setTimeout(() => {
+                balls.forEach((ball, i) => {
+                    const text = ball.querySelector('.answer-text');
+                    const data = ballData[i];
+
+                    if (i !== index) {
+                        ball.classList.add('syncing');
+                        ball.classList.add('agreeing');
+
+                        // Fade out, change, fade in
+                        text.classList.remove('visible');
+
+                        // Timing based on personality - reluctant ones take longer
+                        const syncDelay = data.personality.type === 'reluctant' ? 800 :
+                                         data.personality.type === 'eager' ? 200 :
+                                         400 + i * 80;
+
+                        setTimeout(() => {
+                            text.textContent = chosenAnswer;
+                            text.dataset.confidence = chosen.answer.confidence;
+                            text.classList.add('visible');
+                        }, syncDelay);
+                    }
+                });
+
+                // Decorative eight aligns
+                decorativeEight.classList.add('aligned');
+
+                // Show perfect message after sync completes
+                setTimeout(() => {
+                    const message = perfectMessages[Math.floor(Math.random() * perfectMessages.length)];
+                    perfectMessage.textContent = message;
+                    perfectMessage.classList.add('visible');
+
+                    console.log('%c' + message, 'font-size: 11px; color: #d4a056; font-style: italic;');
+
+                    // Show the mirror text - what divination really is
+                    setTimeout(() => {
+                        mirrorText.textContent = mirrorTexts[Math.floor(Math.random() * mirrorTexts.length)];
+                        mirrorText.classList.add('visible');
+                    }, 3000);
+                }, 1500);
+            }, 800);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret: pressing 8 shows the nature of divination
+            if (e.code === 'Digit8' && hasChosen) {
+                console.log('%ceight returns to eight', 'font-size: 9px; color: #8c64b4; font-style: italic;');
+                console.log('%cthe answer was always inside the question', 'font-size: 9px; color: #6a5488; font-style: italic;');
+            }
+            // Secret: pressing M reveals the mirror
+            if (e.code === 'KeyM' && !mirrorText.classList.contains('visible')) {
+                mirrorText.textContent = "the mirror shows what was already there";
+                mirrorText.classList.add('visible');
+            }
+        });
+
+        // Focus input on load
+        setTimeout(() => {
+            questionInput.focus();
+        }, 2500);
+
+        // Patience reward - if still on the page after choosing
+        setTimeout(() => {
+            if (hasChosen) {
+                console.log('%c', 'font-size: 1px;');
+                console.log('%cyou stayed', 'font-size: 9px; color: #d4a056; font-style: italic;');
+                console.log('%cperhaps the answer was simply: be here', 'font-size: 9px; color: #6a5488; font-style: italic;');
+            }
+        }, 60000);
+    </script>
+</body>
+</html>

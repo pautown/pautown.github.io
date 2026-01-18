@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vibe - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+            transition: all 3s ease;
+        }
+
+        body.exhale { background: var(--cream); }
+        body.inhale { background: var(--bone-dark); }
+        body.deep { background: var(--slate-deep); }
+        body.deep .back-link { color: var(--bone); }
+        body.deep .thread { color: var(--bone); }
+        body.deep .thread-whisper { color: var(--slate-light); }
+        body.deep .paradox { color: var(--amber-glow); }
+        body.deep .paradox-resolution { color: var(--bone-dark); }
+        body.deep .question-text { color: var(--golden); }
+        body.deep .dna-glyph { color: var(--amber); }
+
+        .vibe-container {
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Background texture - subtle grain */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.02;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* The aesthetic DNA */
+        .dna-container {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 3s ease 1s forwards;
+        }
+
+        .dna-element {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: default;
+            transition: transform 0.5s ease;
+        }
+
+        .dna-element:hover {
+            transform: translateY(-3px);
+        }
+
+        .dna-glyph {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+            transition: opacity 0.5s ease, color 0.5s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .dna-element:hover .dna-glyph {
+            opacity: 0.9;
+            color: var(--amber);
+        }
+
+        .dna-name {
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .dna-element:hover .dna-name {
+            opacity: 0.6;
+        }
+
+        /* The central question */
+        .question-container {
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 2.5s ease 2.5s forwards;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-style: italic;
+            color: var(--ink);
+            opacity: 0.55;
+            line-height: 1.9;
+            max-width: 500px;
+            margin: 0 auto;
+            letter-spacing: 0.02em;
+            transition: opacity 1s ease;
+        }
+
+        .question-text:hover {
+            opacity: 0.8;
+        }
+
+        /* The lightswitch principle */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 4s forwards;
+        }
+
+        .switch-symbol {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--slate);
+            cursor: pointer;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .switch-symbol:hover {
+            opacity: 0.8;
+        }
+
+        .switch-symbol:active {
+            transform: scale(0.95);
+        }
+
+        .switch-wisdom {
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            max-width: 280px;
+        }
+
+        .switch-wisdom.visible {
+            opacity: 0.5;
+        }
+
+        /* The paradoxes */
+        .paradoxes {
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 5.5s forwards;
+        }
+
+        .paradox {
+            font-size: 0.85rem;
+            color: var(--ink);
+            opacity: 0;
+            margin: 1rem 0;
+            transition: opacity 1s ease, transform 0.5s ease;
+            cursor: default;
+        }
+
+        .paradox.visible {
+            opacity: 0.45;
+        }
+
+        .paradox:hover {
+            opacity: 0.8;
+            transform: translateX(3px);
+        }
+
+        .paradox-resolution {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate);
+            opacity: 0;
+            margin-top: 0.3rem;
+            letter-spacing: 0.05em;
+            transition: opacity 0.5s ease;
+        }
+
+        .paradox:hover .paradox-resolution {
+            opacity: 0.4;
+        }
+
+        /* The threads */
+        .threads-container {
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 7s forwards;
+        }
+
+        .threads-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+            margin-bottom: 1.5rem;
+        }
+
+        .thread {
+            font-size: 0.8rem;
+            color: var(--ink);
+            opacity: 0;
+            margin: 0.8rem 0;
+            font-style: italic;
+            transition: all 0.5s ease;
+            cursor: default;
+        }
+
+        .thread.visible {
+            opacity: 0.35;
+        }
+
+        .thread:hover {
+            opacity: 0.7;
+        }
+
+        .thread-whisper {
+            font-size: 0.6rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            margin-top: 0.2rem;
+        }
+
+        .thread:hover .thread-whisper {
+            opacity: 0.5;
+        }
+
+        /* Bottom wisdom */
+        .closing {
+            opacity: 0;
+            animation: fadeIn 3s ease 9s forwards;
+            margin-top: 2rem;
+        }
+
+        .closing-text {
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate);
+            opacity: 0.3;
+            letter-spacing: 0.15em;
+        }
+
+        /* Floating ambient elements */
+        .ambient {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0;
+            font-size: 0.5rem;
+            color: var(--slate);
+            font-family: 'JetBrains Mono', monospace;
+            animation: drift-text 30s linear infinite;
+        }
+
+        @keyframes drift-text {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 0.1; }
+            90% { opacity: 0.1; }
+            100% { transform: translateY(-100vh) translateX(30px); opacity: 0; }
+        }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: right;
+            line-height: 2;
+        }
+
+        body:hover .key-hint { opacity: 0.2; }
+
+        /* Breathing indicator */
+        .breath {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 3px;
+            background: var(--amber);
+            border-radius: 50%;
+            opacity: 0;
+            animation: breath-cycle 8s ease-in-out infinite;
+        }
+
+        body.breathing .breath {
+            opacity: 0.2;
+        }
+
+        @keyframes breath-cycle {
+            0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.15; }
+            50% { transform: translateX(-50%) scale(2); opacity: 0.3; }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .dna-container { gap: 1.5rem; }
+            .dna-glyph { font-size: 1.2rem; }
+            .question-text { font-size: 1rem; padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="vibe-container">
+
+        <!-- The aesthetic DNA -->
+        <div class="dna-container">
+            <div class="dna-element" data-element="silence">
+                <span class="dna-glyph">)</span>
+                <span class="dna-name">silence</span>
+            </div>
+            <div class="dna-element" data-element="jungle">
+                <span class="dna-glyph">%</span>
+                <span class="dna-name">jungle</span>
+            </div>
+            <div class="dna-element" data-element="orb">
+                <span class="dna-glyph">o</span>
+                <span class="dna-name">orb</span>
+            </div>
+            <div class="dna-element" data-element="shadow">
+                <span class="dna-glyph">/</span>
+                <span class="dna-name">shadow</span>
+            </div>
+            <div class="dna-element" data-element="cat">
+                <span class="dna-glyph">~</span>
+                <span class="dna-name">cat</span>
+            </div>
+        </div>
+
+        <!-- The central question -->
+        <div class="question-container">
+            <p class="question-text">
+                What use is there in seeing things in anything other than their most pleasant and useful and simply true light?
+            </p>
+        </div>
+
+        <!-- The lightswitch principle -->
+        <div class="switch-container">
+            <span class="switch-symbol" id="switch">!</span>
+            <p class="switch-wisdom" id="switchWisdom">the perfect interaction does nothing</p>
+        </div>
+
+        <!-- The paradoxes -->
+        <div class="paradoxes" id="paradoxes">
+            <div class="paradox" data-paradox="silence">
+                silence that speaks
+                <div class="paradox-resolution">the more nothing happens, the more is communicated</div>
+            </div>
+            <div class="paradox" data-paradox="found">
+                finding the unfound
+                <div class="paradox-resolution">was it ever lost?</div>
+            </div>
+            <div class="paradox" data-paradox="door">
+                door to the same room
+                <div class="paradox-resolution">in and out are the same</div>
+            </div>
+            <div class="paradox" data-paradox="warmth">
+                cold warmth
+                <div class="paradox-resolution">the orb remembers</div>
+            </div>
+        </div>
+
+        <!-- The threads of time and space -->
+        <div class="threads-container" id="threads">
+            <p class="threads-label">temporal modes</p>
+            <div class="thread" data-thread="timeless">
+                timeless
+                <div class="thread-whisper">it has always been this way</div>
+            </div>
+            <div class="thread" data-thread="slow">
+                slow time
+                <div class="thread-whisper">seconds stretch</div>
+            </div>
+            <div class="thread" data-thread="present">
+                eternal present
+                <div class="thread-whisper">there is only now</div>
+            </div>
+            <div class="thread" data-thread="all">
+                all times at once
+                <div class="thread-whisper">past and future collapsed</div>
+            </div>
+        </div>
+
+        <!-- Closing -->
+        <div class="closing">
+            <p class="closing-text">a place that is here because it is</p>
+        </div>
+
+    </div>
+
+    <div class="breath"></div>
+
+    <div class="key-hint">
+        [b] breathe<br>
+        [d] descend<br>
+        [space] exhale
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const switchEl = document.getElementById('switch');
+        const switchWisdom = document.getElementById('switchWisdom');
+        const paradoxes = document.querySelectorAll('.paradox');
+        const threads = document.querySelectorAll('.thread');
+
+        let switchClicks = 0;
+        let isBreathing = false;
+
+        // Reveal paradoxes slowly
+        paradoxes.forEach((p, i) => {
+            setTimeout(() => {
+                p.classList.add('visible');
+            }, 6000 + i * 800);
+        });
+
+        // Reveal threads slowly
+        threads.forEach((t, i) => {
+            setTimeout(() => {
+                t.classList.add('visible');
+            }, 7500 + i * 600);
+        });
+
+        // The lightswitch principle
+        const switchWisdoms = [
+            'the perfect interaction does nothing',
+            'nothing happened',
+            'still nothing',
+            'expectation subverted',
+            'the reward is the interaction itself',
+            'counting without competing',
+            'milestones without destinations',
+            'purposeful pointlessness',
+            'doing nothing is a valid action',
+            'the visitor\'s attention is acknowledged',
+            '',
+            ''
+        ];
+
+        switchEl.addEventListener('click', () => {
+            switchClicks++;
+            const wisdom = switchWisdoms[Math.min(switchClicks - 1, switchWisdoms.length - 1)];
+            switchWisdom.textContent = wisdom;
+            switchWisdom.classList.add('visible');
+
+            if (switchClicks > switchWisdoms.length) {
+                switchWisdom.classList.remove('visible');
+            }
+
+            // Subtle visual feedback
+            switchEl.style.color = 'var(--amber)';
+            setTimeout(() => {
+                switchEl.style.color = '';
+            }, 300);
+        });
+
+        // Show wisdom on hover
+        switchEl.addEventListener('mouseenter', () => {
+            if (switchClicks === 0) {
+                switchWisdom.classList.add('visible');
+            }
+        });
+
+        // Keyboard interactions
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyB') {
+                isBreathing = !isBreathing;
+                document.body.classList.toggle('breathing', isBreathing);
+            }
+            if (e.code === 'KeyD') {
+                document.body.classList.remove('exhale', 'inhale');
+                document.body.classList.toggle('deep');
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                document.body.classList.remove('deep');
+                const isExhale = document.body.classList.contains('exhale');
+                document.body.classList.remove('exhale', 'inhale');
+                document.body.classList.add(isExhale ? 'inhale' : 'exhale');
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Create floating ambient text
+        const ambientTexts = [
+            'breath on glass',
+            'fog lifting',
+            'stone warming',
+            'moss on circuits',
+            'the last note, fading',
+            'forest clearing',
+            'warm cabin',
+            'overgrown greenhouse',
+            'liminality',
+            'mystery as hospitality',
+            'paradox as peace'
+        ];
+
+        function createAmbient() {
+            if (Math.random() > 0.3) return;
+
+            const ambient = document.createElement('div');
+            ambient.className = 'ambient';
+            ambient.textContent = ambientTexts[Math.floor(Math.random() * ambientTexts.length)];
+            ambient.style.left = (10 + Math.random() * 80) + '%';
+            ambient.style.animationDuration = (25 + Math.random() * 15) + 's';
+            ambient.style.animationDelay = Math.random() * 5 + 's';
+            document.body.appendChild(ambient);
+
+            setTimeout(() => ambient.remove(), 40000);
+        }
+
+        setInterval(createAmbient, 8000);
+        setTimeout(createAmbient, 10000);
+
+        // DNA element interactions - navigate to corresponding pages
+        document.querySelectorAll('.dna-element').forEach(el => {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => {
+                const element = el.dataset.element;
+                const pageMap = {
+                    'silence': 'silence.html',
+                    'jungle': 'jungle.html',
+                    'orb': 'orb.html',
+                    'shadow': 'shadow.html',
+                    'cat': 'shop.html'
+                };
+                if (pageMap[element]) {
+                    window.location.href = pageMap[element];
+                }
+            });
+        });
+
+        // Paradox interactions - navigate to corresponding pages
+        document.querySelectorAll('.paradox').forEach(el => {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => {
+                const paradox = el.dataset.paradox;
+                const pageMap = {
+                    'silence': 'silence.html',
+                    'found': 'found.html',
+                    'door': 'door.html',
+                    'warmth': 'orb.html'
+                };
+                if (pageMap[paradox]) {
+                    window.location.href = pageMap[paradox];
+                }
+            });
+        });
+
+        // Thread interactions - navigate to time.html
+        document.querySelectorAll('.thread').forEach(el => {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => {
+                window.location.href = 'time.html';
+            });
+        });
+
+        // Right-click creates momentary stillness
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                document.body.style.transition = 'all 0.5s ease';
+                document.body.style.filter = 'brightness(0.95) blur(1px)';
+                setTimeout(() => {
+                    document.body.style.filter = '';
+                    document.body.style.transition = '';
+                }, 1000);
+            }
+        });
+
+        // Console poetry
+        console.log('%cvibe', 'font-size: 20px; color: #d4a056; font-weight: 300; letter-spacing: 0.3em;');
+        console.log('%ca place that is here because it is', 'font-size: 11px; color: #718096; font-style: italic;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cthe lightswitch that does nothing is the perfect interaction', 'font-size: 10px; color: #4a5568;');
+        console.log('%c', 'padding: 5px');
+        console.log('%csilence ) | jungle %% | orb o | shadow / | cat ~', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c', 'padding: 5px');
+        console.log('%c[b] breathe | [d] descend | [space] exhale', 'font-size: 9px; color: #a0aec0;');
+        console.log('%cclick elements to visit their pages', 'font-size: 8px; color: #cbd5e0;');
+    </script>
+</body>
+</html>

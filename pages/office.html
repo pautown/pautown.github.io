@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>office - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            cursor: default;
+            user-select: none;
+        }
+
+        /* Prevent default selection styling */
+        ::selection {
+            background: transparent;
+        }
+
+        /* The scattered office phrases */
+        .phrase {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--slate);
+            pointer-events: none;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        .phrase.out-of-office {
+            filter: blur(2px);
+            opacity: 0.2 !important;
+        }
+
+        .phrase.out-of-office::after {
+            content: ' [out of office]';
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            opacity: 0.6;
+            filter: blur(0);
+        }
+
+        /* Coffee rings - visual chaos element */
+        .coffee-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 90, 43, 0.15);
+            pointer-events: none;
+        }
+
+        /* Sticky notes scattered */
+        .sticky {
+            position: absolute;
+            padding: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            transform: rotate(var(--rot, 0deg));
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            pointer-events: none;
+        }
+
+        .sticky.yellow { background: #fff59d; color: #5d4e37; }
+        .sticky.pink { background: #f8bbd9; color: #4a3040; }
+        .sticky.blue { background: #b3e5fc; color: #1a3a4a; }
+        .sticky.green { background: #c8e6c9; color: #2d4a2e; }
+
+        /* The return button that follows mouse */
+        .return-btn {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--slate);
+            text-decoration: none;
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            pointer-events: auto;
+        }
+
+        .return-btn:hover {
+            border-color: var(--amber);
+        }
+
+        /* Click denial message */
+        .denial-message {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--amber);
+            background: var(--paper);
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1001;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .denial-message.visible {
+            opacity: 1;
+        }
+
+        /* Loading elements */
+        .loading-element {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            pointer-events: none;
+        }
+
+        .progress-bar {
+            position: absolute;
+            width: 80px;
+            height: 4px;
+            background: var(--bone-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: var(--progress, 73%);
+            background: var(--slate-light);
+            animation: progress-backwards 8s linear infinite;
+        }
+
+        @keyframes progress-backwards {
+            0% { width: var(--progress, 73%); }
+            100% { width: 10%; }
+        }
+
+        .spinner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--bone-dark);
+            border-top-color: var(--slate-light);
+            border-radius: 50%;
+            animation: spin-wrong 1s linear infinite reverse;
+            pointer-events: none;
+        }
+
+        @keyframes spin-wrong {
+            to { transform: rotate(-360deg); }
+        }
+
+        /* Tangled cords visual */
+        .cord {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* Queue notification */
+        .queue-notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0.4;
+            z-index: 100;
+        }
+
+        /* Escape hint */
+        .escape-hint {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+        }
+
+        .escape-hint.visible {
+            opacity: 0.3;
+        }
+
+        .escape-hint kbd {
+            display: inline-block;
+            padding: 0.1rem 0.25rem;
+            border: 1px solid var(--slate-light);
+            border-radius: 2px;
+            margin: 0 0.15rem;
+        }
+
+        /* Subtle actual return link */
+        .back-link {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            text-decoration: none;
+            opacity: 0;
+            transition: opacity 4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            letter-spacing: 0.1em;
+        }
+
+        .back-link.visible {
+            opacity: 0.25;
+        }
+
+        .back-link:hover {
+            opacity: 0.6;
+            color: var(--amber);
+        }
+
+        /* Stillness reward - appears when you stop */
+        .stillness-message {
+            position: fixed;
+            bottom: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-weight: 300;
+            color: var(--slate);
+            opacity: 0;
+            text-align: center;
+            pointer-events: none;
+            transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            letter-spacing: 0.1em;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        .stillness-message .sub {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.15em;
+            opacity: 0.6;
+        }
+
+        /* Selection denied overlay */
+        .selection-denied {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--amber);
+            background: var(--paper);
+            padding: 0.3rem 0.6rem;
+            border: 1px solid var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1002;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Input forwarded message */
+        .input-message {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: right;
+            max-width: 200px;
+        }
+
+        .input-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Static grain overlay */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 2000;
+        }
+
+        /* Paper stack visual */
+        .paper-stack {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            box-shadow:
+                2px 2px 0 var(--bone-dark),
+                4px 4px 0 var(--paper),
+                6px 6px 0 var(--bone-dark),
+                8px 8px 0 var(--paper),
+                10px 10px 0 var(--bone-dark);
+            pointer-events: none;
+        }
+
+        /* Meeting in progress sign */
+        .meeting-sign {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--amber-deep);
+            background: var(--paper);
+            border: 1px solid var(--amber);
+            padding: 0.3rem 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            pointer-events: none;
+            animation: meeting-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes meeting-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Synergy word - special floating treatment */
+        .synergy {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0.08;
+            animation: synergy-drift 30s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes synergy-drift {
+            0%, 100% { transform: translate(0, 0) rotate(-2deg); }
+            25% { transform: translate(20px, -10px) rotate(1deg); }
+            50% { transform: translate(-15px, 15px) rotate(-1deg); }
+            75% { transform: translate(10px, 5px) rotate(2deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <a href="../index.html" class="back-link" id="backLink">return</a>
+    <div class="return-btn" id="returnBtn">return</div>
+    <div class="denial-message" id="denialMsg"></div>
+    <div class="selection-denied" id="selectionDenied">text prefers to stay where it is</div>
+    <div class="input-message" id="inputMsg"></div>
+
+    <div class="queue-notification" id="queueNotification">
+        clicks in queue: <span id="queueCount">0</span>
+    </div>
+
+    <div class="escape-hint" id="escapeHint">
+        <kbd>esc</kbd> emergency exit
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage">
+        even here, there is quiet
+        <span class="sub">if you wait for it</span>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // === OFFICE PHRASES - A MILLION WAYS OF SAYING IT'S BROKEN ===
+        const phrases = [
+            // Printer & Technology
+            "the printer is always broken",
+            "the printer is thinking",
+            "PC LOAD LETTER",
+            "have you tried turning it off and on again",
+            "the wifi password is on a sticky note that fell behind something",
+            "nobody knows what that cord does",
+            "this cable has been here since 2007",
+            "the scanner only works on Tuesdays",
+            "please install the driver (which driver?)",
+            "your session has expired",
+            "connection timed out",
+            "server not responding",
+            "error 403: ambition forbidden",
+            "404: motivation not found",
+            "500: internal existential error",
+            "please update your software (forever)",
+            "restart required (always)",
+            "saving... saving... saving...",
+            "syncing (eternally)",
+            "loading (indefinitely)",
+            "buffering your request",
+            "calculating... calculating...",
+            "processing your feelings",
+            "rebooting expectations",
+            "defragmenting hope",
+            "your computer will restart in 15 minutes",
+            "update scheduled during your presentation",
+            "caps lock is on (so are the fluorescent lights)",
+            "numlock is a state of mind",
+            "ctrl+z doesnt work on decisions",
+
+            // Desk & Space
+            "this desk was someone else's problem",
+            "this chair has trust issues",
+            "the armrest is decorative",
+            "lumbar support is a myth here",
+            "whose mug is this",
+            "the coffee is from last Tuesday",
+            "the plant is fake and still dying",
+            "the clock is wrong and so are we",
+            "the thermostat is a democracy nobody won",
+            "it's either too hot or too cold",
+            "the AC is set to 'existential dread'",
+            "this desk drawer contains someone else's snacks (expired)",
+            "previous occupant: unknown",
+            "desk archaeology in progress",
+            "this sticky note is older than the intern",
+            "the stapler has migrated",
+            "someone borrowed the tape (in 2019)",
+            "the whiteboard marker is dry",
+            "all the good pens are gone",
+            "this notepad has one page left",
+            "the paper cutter is dull and philosophical",
+            "filing cabinet: do not open",
+            "mystery drawer energy",
+            "cables that lead nowhere",
+            "this outlet doesnt work",
+            "that outlet is dangerous",
+            "the third outlet is fine (its not)",
+            "desk plant named 'hope'",
+            "desk plant status: concerning",
+
+            // Meetings
+            "meeting about the meeting about the meeting",
+            "this could have been an email",
+            "this could have been a thought",
+            "this could have been nothing",
+            "mandatory fun scheduled",
+            "optional meeting (attendance tracked)",
+            "lets table this",
+            "lets parking lot that",
+            "lets take this offline",
+            "lets circle back",
+            "circling back",
+            "per my last email",
+            "as per my previous correspondence",
+            "as discussed",
+            "as not discussed",
+            "just following up",
+            "gentle reminder",
+            "friendly nudge",
+            "quick sync (3 hours)",
+            "brief chat (eternal)",
+            "just a quick call",
+            "do you have five minutes (you dont)",
+            "let's align on this",
+            "let's touch base",
+            "let's get granular",
+            "let's unpack this",
+            "let's workshop this",
+            "let's ideate",
+            "let's iterate",
+            "let's pivot",
+            "let's leverage",
+            "let's double-click on that",
+            "let's put a pin in it",
+            "let's shelf this",
+            "action items pending",
+            "deliverables unclear",
+            "stakeholders concerned",
+            "bandwidth limited",
+            "capacity at capacity",
+            "out of pocket (somewhere else)",
+            "OOO (out of optimism)",
+
+            // Corporate Speak
+            "synergy",
+            "leverage",
+            "paradigm shift imminent",
+            "disruption in progress",
+            "thought leadership required",
+            "best practices (whose?)",
+            "moving forward",
+            "going forward",
+            "at the end of the day",
+            "at this point in time",
+            "in terms of",
+            "with respect to",
+            "regarding the matter of",
+            "concerning the issue of",
+            "apropos of nothing",
+            "low-hanging fruit (rotting)",
+            "quick wins (slow losses)",
+            "value-add uncertain",
+            "ROI: emotional",
+            "KPIs: vibes",
+            "OKRs: unclear",
+            "SLAs: suggestions",
+            "core competencies: TBD",
+            "mission critical (everything is)",
+            "high priority (everything is)",
+            "urgent (everything is)",
+            "ASAP (always)",
+            "EOD (end of days)",
+            "COB (close of business, close of hope)",
+            "bandwidth maxed",
+            "cycles unavailable",
+            "resources constrained (you)",
+            "headcount frozen (like the AC)",
+            "org chart: abstract art",
+            "reporting structure: unclear",
+            "decision tree: deciduous",
+            "feedback loop: infinite",
+            "information silo: full",
+
+            // Phone & Communication
+            "your call is important to us",
+            "please hold",
+            "estimated wait time: forever",
+            "all representatives are busy",
+            "press 1 for nothing",
+            "press 2 for also nothing",
+            "press 0 to start over",
+            "did you mean to call?",
+            "reply all. reply all. reply all.",
+            "CC'd for visibility",
+            "BCC'd for safety",
+            "FYI (for your investigation)",
+            "TL;DR: still reading",
+            "email sent to the void",
+            "message received (was it?)",
+            "seen (ignored)",
+            "typing... (stopped)",
+            "left on read (professional edition)",
+            "slack is a lifestyle",
+            "teams is loading",
+            "zoom fatigue is real",
+            "you're on mute",
+            "can you hear me?",
+            "can everyone see my screen?",
+            "let me share my screen (forever)",
+            "sorry, you go ahead",
+            "no, you go ahead",
+            "awkward pause (scheduled)",
+
+            // Existential Office (tender)
+            "quiet quitting is a spectrum",
+            "work-life balance (still figuring it out)",
+            "the grind pauses sometimes",
+            "living for the weekend (and small moments)",
+            "almost friday",
+            "case of the mondays (understandable)",
+            "hump day (we are here together)",
+            "almost friday (almost)",
+            "friday energy (hopeful)",
+            "sunday has its own quiet",
+            "is it 5 yet (gently asking)",
+            "time moves differently here",
+            "minutes feel like hours (sometimes that is okay)",
+            "hours feel like minutes (during good conversations)",
+            "lunch break: a small freedom",
+            "break room: someone left cake",
+            "watercooler: now a slack channel",
+            "office culture: evolving",
+            "company values: aspirational",
+            "employee appreciation: the small nods",
+            "wellness initiative: well-intentioned",
+            "mental health day: necessary sometimes",
+            "PTO: please take occasionally",
+            "vacation: tried to unplug (mostly)",
+            "sick day: rest is valid",
+            "remote work: pajama professional",
+            "hybrid: finding its rhythm",
+            "return to office: familiar desks",
+            "desk hoteling: choosing where to land",
+            "open floor plan: we hear each other",
+            "glass walls: sunlight at least",
+            "standing desk: intentions were good",
+
+            // The Absurd Mundane (gentle)
+            "the fridge is a mystery",
+            "whose lunch is this (curious)",
+            "labeled with love",
+            "expired yogurt: a small ecosystem",
+            "microwave: the great equalizer",
+            "coffee: communal and essential",
+            "decaf: here for those who need it",
+            "the good creamer goes quickly",
+            "someone made fresh coffee",
+            "kitchen sink: stories it could tell",
+            "dish sponge: needs replacing (we all know)",
+            "paper towels: please use sparingly",
+            "soap dispenser: refilled eventually",
+            "bathroom occupied (fair enough)",
+            "elevator small talk: surprisingly nice sometimes",
+            "parking spot: daily adventure",
+            "good morning (meant sincerely)",
+            "happy monday (trying)",
+            "how was your weekend (genuine question)",
+            "busy? (we all are)",
+            "hanging in there",
+            "living the dream (some version of it)",
+            "another day",
+            "same old same old (comforting)",
+            "it is what it is",
+            "could be worse (gratitude)",
+            "at least we are here together",
+
+            // Forms & Process
+            "form 27B-stroke-6 required",
+            "please sign here, here, and here",
+            "initial here",
+            "date this (when?)",
+            "this form is outdated",
+            "use the new form (which one)",
+            "submit in triplicate",
+            "approval pending (always)",
+            "awaiting signature (forever)",
+            "in the queue (infinite)",
+            "processing (eternally)",
+            "under review (forgotten)",
+            "escalated (to nowhere)",
+            "routed to appropriate department (which?)",
+            "ticket opened (never closed)",
+            "case number: meaningless",
+            "reference ID: generated, lost",
+            "please allow 3-5 business days (weeks)",
+            "your request has been received",
+            "we'll get back to you (we wont)",
+            "thanks for your patience (what patience)",
+            "policy requires",
+            "procedure dictates",
+            "compliance demands",
+            "HR has been notified",
+            "legal is reviewing",
+            "finance is questioning",
+            "IT will look into it",
+            "facilities has been informed",
+            "management is aware",
+
+            // Misc Office Entropy
+            "inbox zero: a myth",
+            "email bankruptcy: considered",
+            "unread: 4,827",
+            "marked as read (unread)",
+            "flagged for follow-up (forgotten)",
+            "archived (buried)",
+            "deleted (refreshing)",
+            "sent to spam (fair)",
+            "out of office: wish I was",
+            "working from home (existing from home)",
+            "logging off (logging back on)",
+            "end of day (is it?)",
+            "close of business (business of closing)",
+            "quarterly review: a conversation",
+            "annual review: reflections",
+            "goals: somewhere ahead",
+            "achievements: accumulated quietly",
+            "growth areas: room to become",
+            "strengths: still discovering them",
+            "development plan: unfolding",
+            "career path: winding (that is okay)",
+            "promotion: when the time is right",
+            "raise: appreciated when it comes",
+            "bonus: unexpected kindness",
+            "recognition: small and meaningful",
+            "award: someone noticed",
+            "team building: actually nice sometimes",
+            "offsite: change of scenery",
+            "retreat: time to think",
+            "the motivational poster means well",
+            "hang in there (the cat believes in you)",
+            "teamwork makes something",
+            "there is no 'i' in team (there is 'we')",
+
+            // Tender moments (scattered among the chaos)
+            "the window shows clouds",
+            "sunlight on the carpet",
+            "someone hums quietly",
+            "a plant grows toward the light",
+            "the afternoon has its own rhythm",
+            "somewhere, laughter",
+            "the rain on the windows",
+            "a shared smile across cubicles",
+            "the comfort of routine",
+            "we are all just trying",
+            "there is kindness here too",
+            "the small courtesies",
+            "holding the door",
+            "remembering your name"
+        ];
+
+        // === DENIAL MESSAGES FOR RETURN BUTTON (gently absurd) ===
+        const denialMessages = [
+            "button is thinking about it",
+            "button on lunch break",
+            "please wait... patiently",
+            "button is in a meeting",
+            "one moment please",
+            "return: processing feelings",
+            "click noted. response forthcoming",
+            "button is taking a breath",
+            "return: considering your request",
+            "click received warmly",
+            "the button needs a moment",
+            "return: gently pending",
+            "button is gathering its thoughts",
+            "please hold (but not too tightly)",
+            "click added to the queue",
+            "button appreciates your patience",
+            "return: brewing",
+            "the button is stretching",
+            "click has been acknowledged",
+            "return: in transit (emotional)",
+            "button will be right with you",
+            "taking a scenic route",
+            "button is on a call",
+            "return: queued with care"
+        ];
+
+        // === DOUBLE CLICK MESSAGES (gentle) ===
+        const doubleClickMessages = [
+            "one at a time, please",
+            "the first click is still arriving",
+            "patience is a click virtue",
+            "double-click noted, single-click processed",
+            "easy does it",
+            "clicks take time to settle"
+        ];
+
+        // === RIGHT CLICK MESSAGES (gentle) ===
+        const rightClickMessages = [
+            "the context is... here",
+            "menu is resting",
+            "alternatives are being considered",
+            "right-click is on its way",
+            "secondary options: pending",
+            "context: still loading"
+        ];
+
+        // === INPUT MESSAGES (gentle) ===
+        const inputMessages = [
+            "typing received, gently",
+            "a letter arrives",
+            "keystroke: noted with appreciation",
+            "your thoughts are being collected",
+            "input is making its way",
+            "key press felt",
+            "message forming",
+            "letters gather like small birds",
+            "your words are welcome here",
+            "typing... understood"
+        ];
+
+        // === CONSOLE MESSAGES (warmer, more poetic) ===
+        const consoleMessages = [
+            ["office", "font-size: 20px; font-weight: 100; color: #4a5568; letter-spacing: 0.3em;"],
+            ["a shared space of small frustrations and quiet camaraderie", "font-size: 10px; font-style: italic; color: #718096;"],
+            ["", "padding: 5px;"],
+            ["the coffee is always somewhere between fresh and memory", "font-size: 9px; color: #a0aec0;"],
+            ["the printer remembers everyone who has stood before it, waiting", "font-size: 9px; color: #a0aec0;"],
+            ["", "padding: 3px;"],
+            ["every desk was someone's before", "font-size: 9px; color: #cbd5e0;"],
+            ["every chair holds the shape of someone who sat here", "font-size: 9px; color: #cbd5e0;"],
+            ["", "padding: 5px;"],
+            ["[ESC] when you need to go", "font-size: 9px; font-family: monospace; color: #a0aec0;"]
+        ];
+
+        // === STILLNESS MESSAGES ===
+        const stillnessMessages = [
+            { main: "even here, there is quiet", sub: "if you wait for it" },
+            { main: "the chaos pauses", sub: "when you do" },
+            { main: "between the emails", sub: "there is breathing room" },
+            { main: "someone else is also still", sub: "somewhere in this building" },
+            { main: "the fluorescent lights hum", sub: "a kind of lullaby" }
+        ];
+
+        // DOM elements
+        const returnBtn = document.getElementById('returnBtn');
+        const denialMsg = document.getElementById('denialMsg');
+        const queueNotification = document.getElementById('queueNotification');
+        const queueCount = document.getElementById('queueCount');
+        const escapeHint = document.getElementById('escapeHint');
+        const selectionDenied = document.getElementById('selectionDenied');
+        const inputMsg = document.getElementById('inputMsg');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const backLink = document.getElementById('backLink');
+
+        let clickQueue = 0;
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let buttonOffset = { x: 100, y: 100 };
+        let lastScrollY = window.scrollY;
+        let stillnessTimer = null;
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+
+        // === GENERATE SCATTERED PHRASES ===
+        function generatePhrases() {
+            const usedPhrases = new Set();
+            const numPhrases = Math.min(80, phrases.length); // Fewer phrases for breathing room
+
+            for (let i = 0; i < numPhrases; i++) {
+                let phrase;
+                let attempts = 0;
+                do {
+                    phrase = phrases[Math.floor(Math.random() * phrases.length)];
+                    attempts++;
+                } while (usedPhrases.has(phrase) && attempts < 50);
+
+                usedPhrases.add(phrase);
+
+                const el = document.createElement('div');
+                el.className = 'phrase';
+                el.textContent = phrase;
+
+                // Random positioning
+                el.style.left = (Math.random() * 90 + 5) + '%';
+                el.style.top = (Math.random() * 90 + 5) + '%';
+
+                // Random styling
+                const fontSize = 0.5 + Math.random() * 1.5;
+                el.style.fontSize = fontSize + 'rem';
+                el.style.opacity = 0.15 + Math.random() * 0.4;
+                el.style.transform = `rotate(${(Math.random() - 0.5) * 30}deg)`;
+
+                // Random font variations
+                if (Math.random() > 0.7) {
+                    el.style.fontStyle = 'italic';
+                }
+                if (Math.random() > 0.8) {
+                    el.style.fontFamily = "'JetBrains Mono', monospace";
+                    el.style.fontSize = (fontSize * 0.7) + 'rem';
+                }
+                if (Math.random() > 0.9) {
+                    el.style.textDecoration = 'line-through';
+                    el.style.opacity = '0.2';
+                }
+
+                // Random color variations within palette
+                const colors = ['var(--slate)', 'var(--slate-light)', 'var(--ink-light)', 'var(--amber-dark)'];
+                el.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+                document.body.appendChild(el);
+            }
+        }
+
+        // === GENERATE VISUAL CLUTTER ===
+        function generateClutter() {
+            // Coffee rings
+            for (let i = 0; i < 8; i++) {
+                const ring = document.createElement('div');
+                ring.className = 'coffee-ring';
+                const size = 40 + Math.random() * 80;
+                ring.style.width = size + 'px';
+                ring.style.height = size + 'px';
+                ring.style.left = (Math.random() * 90 + 5) + '%';
+                ring.style.top = (Math.random() * 90 + 5) + '%';
+                ring.style.opacity = 0.1 + Math.random() * 0.2;
+                document.body.appendChild(ring);
+            }
+
+            // Sticky notes
+            const stickyColors = ['yellow', 'pink', 'blue', 'green'];
+            const stickyTexts = [
+                'TODO:', 'URGENT', 'call back', 'password: ********',
+                'meeting 3pm', 'lunch?', 'ask about TPS reports',
+                'dont forget', 'important!!!', 'see me -mgmt',
+                'wifi: guest123', 'printer code: 4521', '???'
+            ];
+
+            for (let i = 0; i < 6; i++) {
+                const sticky = document.createElement('div');
+                sticky.className = 'sticky ' + stickyColors[Math.floor(Math.random() * stickyColors.length)];
+                sticky.textContent = stickyTexts[Math.floor(Math.random() * stickyTexts.length)];
+                sticky.style.left = (Math.random() * 85 + 5) + '%';
+                sticky.style.top = (Math.random() * 85 + 5) + '%';
+                sticky.style.setProperty('--rot', (Math.random() - 0.5) * 20 + 'deg');
+                document.body.appendChild(sticky);
+            }
+
+            // Loading elements
+            for (let i = 0; i < 4; i++) {
+                const loading = document.createElement('div');
+                loading.className = 'loading-element';
+                loading.textContent = 'loading...';
+                loading.style.left = (Math.random() * 80 + 10) + '%';
+                loading.style.top = (Math.random() * 80 + 10) + '%';
+                document.body.appendChild(loading);
+            }
+
+            // Progress bars that go backwards
+            for (let i = 0; i < 3; i++) {
+                const progress = document.createElement('div');
+                progress.className = 'progress-bar';
+                progress.style.left = (Math.random() * 80 + 10) + '%';
+                progress.style.top = (Math.random() * 80 + 10) + '%';
+                progress.style.setProperty('--progress', (40 + Math.random() * 50) + '%');
+                document.body.appendChild(progress);
+            }
+
+            // Spinners that spin wrong
+            for (let i = 0; i < 3; i++) {
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner';
+                spinner.style.left = (Math.random() * 85 + 5) + '%';
+                spinner.style.top = (Math.random() * 85 + 5) + '%';
+                document.body.appendChild(spinner);
+            }
+
+            // Paper stacks
+            for (let i = 0; i < 2; i++) {
+                const stack = document.createElement('div');
+                stack.className = 'paper-stack';
+                stack.style.left = (Math.random() * 80 + 5) + '%';
+                stack.style.top = (Math.random() * 80 + 5) + '%';
+                stack.style.transform = `rotate(${(Math.random() - 0.5) * 10}deg)`;
+                document.body.appendChild(stack);
+            }
+
+            // Meeting in progress signs
+            const meetingSign = document.createElement('div');
+            meetingSign.className = 'meeting-sign';
+            meetingSign.textContent = 'meeting in progress';
+            meetingSign.style.left = (Math.random() * 70 + 15) + '%';
+            meetingSign.style.top = (Math.random() * 70 + 15) + '%';
+            document.body.appendChild(meetingSign);
+
+            // The ominous floating "synergy"
+            const synergy = document.createElement('div');
+            synergy.className = 'synergy';
+            synergy.textContent = 'synergy';
+            synergy.style.left = '40%';
+            synergy.style.top = '35%';
+            document.body.appendChild(synergy);
+        }
+
+        // === RETURN BUTTON FOLLOWS MOUSE ===
+        function updateButtonPosition() {
+            const targetX = mouseX + buttonOffset.x;
+            const targetY = mouseY + buttonOffset.y;
+
+            // Keep button on screen
+            const btnRect = returnBtn.getBoundingClientRect();
+            const maxX = window.innerWidth - btnRect.width - 20;
+            const maxY = window.innerHeight - btnRect.height - 20;
+
+            const finalX = Math.max(20, Math.min(maxX, targetX));
+            const finalY = Math.max(20, Math.min(maxY, targetY));
+
+            returnBtn.style.left = finalX + 'px';
+            returnBtn.style.top = finalY + 'px';
+
+            requestAnimationFrame(updateButtonPosition);
+        }
+
+        // === STILLNESS DETECTION ===
+        function resetStillness() {
+            lastActivity = Date.now();
+            clearTimeout(stillnessTimer);
+            stillnessMessage.classList.remove('visible');
+            stillnessShown = false;
+
+            stillnessTimer = setTimeout(() => {
+                if (!stillnessShown) {
+                    // Pick a random stillness message
+                    const msg = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                    stillnessMessage.innerHTML = msg.main + '<span class="sub">' + msg.sub + '</span>';
+                    stillnessMessage.classList.add('visible');
+                    stillnessShown = true;
+                }
+            }, 7000); // 7 seconds of stillness
+        }
+
+        // === MOUSE TRACKING ===
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            resetStillness();
+
+            // Phrases become "out of office" when hovered near
+            document.querySelectorAll('.phrase').forEach(phrase => {
+                const rect = phrase.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+
+                if (distance < 100) {
+                    phrase.classList.add('out-of-office');
+                } else {
+                    phrase.classList.remove('out-of-office');
+                }
+            });
+        });
+
+        // === CLICK HANDLERS ===
+
+        // Click anywhere adds to queue
+        document.addEventListener('click', (e) => {
+            if (e.target !== returnBtn) {
+                clickQueue++;
+                queueCount.textContent = clickQueue;
+
+                // Show temporary message at click location
+                const msg = document.createElement('div');
+                msg.style.cssText = `
+                    position: fixed;
+                    left: ${e.clientX}px;
+                    top: ${e.clientY}px;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 0.5rem;
+                    color: var(--slate);
+                    opacity: 0;
+                    pointer-events: none;
+                    transform: translate(-50%, -50%);
+                    transition: opacity 0.3s ease, transform 1s ease;
+                    z-index: 500;
+                `;
+                msg.textContent = 'click added to queue';
+                document.body.appendChild(msg);
+
+                requestAnimationFrame(() => {
+                    msg.style.opacity = '0.6';
+                    msg.style.transform = 'translate(-50%, -50%) translateY(-20px)';
+                });
+
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 300);
+                }, 1500);
+            }
+        });
+
+        // Return button denial
+        returnBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Move button away
+            buttonOffset.x = (Math.random() - 0.5) * 200;
+            buttonOffset.y = (Math.random() - 0.5) * 200;
+
+            // Show denial message
+            const denial = denialMessages[Math.floor(Math.random() * denialMessages.length)];
+            denialMsg.textContent = denial;
+            denialMsg.style.left = (e.clientX + 20) + 'px';
+            denialMsg.style.top = (e.clientY - 10) + 'px';
+            denialMsg.classList.add('visible');
+
+            setTimeout(() => {
+                denialMsg.classList.remove('visible');
+            }, 2000);
+        });
+
+        // Double click
+        document.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            const msg = doubleClickMessages[Math.floor(Math.random() * doubleClickMessages.length)];
+
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.5rem;
+                color: var(--amber);
+                background: var(--paper);
+                padding: 0.3rem 0.6rem;
+                border: 1px solid var(--amber);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 1000;
+            `;
+            notification.textContent = msg;
+            document.body.appendChild(notification);
+
+            requestAnimationFrame(() => {
+                notification.style.opacity = '1';
+            });
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 2500);
+        });
+
+        // Right click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            const msg = rightClickMessages[Math.floor(Math.random() * rightClickMessages.length)];
+
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.5rem;
+                color: var(--amber);
+                background: var(--paper);
+                padding: 0.3rem 0.6rem;
+                border: 1px solid var(--amber);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 1000;
+            `;
+            notification.textContent = msg;
+            document.body.appendChild(notification);
+
+            requestAnimationFrame(() => {
+                notification.style.opacity = '1';
+            });
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        });
+
+        // Selection attempt
+        document.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+
+            selectionDenied.style.left = (mouseX + 10) + 'px';
+            selectionDenied.style.top = (mouseY - 20) + 'px';
+            selectionDenied.style.opacity = '1';
+
+            setTimeout(() => {
+                selectionDenied.style.opacity = '0';
+            }, 1500);
+        });
+
+        // Scroll subversion - things scroll sideways
+        let scrollTimeout;
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            // Scroll sideways instead
+            document.querySelectorAll('.phrase').forEach(phrase => {
+                const currentLeft = parseFloat(phrase.style.left) || 50;
+                phrase.style.left = (currentLeft + e.deltaY * 0.05) + '%';
+            });
+
+            // Show message
+            clearTimeout(scrollTimeout);
+            const scrollMsg = document.createElement('div');
+            scrollMsg.style.cssText = `
+                position: fixed;
+                bottom: 50%;
+                left: 50%;
+                transform: translate(-50%, 50%);
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.5rem;
+                color: var(--slate);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 500;
+            `;
+            scrollMsg.textContent = 'scroll direction: horizontal (policy update)';
+            scrollMsg.id = 'scroll-msg';
+
+            const existing = document.getElementById('scroll-msg');
+            if (existing) existing.remove();
+
+            document.body.appendChild(scrollMsg);
+            requestAnimationFrame(() => {
+                scrollMsg.style.opacity = '0.5';
+            });
+
+            scrollTimeout = setTimeout(() => {
+                scrollMsg.style.opacity = '0';
+                setTimeout(() => scrollMsg.remove(), 300);
+            }, 1500);
+        }, { passive: false });
+
+        // Keyboard input forwarding
+        document.addEventListener('keydown', (e) => {
+            // Escape is the only way out
+            if (e.key === 'Escape') {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Forward everything else to "appropriate department"
+            if (e.key.length === 1) { // Printable character
+                inputMsg.textContent = inputMessages[Math.floor(Math.random() * inputMessages.length)];
+                inputMsg.classList.add('visible');
+
+                setTimeout(() => {
+                    inputMsg.classList.remove('visible');
+                }, 2000);
+            }
+        });
+
+        // Show escape hint after some time
+        setTimeout(() => {
+            escapeHint.classList.add('visible');
+        }, 8000);
+
+        // Show the actual back link after longer - a quiet gift for those who stay
+        setTimeout(() => {
+            backLink.classList.add('visible');
+        }, 15000);
+
+        // Console poetry
+        setTimeout(() => {
+            consoleMessages.forEach(([msg, style]) => {
+                if (msg) {
+                    console.log('%c' + msg, style);
+                } else {
+                    console.log('%c ', style);
+                }
+            });
+
+            // Periodic console messages (gentler)
+            setInterval(() => {
+                const periodicMessages = [
+                    "the afternoon light shifts",
+                    "somewhere, a phone rings unanswered",
+                    "the coffee cools gently",
+                    "a desk drawer opens, closes",
+                    "someone stretches, sighs",
+                    "the clock ticks. the clock ticks.",
+                    "papers shuffle like leaves"
+                ];
+                console.log('%c' + periodicMessages[Math.floor(Math.random() * periodicMessages.length)],
+                    'font-size: 9px; font-style: italic; color: #a0aec0;');
+            }, 20000);
+        }, 500);
+
+        // Initialize
+        generatePhrases();
+        generateClutter();
+        updateButtonPosition();
+        resetStillness(); // Start stillness detection
+
+        // Initial button position
+        returnBtn.style.left = '70%';
+        returnBtn.style.top = '20%';
+
+    })();
+    </script>
+</body>
+</html>

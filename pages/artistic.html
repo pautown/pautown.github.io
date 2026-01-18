@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>artistic - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: background 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.night-mode {
+            background: var(--night);
+        }
+
+        body.night-mode .back-link {
+            color: var(--bone);
+        }
+
+        /* The scroll container */
+        .scroll-field {
+            position: relative;
+            min-height: 600vh;
+            width: 100%;
+        }
+
+        /* Ambient grain overlay */
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.015;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            z-index: 1000;
+        }
+
+        /* Section base */
+        .section {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 4rem 2rem;
+            opacity: 0;
+            transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section.visible {
+            opacity: 1;
+        }
+
+        /* Opening - empty space with single word */
+        .section-opening {
+            top: 0;
+            height: 100vh;
+        }
+
+        .opening-word {
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.3em;
+            animation: breathe-in 8s ease 2s forwards;
+        }
+
+        @keyframes breathe-in {
+            0% { opacity: 0; letter-spacing: 0.5em; }
+            100% { opacity: 0.4; letter-spacing: 0.3em; }
+        }
+
+        /* Feeling section */
+        .section-feeling {
+            top: 100vh;
+        }
+
+        .feeling-text {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .feeling-primary {
+            font-size: 1.1rem;
+            color: var(--ink);
+            opacity: 0.7;
+            line-height: 2;
+            margin-bottom: 2rem;
+        }
+
+        .feeling-secondary {
+            font-size: 0.85rem;
+            color: var(--slate);
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        /* Sensory section - the four qualities */
+        .section-sensory {
+            top: 200vh;
+            min-height: 120vh;
+        }
+
+        .sensory-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            max-width: 900px;
+            padding: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .sensory-grid {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+        }
+
+        .sensory-item {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sensory-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .sensory-title {
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--amber);
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        .sensory-description {
+            font-size: 0.9rem;
+            color: var(--slate);
+            opacity: 0.6;
+            font-style: italic;
+            line-height: 1.8;
+        }
+
+        /* Visual element for each sensory */
+        .sensory-visual {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+
+        /* Breath on glass visual */
+        .breath-visual {
+            background: radial-gradient(circle, rgba(212, 160, 86, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: breath-fade 6s ease-in-out infinite;
+        }
+
+        @keyframes breath-fade {
+            0%, 100% { opacity: 0.3; transform: scale(0.9); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        /* Fog lifting visual */
+        .fog-visual {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                var(--slate-light) 30%,
+                var(--slate-light) 70%,
+                transparent 100%);
+            opacity: 0.2;
+            animation: fog-lift 8s ease-in-out infinite;
+        }
+
+        @keyframes fog-lift {
+            0%, 100% { transform: translateY(0); opacity: 0.3; }
+            50% { transform: translateY(-20px); opacity: 0.1; }
+        }
+
+        /* Stone warming visual */
+        .stone-visual {
+            background: linear-gradient(135deg, var(--slate) 0%, var(--slate-light) 100%);
+            border-radius: 4px;
+            transition: all 3s ease;
+        }
+
+        .stone-visual:hover {
+            background: linear-gradient(135deg, var(--amber-deep) 0%, var(--amber) 100%);
+        }
+
+        /* Moss visual */
+        .moss-visual {
+            background:
+                linear-gradient(90deg, var(--slate) 2px, transparent 2px),
+                linear-gradient(var(--slate) 2px, transparent 2px);
+            background-size: 10px 10px;
+            opacity: 0.3;
+            position: relative;
+        }
+
+        .moss-visual::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 30%;
+            width: 40%;
+            height: 40%;
+            background: var(--green-orb);
+            border-radius: 50% 30% 50% 30%;
+            opacity: 0.4;
+            animation: moss-grow 10s ease-in-out infinite;
+        }
+
+        @keyframes moss-grow {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 0.6; }
+        }
+
+        /* Spaces section */
+        .section-spaces {
+            top: 340vh;
+        }
+
+        .spaces-container {
+            display: flex;
+            gap: 3rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px;
+        }
+
+        .space-card {
+            width: 200px;
+            height: 280px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.5s ease;
+        }
+
+        .space-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .space-visual {
+            width: 100%;
+            height: 180px;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Forest clearing */
+        .forest-space {
+            background: linear-gradient(180deg, var(--green-deep) 0%, #0a120a 100%);
+        }
+
+        .forest-space::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 100%;
+            background: linear-gradient(180deg,
+                rgba(255, 255, 200, 0.15) 0%,
+                rgba(255, 255, 200, 0.05) 50%,
+                transparent 100%);
+        }
+
+        /* Greenhouse */
+        .greenhouse-space {
+            background: linear-gradient(135deg, var(--paper) 0%, var(--green-translucent) 100%);
+            border: 1px solid var(--bone-dark);
+        }
+
+        .greenhouse-space::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, var(--slate-light) 1px, transparent 1px),
+                linear-gradient(var(--slate-light) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.1;
+        }
+
+        .greenhouse-space::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(180deg, transparent, var(--green-orb));
+            opacity: 0.3;
+        }
+
+        /* Cabin */
+        .cabin-space {
+            background: linear-gradient(180deg, var(--night) 0%, var(--dusk) 50%, var(--night) 100%);
+        }
+
+        .cabin-space::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, var(--amber) 0%, var(--amber-glow) 50%, transparent 70%);
+            opacity: 0.6;
+            animation: cabin-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes cabin-glow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.7; }
+        }
+
+        .space-title {
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate);
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
+
+        .space-description {
+            font-size: 0.8rem;
+            color: var(--slate-light);
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        /* Anti-patterns section */
+        .section-anti {
+            top: 460vh;
+        }
+
+        .anti-container {
+            max-width: 700px;
+            text-align: center;
+        }
+
+        .anti-header {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate);
+            letter-spacing: 0.2em;
+            margin-bottom: 3rem;
+            opacity: 0.5;
+        }
+
+        .anti-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .anti-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .anti-item {
+            padding: 1.5rem;
+            border: 1px solid var(--bone-dark);
+            border-radius: 4px;
+            transition: all 0.5s ease;
+        }
+
+        .anti-item:hover {
+            border-color: var(--amber);
+            background: var(--paper);
+        }
+
+        .anti-this {
+            font-size: 0.85rem;
+            color: var(--ink);
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .anti-not {
+            font-size: 0.75rem;
+            color: var(--slate);
+            opacity: 0.5;
+            text-decoration: line-through;
+            font-style: italic;
+        }
+
+        /* Coherence section */
+        .section-coherence {
+            top: 560vh;
+            min-height: 100vh;
+        }
+
+        .coherence-container {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .coherence-rule {
+            margin-bottom: 3rem;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .coherence-rule.visible {
+            opacity: 1;
+        }
+
+        .coherence-title {
+            font-size: 0.9rem;
+            color: var(--ink);
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .coherence-explain {
+            font-size: 0.8rem;
+            color: var(--slate);
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        /* Final section */
+        .section-final {
+            top: 560vh;
+            min-height: 40vh;
+            margin-top: 100vh;
+        }
+
+        .final-text {
+            font-size: 0.9rem;
+            color: var(--ink);
+            opacity: 0;
+            text-align: center;
+            max-width: 500px;
+            line-height: 2;
+            transition: opacity 3s ease;
+        }
+
+        .final-text.visible {
+            opacity: 0.5;
+        }
+
+        .final-whisper {
+            margin-top: 2rem;
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--amber);
+            letter-spacing: 0.2em;
+            opacity: 0;
+            transition: opacity 4s ease 2s;
+        }
+
+        .final-text.visible + .final-whisper,
+        .final-whisper.visible {
+            opacity: 0.4;
+        }
+
+        /* Scroll indicator */
+        .scroll-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            letter-spacing: 0.15em;
+            z-index: 100;
+        }
+
+        body:hover .scroll-indicator {
+            opacity: 0.25;
+        }
+
+        .scroll-indicator.hide {
+            opacity: 0 !important;
+        }
+
+        /* Progress line */
+        .progress-line {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 200px;
+            background: var(--bone-dark);
+            z-index: 100;
+        }
+
+        body.night-mode .progress-line {
+            background: var(--slate-deep);
+        }
+
+        .progress-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: var(--amber);
+            opacity: 0.5;
+            transition: height 0.3s ease;
+        }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: right;
+            line-height: 2;
+            z-index: 100;
+        }
+
+        body:hover .key-hint {
+            opacity: 0.25;
+        }
+
+        body.night-mode .key-hint {
+            color: var(--bone);
+        }
+
+        /* Section markers */
+        .section-marker {
+            position: absolute;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0.2;
+            letter-spacing: 0.1em;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        body.night-mode .section-marker {
+            color: var(--bone);
+        }
+
+        /* Ambient particles */
+        .ambient-particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--amber);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="grain"></div>
+
+    <div class="scroll-field" id="scrollField">
+        <!-- Opening -->
+        <section class="section section-opening visible" id="sectionOpening">
+            <span class="section-marker">i. opening</span>
+            <p class="opening-word">before any specification, ask: does this feel like breath on glass?</p>
+        </section>
+
+        <!-- Feeling -->
+        <section class="section section-feeling" id="sectionFeeling">
+            <span class="section-marker">ii. feeling</span>
+            <div class="feeling-text">
+                <p class="feeling-primary">
+                    townhaus exists in the space between stimulus and response.
+                    It is the pause before speaking, the weight of a room when you enter it alone,
+                    the temperature of stone that remembers who touched it last.
+                </p>
+                <p class="feeling-secondary">
+                    The specifications that follow are containers for feeling, not substitutes for it.
+                </p>
+            </div>
+        </section>
+
+        <!-- Sensory -->
+        <section class="section section-sensory" id="sectionSensory">
+            <span class="section-marker">iii. sensory</span>
+            <div class="sensory-grid">
+                <div class="sensory-item" data-index="0">
+                    <div class="sensory-visual breath-visual"></div>
+                    <p class="sensory-title">breath on glass</p>
+                    <p class="sensory-description">Temporary. Evidence of presence. Fading but real.</p>
+                </div>
+                <div class="sensory-item" data-index="1">
+                    <div class="sensory-visual fog-visual"></div>
+                    <p class="sensory-title">fog lifting slowly</p>
+                    <p class="sensory-description">Revelation through patience. What was obscured becomes clear.</p>
+                </div>
+                <div class="sensory-item" data-index="2">
+                    <div class="sensory-visual stone-visual"></div>
+                    <p class="sensory-title">stone warming to touch</p>
+                    <p class="sensory-description">The environment responds to presence. Hover to feel.</p>
+                </div>
+                <div class="sensory-item" data-index="3">
+                    <div class="sensory-visual moss-visual"></div>
+                    <p class="sensory-title">moss on circuit boards</p>
+                    <p class="sensory-description">Nature reclaiming technology. The organic reasserting itself.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Spaces -->
+        <section class="section section-spaces" id="sectionSpaces">
+            <span class="section-marker">iv. spaces</span>
+            <div class="spaces-container">
+                <div class="space-card">
+                    <div class="space-visual forest-space"></div>
+                    <p class="space-title">forest clearing</p>
+                    <p class="space-description">A cathedral of trees, a single shaft of light</p>
+                </div>
+                <div class="space-card">
+                    <div class="space-visual greenhouse-space"></div>
+                    <p class="space-title">overgrown greenhouse</p>
+                    <p class="space-description">Plants claiming glass and metal</p>
+                </div>
+                <div class="space-card">
+                    <div class="space-visual cabin-space"></div>
+                    <p class="space-title">norwegian cabin</p>
+                    <p class="space-description">Warm inside, snowy darkness outside</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Anti-patterns -->
+        <section class="section section-anti" id="sectionAnti">
+            <span class="section-marker">v. not this</span>
+            <div class="anti-container">
+                <p class="anti-header">what townhaus is not</p>
+                <div class="anti-grid">
+                    <div class="anti-item">
+                        <p class="anti-this">patience</p>
+                        <p class="anti-not">urgency, FOMO, countdown</p>
+                    </div>
+                    <div class="anti-item">
+                        <p class="anti-this">discovery</p>
+                        <p class="anti-not">tutorial, onboarding, tooltips</p>
+                    </div>
+                    <div class="anti-item">
+                        <p class="anti-this">quiet</p>
+                        <p class="anti-not">brightness, loudness, bold</p>
+                    </div>
+                    <div class="anti-item">
+                        <p class="anti-this">ongoing</p>
+                        <p class="anti-not">completion, achievement, 100%</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Coherence -->
+        <section class="section section-coherence" id="sectionCoherence">
+            <span class="section-marker">vi. coherence</span>
+            <div class="coherence-container">
+                <div class="coherence-rule" data-index="0">
+                    <p class="coherence-title">same spirit, different form</p>
+                    <p class="coherence-explain">A new page can look nothing like existing pages if it feels like townhaus.</p>
+                </div>
+                <div class="coherence-rule" data-index="1">
+                    <p class="coherence-title">surprising but fitting</p>
+                    <p class="coherence-explain">Users should feel "oh, of course" not "what is this?"</p>
+                </div>
+                <div class="coherence-rule" data-index="2">
+                    <p class="coherence-title">deliberate disruption</p>
+                    <p class="coherence-explain">Rules can be broken to highlight them. Know when you break a rule and why.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final -->
+        <section class="section section-final" id="sectionFinal">
+            <span class="section-marker">vii. duration</span>
+            <p class="final-text">
+                all durations are valid<br><br>
+                30 seconds is complete<br>
+                3 hours is complete<br>
+                opening and closing immediately is complete<br>
+                returning months later is complete<br><br>
+                townhaus exists whether or not anyone is looking
+            </p>
+            <p class="final-whisper">the best way to understand townhaus is to spend time there</p>
+        </section>
+    </div>
+
+    <p class="scroll-indicator" id="scrollIndicator">scroll to continue</p>
+
+    <div class="progress-line">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="key-hint">
+        [n] night mode<br>
+        [t] return to top<br>
+        [p] pause particles
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const scrollField = document.getElementById('scrollField');
+        const scrollIndicator = document.getElementById('scrollIndicator');
+        const progressFill = document.getElementById('progressFill');
+
+        const sections = {
+            opening: document.getElementById('sectionOpening'),
+            feeling: document.getElementById('sectionFeeling'),
+            sensory: document.getElementById('sectionSensory'),
+            spaces: document.getElementById('sectionSpaces'),
+            anti: document.getElementById('sectionAnti'),
+            coherence: document.getElementById('sectionCoherence'),
+            final: document.getElementById('sectionFinal')
+        };
+
+        const sensoryItems = document.querySelectorAll('.sensory-item');
+        const coherenceRules = document.querySelectorAll('.coherence-rule');
+        const finalText = document.querySelector('.final-text');
+        const finalWhisper = document.querySelector('.final-whisper');
+
+        let particlesActive = true;
+        let particleInterval;
+
+        // Scroll handling
+        function handleScroll() {
+            const scrollY = window.scrollY;
+            const maxScroll = document.body.scrollHeight - window.innerHeight;
+            const scrollPercent = scrollY / maxScroll;
+
+            // Update progress
+            progressFill.style.height = (scrollPercent * 100) + '%';
+
+            // Hide scroll indicator after scrolling
+            if (scrollY > 100) {
+                scrollIndicator.classList.add('hide');
+            } else {
+                scrollIndicator.classList.remove('hide');
+            }
+
+            // Section visibility
+            const vh = window.innerHeight;
+
+            // Feeling section
+            if (scrollY > vh * 0.3) {
+                sections.feeling.classList.add('visible');
+            }
+
+            // Sensory section + items
+            if (scrollY > vh * 1.2) {
+                sections.sensory.classList.add('visible');
+                sensoryItems.forEach((item, i) => {
+                    setTimeout(() => {
+                        item.classList.add('visible');
+                    }, i * 300);
+                });
+            }
+
+            // Spaces section
+            if (scrollY > vh * 2.5) {
+                sections.spaces.classList.add('visible');
+            }
+
+            // Anti section
+            if (scrollY > vh * 3.8) {
+                sections.anti.classList.add('visible');
+            }
+
+            // Coherence section + rules
+            if (scrollY > vh * 4.8) {
+                sections.coherence.classList.add('visible');
+                coherenceRules.forEach((rule, i) => {
+                    setTimeout(() => {
+                        rule.classList.add('visible');
+                    }, i * 500);
+                });
+            }
+
+            // Final section
+            if (scrollY > vh * 5.3) {
+                sections.final.classList.add('visible');
+                finalText.classList.add('visible');
+                setTimeout(() => {
+                    finalWhisper.classList.add('visible');
+                }, 3000);
+            }
+        }
+
+        window.addEventListener('scroll', handleScroll);
+
+        // Particle system
+        function createParticle() {
+            if (!particlesActive) return;
+
+            const particle = document.createElement('div');
+            particle.className = 'ambient-particle';
+            particle.style.left = (Math.random() * 100) + '%';
+            particle.style.top = (Math.random() * 100) + '%';
+
+            const duration = 8 + Math.random() * 12;
+            const driftX = (Math.random() - 0.5) * 100;
+            const driftY = (Math.random() - 0.5) * 100;
+
+            particle.style.animation = `none`;
+            document.body.appendChild(particle);
+
+            // Animate
+            setTimeout(() => {
+                particle.style.transition = `all ${duration}s ease-in-out`;
+                particle.style.opacity = '0.3';
+                particle.style.transform = `translate(${driftX}px, ${driftY}px)`;
+            }, 50);
+
+            setTimeout(() => {
+                particle.style.opacity = '0';
+            }, duration * 500);
+
+            setTimeout(() => {
+                particle.remove();
+            }, duration * 1000);
+        }
+
+        particleInterval = setInterval(createParticle, 2000);
+
+        // Initial particles
+        for (let i = 0; i < 5; i++) {
+            setTimeout(createParticle, i * 500);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyN') {
+                document.body.classList.toggle('night-mode');
+            }
+            if (e.code === 'KeyT') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            if (e.code === 'KeyP') {
+                particlesActive = !particlesActive;
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Stillness detection - hidden message
+        let stillnessTimer;
+        let stillnessMessage;
+
+        function resetStillness() {
+            clearTimeout(stillnessTimer);
+            if (stillnessMessage) {
+                stillnessMessage.remove();
+                stillnessMessage = null;
+            }
+            stillnessTimer = setTimeout(() => {
+                stillnessMessage = document.createElement('p');
+                stillnessMessage.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 0.8rem;
+                    font-style: italic;
+                    color: var(--amber);
+                    opacity: 0;
+                    transition: opacity 3s ease;
+                    pointer-events: none;
+                    z-index: 200;
+                    text-align: center;
+                `;
+                stillnessMessage.textContent = 'this guide is a map, not the territory';
+                document.body.appendChild(stillnessMessage);
+                setTimeout(() => {
+                    if (stillnessMessage) stillnessMessage.style.opacity = '0.5';
+                }, 100);
+                setTimeout(() => {
+                    if (stillnessMessage) stillnessMessage.style.opacity = '0';
+                }, 6000);
+            }, 15000);
+        }
+
+        document.addEventListener('mousemove', resetStillness);
+        document.addEventListener('scroll', resetStillness);
+        resetStillness();
+
+        // Console messages
+        console.log('%c  artistic direction  ', 'font-size: 14px; color: #d4a056; background: #f5f0e6; padding: 8px 12px; border-radius: 4px;');
+        console.log('%c', 'padding: 4px');
+        console.log('%cThis page is itself an example of the aesthetic it describes.', 'font-size: 10px; color: #4a5568; font-style: italic;');
+        console.log('%cScroll slowly. Let things reveal themselves.', 'font-size: 10px; color: #4a5568;');
+        console.log('%c', 'padding: 4px');
+        console.log('%c[n] night mode  [t] top  [p] pause particles', 'font-size: 9px; color: #718096;');
+        console.log('%c', 'padding: 4px');
+        console.log('%ctry being still for 15 seconds', 'font-size: 9px; color: #d4a056; opacity: 0.7;');
+
+        // Initial state
+        handleScroll();
+    </script>
+</body>
+</html>

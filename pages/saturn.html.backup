@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>saturn - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            /* Fear palette */
+            --void-deep: #0a0812;
+            --void: #12101a;
+            --purple-deep: #1a1025;
+            --purple-mid: #2d1f3d;
+            --midnight: #0f1729;
+            --midnight-blue: #1a2744;
+            --star-white: rgba(255, 255, 255, 0.7);
+            --star-dim: rgba(200, 210, 230, 0.3);
+
+            /* Peace palette */
+            --amber-warm: #d4a056;
+            --gold-soft: #f4e4c1;
+            --gold-glow: rgba(244, 228, 193, 0.4);
+
+            /* Mercury */
+            --quicksilver: #c0d8e8;
+            --mercury-bright: #e8f4ff;
+
+            /* Janus */
+            --janus-past: #3d2d4d;
+            --janus-future: #4d3d2d;
+
+            /* Parallax depth multipliers - archaeological layering */
+            --parallax-abyss: 0.008;
+            --parallax-deep: 0.02;
+            --parallax-bg: 0.04;
+            --parallax-mid: 0.07;
+            --parallax-fg: 0.14;
+        }
+
+        body {
+            background: var(--void-deep);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: background 3s ease;
+        }
+
+        /* ===== VIGNETTE - Changes with layer depth ===== */
+        .vignette {
+            position: fixed;
+            inset: -20%;
+            pointer-events: none;
+            z-index: 996;
+            transition: all 3s ease;
+            background: radial-gradient(ellipse 60% 60% at 50% 50%,
+                transparent 0%,
+                transparent 30%,
+                rgba(10, 8, 18, 0.9) 100%);
+        }
+
+        body[data-layer="1"] .vignette {
+            background: radial-gradient(ellipse 50% 50% at 50% 50%,
+                transparent 0%,
+                transparent 20%,
+                rgba(10, 8, 18, 0.95) 100%);
+        }
+
+        body[data-layer="2"] .vignette {
+            background: radial-gradient(ellipse 65% 65% at 50% 50%,
+                transparent 0%,
+                transparent 35%,
+                rgba(26, 16, 37, 0.8) 100%);
+        }
+
+        body[data-layer="3"] .vignette {
+            background: radial-gradient(ellipse 80% 80% at 50% 50%,
+                transparent 0%,
+                transparent 50%,
+                rgba(77, 61, 45, 0.5) 100%);
+        }
+
+        /* ===== LAYER VEILS - Archaeological peeling effect ===== */
+        .layer-veil {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 250;
+            opacity: 0;
+        }
+
+        .layer-veil.peeling {
+            animation: veilPeel 2.5s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes veilPeel {
+            0% {
+                opacity: 0.9;
+                transform: scale(1);
+                filter: blur(0px);
+            }
+            30% {
+                opacity: 0.6;
+                filter: blur(2px);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.15);
+                filter: blur(8px);
+            }
+        }
+
+        .layer-veil-fear {
+            background: radial-gradient(ellipse at center,
+                transparent 10%,
+                rgba(10, 8, 18, 0.95) 70%);
+        }
+
+        .layer-veil-understanding {
+            background: radial-gradient(ellipse at center,
+                transparent 20%,
+                rgba(45, 31, 61, 0.8) 70%);
+        }
+
+        .layer-veil-peace {
+            background: radial-gradient(ellipse at center,
+                transparent 30%,
+                rgba(212, 160, 86, 0.15) 70%);
+        }
+
+        /* ===== DEPTH LAYERS - Parallax containers ===== */
+        .depth-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            will-change: transform;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .depth-abyss {
+            inset: -10%;
+            z-index: -1;
+        }
+
+        .depth-deep {
+            inset: -8%;
+            z-index: 0;
+        }
+
+        .depth-background {
+            inset: -5%;
+            z-index: 1;
+        }
+
+        .depth-midground {
+            z-index: 10;
+        }
+
+        .depth-foreground {
+            inset: -15%;
+            z-index: 45;
+        }
+
+        /* ===== HIDDEN DEPTH ELEMENTS - Emerge at deeper layers ===== */
+        .hidden-depths {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        body[data-layer="2"] .hidden-depths {
+            opacity: 0.2;
+        }
+
+        body[data-layer="3"] .hidden-depths {
+            opacity: 0.5;
+        }
+
+        .hidden-glyph {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--quicksilver);
+            opacity: 0.25;
+            transition: color 3s ease, opacity 3s ease, transform 3s ease;
+        }
+
+        body[data-layer="3"] .hidden-glyph {
+            color: var(--amber-warm);
+            opacity: 0.4;
+        }
+
+        .hidden-glyph.ancient {
+            font-size: 3rem;
+            opacity: 0.15;
+        }
+
+        /* ===== FOREGROUND DUST MOTES ===== */
+        .foreground-dust {
+            position: fixed;
+            inset: -15%;
+            pointer-events: none;
+            z-index: 46;
+            will-change: transform;
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dust-mote-fg {
+            position: absolute;
+            background: rgba(200, 210, 230, 0.2);
+            border-radius: 50%;
+            opacity: 0;
+            animation: dustFloat var(--float-dur, 25s) ease-in-out infinite,
+                       dustFade var(--fade-dur, 10s) ease-in-out infinite;
+            animation-delay: var(--del, 0s);
+        }
+
+        @keyframes dustFloat {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(var(--dx1, 15px), var(--dy1, -20px)); }
+            50% { transform: translate(var(--dx2, -10px), var(--dy2, -35px)); }
+            75% { transform: translate(var(--dx3, 8px), var(--dy3, -15px)); }
+        }
+
+        @keyframes dustFade {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: var(--max-op, 0.35); }
+        }
+
+        body[data-layer="3"] .dust-mote-fg {
+            background: rgba(212, 160, 86, 0.25);
+        }
+
+        /* ===== DEPTH REVEAL LINES - archaeological strata ===== */
+        .strata-lines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        body[data-layer="2"] .strata-lines {
+            opacity: 0.08;
+        }
+
+        body[data-layer="3"] .strata-lines {
+            opacity: 0.15;
+        }
+
+        .stratum {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--quicksilver) 20%,
+                var(--quicksilver) 80%,
+                transparent 100%);
+            opacity: 0.3;
+        }
+
+        body[data-layer="3"] .stratum {
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--amber-warm) 20%,
+                var(--amber-warm) 80%,
+                transparent 100%);
+        }
+
+        .back-link {
+            color: var(--star-dim);
+            opacity: 0.2;
+            z-index: 1000;
+        }
+
+        .back-link:hover {
+            opacity: 0.6;
+            color: var(--star-white);
+        }
+
+        /* Grain overlay */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 999;
+            mix-blend-mode: overlay;
+        }
+
+        /* Stars - layered depths */
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--star-white);
+            border-radius: 50%;
+            opacity: 0;
+            animation: starTwinkle var(--dur, 4s) ease-in-out infinite;
+            animation-delay: var(--del, 0s);
+        }
+
+        .star.distant {
+            width: 1px;
+            height: 1px;
+            filter: blur(0.3px);
+        }
+
+        .star.golden {
+            background: #f4d9a0;
+            box-shadow: 0 0 2px rgba(244, 217, 160, 0.4);
+        }
+
+        .star.blue {
+            background: #c8d8f0;
+            box-shadow: 0 0 2px rgba(200, 216, 240, 0.3);
+        }
+
+        .star.near {
+            width: 3px;
+            height: 3px;
+            box-shadow: 0 0 4px var(--star-white);
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: var(--max-opacity, 0.6); }
+        }
+
+        /* Cosmic dust particles */
+        .cosmic-dust {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .dust-particle {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: rgba(200, 210, 230, 0.15);
+            border-radius: 50%;
+            animation: dustDrift var(--drift-dur, 60s) linear infinite;
+        }
+
+        @keyframes dustDrift {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: var(--dust-opacity, 0.15); }
+            90% { opacity: var(--dust-opacity, 0.15); }
+            100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+        }
+
+        /* Nebula gradients */
+        .nebula {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+            transition: opacity 3s ease;
+        }
+
+        .nebula-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .nebula-1 {
+            background: radial-gradient(ellipse 80% 50% at 20% 80%,
+                rgba(45, 31, 77, 0.3) 0%,
+                transparent 60%);
+        }
+
+        .nebula-2 {
+            background: radial-gradient(ellipse 60% 40% at 85% 20%,
+                rgba(26, 39, 68, 0.25) 0%,
+                transparent 50%);
+        }
+
+        .nebula-3 {
+            background: radial-gradient(ellipse 50% 60% at 50% 50%,
+                rgba(20, 15, 30, 0.2) 0%,
+                transparent 70%);
+            animation: nebulaBreathe 30s ease-in-out infinite;
+        }
+
+        @keyframes nebulaBreathe {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        body[data-layer="2"] .nebula { opacity: 0.5; }
+        body[data-layer="3"] .nebula { opacity: 0.3; }
+
+        body[data-layer="3"] .nebula-1 {
+            background: radial-gradient(ellipse 80% 50% at 20% 80%,
+                rgba(212, 160, 86, 0.15) 0%,
+                transparent 60%);
+        }
+
+        /* Aurora veil */
+        .aurora {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .aurora-band {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(45, 80, 100, 0.03) 30%,
+                rgba(60, 45, 80, 0.02) 60%,
+                transparent 100%);
+            animation: auroraShimmer 20s ease-in-out infinite;
+        }
+
+        .aurora-band:nth-child(2) {
+            animation-delay: -7s;
+            opacity: 0.7;
+        }
+
+        @keyframes auroraShimmer {
+            0%, 100% { transform: translateX(-5%) scaleY(1); opacity: 0.5; }
+            50% { transform: translateX(5%) scaleY(1.1); opacity: 0.8; }
+        }
+
+        body[data-layer="2"] .aurora { opacity: 0.4; }
+        body[data-layer="3"] .aurora { opacity: 0.6; }
+
+        body[data-layer="3"] .aurora-band {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(212, 160, 86, 0.04) 30%,
+                rgba(244, 228, 193, 0.02) 60%,
+                transparent 100%);
+        }
+
+        /* God rays - subtle light emanation at peace layer */
+        .god-rays {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200vmax;
+            height: 200vmax;
+            pointer-events: none;
+            z-index: 8;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .god-ray {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 50%;
+            background: linear-gradient(to top,
+                rgba(244, 228, 193, 0.15) 0%,
+                rgba(244, 228, 193, 0.05) 40%,
+                transparent 100%);
+            transform-origin: bottom center;
+            opacity: 0.4;
+        }
+
+        body[data-layer="3"] .god-rays {
+            opacity: 1;
+            animation: raysRotate 120s linear infinite;
+        }
+
+        @keyframes raysRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Saturn container */
+        .saturn-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmin;
+            height: 100vmin;
+            z-index: 10;
+            perspective: 1000px;
+        }
+
+        /* Saturn core */
+        .saturn-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--purple-mid) 0%,
+                var(--void-deep) 60%,
+                var(--void) 100%);
+            box-shadow:
+                0 0 60px rgba(26, 16, 37, 0.8),
+                inset 0 0 40px rgba(0, 0, 0, 0.6);
+            transition: all 3s ease, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 20;
+            cursor: pointer;
+        }
+
+        .saturn-core.breathing {
+            animation: saturnBreathe 8s ease-in-out infinite;
+        }
+
+        @keyframes saturnBreathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.02); }
+        }
+
+        .saturn-core.held {
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow:
+                0 0 100px rgba(212, 160, 86, 0.4),
+                inset 0 0 60px rgba(212, 160, 86, 0.2);
+        }
+
+        /* Core inner glow for deep stillness */
+        .saturn-core::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                rgba(212, 160, 86, 0) 0%,
+                rgba(212, 160, 86, 0) 100%);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        .saturn-core.deep-peace::before {
+            opacity: 1;
+            background: radial-gradient(circle at center,
+                rgba(212, 160, 86, 0.3) 0%,
+                rgba(212, 160, 86, 0) 70%);
+            animation: innerPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes innerPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .saturn-core::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 70% 70%,
+                transparent 40%,
+                rgba(0, 0, 0, 0.4) 100%);
+        }
+
+        /* Rings container */
+        .rings {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(75deg);
+            transform-style: preserve-3d;
+            z-index: 15;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
+        }
+
+        .rings.dragging {
+            cursor: grabbing;
+            transition: none;
+        }
+
+        .rings.tilted {
+            transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Individual rings - with texture and density variations */
+        .ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 1px solid var(--star-dim);
+            transform: translate(-50%, -50%);
+            opacity: 0.3;
+            transition: all 2s ease;
+            pointer-events: none;
+        }
+
+        /* Ring density classes - some rings are denser, some sparser */
+        .ring-dense {
+            border-width: 3px;
+            border-style: double;
+        }
+
+        .ring-sparse {
+            border-style: dashed;
+            border-width: 1px;
+        }
+
+        .ring-shimmer {
+            animation: ringRotate 60s linear infinite, ringShimmer 8s ease-in-out infinite;
+        }
+
+        @keyframes ringShimmer {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Individual ring configurations with gaps and density */
+        .ring-1 {
+            width: 200px; height: 200px;
+            animation: ringRotate 60s linear infinite;
+            border-width: 2px;
+        }
+        .ring-2 {
+            width: 240px; height: 240px;
+            animation: ringRotate 70s linear infinite reverse;
+            border-width: 1px;
+            border-style: dashed;
+            opacity: 0.15; /* Cassini division - gap */
+        }
+        .ring-3 {
+            width: 280px; height: 280px;
+            animation: ringRotate 80s linear infinite, ringShimmer 12s ease-in-out infinite;
+            border-width: 4px;
+            border-style: double;
+        }
+        .ring-4 {
+            width: 340px; height: 340px;
+            animation: ringRotate 100s linear infinite reverse;
+            border-width: 1.5px;
+        }
+        .ring-5 {
+            width: 400px; height: 400px;
+            animation: ringRotate 120s linear infinite, ringShimmer 15s ease-in-out infinite;
+            animation-delay: 0s, -5s;
+            border-width: 3px;
+        }
+        .ring-6 {
+            width: 450px; height: 450px;
+            animation: ringRotate 140s linear infinite reverse;
+            border-width: 1px;
+            opacity: 0.2; /* Encke gap */
+        }
+        .ring-7 {
+            width: 520px; height: 520px;
+            animation: ringRotate 160s linear infinite, ringShimmer 18s ease-in-out infinite;
+            animation-delay: 0s, -8s;
+            border-width: 2px;
+        }
+
+        /* Additional outer rings for depth */
+        .ring-8 {
+            width: 580px; height: 580px;
+            animation: ringRotate 180s linear infinite reverse;
+            border-width: 1px;
+            opacity: 0.15;
+        }
+
+        .ring-9 {
+            width: 640px; height: 640px;
+            animation: ringRotate 200s linear infinite;
+            border-width: 1px;
+            border-style: dotted;
+            opacity: 0.1;
+        }
+
+        @keyframes ringRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Ring glow at peace layer */
+        body[data-layer="3"] .ring {
+            box-shadow: 0 0 8px rgba(212, 160, 86, 0.2);
+        }
+
+        body[data-layer="3"] .ring-3,
+        body[data-layer="3"] .ring-5,
+        body[data-layer="3"] .ring-7 {
+            box-shadow: 0 0 12px rgba(244, 228, 193, 0.3);
+        }
+
+        /* Orbiting text fragments */
+        .orbit-text {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--star-dim);
+            white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 1.5s ease;
+            opacity: 0.4;
+            text-shadow: 0 0 10px var(--void);
+        }
+
+        .orbit-text:hover {
+            opacity: 0.8;
+            color: var(--star-white);
+        }
+
+        .orbit-text.transformed {
+            color: var(--amber-warm);
+            opacity: 0.7;
+        }
+
+        .orbit-text.shed {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+
+        /* Ring fragments (clickable debris) */
+        .ring-fragment {
+            position: absolute;
+            width: 8px;
+            height: 3px;
+            background: var(--star-dim);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 1s ease;
+            opacity: 0.5;
+        }
+
+        .ring-fragment:hover {
+            opacity: 1;
+            background: var(--star-white);
+            transform: scale(1.5);
+        }
+
+        .ring-fragment.transformed {
+            background: var(--amber-warm);
+            box-shadow: 0 0 8px var(--gold-glow);
+        }
+
+        .ring-fragment.shed {
+            opacity: 0;
+            transform: translateY(-20px) scale(0);
+        }
+
+        /* Layer slider */
+        .layer-slider-container {
+            position: fixed;
+            right: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .layer-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 300px;
+            height: 4px;
+            background: linear-gradient(to right,
+                var(--void-deep) 0%,
+                var(--purple-mid) 50%,
+                var(--gold-soft) 100%);
+            border-radius: 2px;
+            outline: none;
+            transform: rotate(-90deg);
+            transform-origin: center center;
+            cursor: grab;
+            opacity: 0.6;
+            transition: opacity 0.5s ease;
+        }
+
+        .layer-slider:hover {
+            opacity: 1;
+        }
+
+        .layer-slider:active {
+            cursor: grabbing;
+        }
+
+        .layer-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--star-white) 0%,
+                var(--slate) 100%);
+            cursor: grab;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .layer-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .layer-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--star-white) 0%,
+                var(--slate) 100%);
+            cursor: grab;
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .layer-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--star-dim);
+            margin-top: 1rem;
+            opacity: 0.4;
+            transition: all 1s ease;
+        }
+
+        /* Layer states */
+        body[data-layer="1"] { background: var(--void-deep); }
+        body[data-layer="2"] { background: var(--purple-deep); }
+        body[data-layer="3"] { background: linear-gradient(135deg, var(--purple-mid) 0%, var(--midnight-blue) 50%, var(--janus-future) 100%); }
+
+        body[data-layer="2"] .saturn-core {
+            background: radial-gradient(circle at 30% 30%,
+                var(--purple-mid) 0%,
+                var(--midnight-blue) 60%,
+                var(--void) 100%);
+            box-shadow: 0 0 80px rgba(45, 31, 61, 0.6);
+        }
+
+        body[data-layer="3"] .saturn-core {
+            background: radial-gradient(circle at 30% 30%,
+                var(--gold-soft) 0%,
+                var(--amber-warm) 40%,
+                var(--purple-mid) 100%);
+            box-shadow:
+                0 0 100px var(--gold-glow),
+                0 0 200px rgba(212, 160, 86, 0.2);
+        }
+
+        body[data-layer="2"] .ring { opacity: 0.5; border-color: var(--quicksilver); }
+        body[data-layer="3"] .ring { opacity: 0.7; border-color: var(--amber-warm); }
+
+        body[data-layer="2"] .layer-label { color: var(--quicksilver); }
+        body[data-layer="3"] .layer-label { color: var(--amber-warm); }
+
+        /* Mercury messenger */
+        .mercury {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--mercury-bright) 0%,
+                var(--quicksilver) 100%);
+            box-shadow:
+                0 0 20px var(--quicksilver),
+                0 0 40px rgba(192, 216, 232, 0.4);
+            pointer-events: none;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .mercury.active {
+            opacity: 1;
+            animation: mercuryDart 3s ease-in-out forwards;
+        }
+
+        @keyframes mercuryDart {
+            0% {
+                left: -20px;
+                top: 30%;
+                transform: scale(0.5);
+            }
+            20% {
+                left: 30%;
+                top: 60%;
+                transform: scale(1);
+            }
+            40% {
+                left: 50%;
+                top: 40%;
+                transform: scale(1.2);
+            }
+            60% {
+                left: 70%;
+                top: 55%;
+                transform: scale(0.8);
+            }
+            80% {
+                left: 85%;
+                top: 35%;
+                transform: scale(1);
+            }
+            100% {
+                left: calc(100% + 20px);
+                top: 50%;
+                transform: scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        .mercury-trail {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--quicksilver);
+            pointer-events: none;
+            z-index: 499;
+            opacity: 0.6;
+            animation: trailFade 1s ease forwards;
+        }
+
+        @keyframes trailFade {
+            to { opacity: 0; transform: scale(0); }
+        }
+
+        .mercury-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--quicksilver);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 501;
+            text-shadow: 0 0 20px var(--quicksilver);
+        }
+
+        .mercury-message.visible {
+            animation: mercuryMessageAppear 3s ease forwards;
+        }
+
+        @keyframes mercuryMessageAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-20px); }
+        }
+
+        /* Janus threshold guardian */
+        .janus {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 400;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .janus.visible {
+            opacity: 1;
+        }
+
+        .janus-face {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            border-radius: 50% 50% 45% 45%;
+            transition: all 1s ease;
+        }
+
+        .janus-past {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%) rotateY(30deg);
+            background: linear-gradient(135deg, var(--janus-past) 0%, var(--void) 100%);
+            border: 1px solid rgba(61, 45, 77, 0.5);
+        }
+
+        .janus-future {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%) rotateY(-30deg);
+            background: linear-gradient(135deg, var(--janus-future) 0%, var(--amber-warm) 100%);
+            border: 1px solid rgba(212, 160, 86, 0.3);
+        }
+
+        .janus-eye {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            top: 35%;
+        }
+
+        .janus-past .janus-eye {
+            background: var(--star-dim);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .janus-future .janus-eye {
+            background: var(--amber-warm);
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .janus-door {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 80px;
+            border: 1px solid var(--star-dim);
+            border-radius: 15px 15px 0 0;
+            background: linear-gradient(180deg,
+                var(--void) 0%,
+                var(--purple-deep) 50%,
+                var(--void-deep) 100%);
+        }
+
+        .janus-blessing {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--star-dim);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 1s ease 0.5s;
+        }
+
+        .janus.visible .janus-blessing {
+            opacity: 0.6;
+        }
+
+        /* Central truth text */
+        .truth {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--star-dim);
+            text-align: center;
+            max-width: 60%;
+            opacity: 0;
+            transition: all 2s ease;
+            z-index: 100;
+            line-height: 1.8;
+        }
+
+        body[data-layer="1"] .truth.visible {
+            opacity: 0.4;
+        }
+
+        body[data-layer="2"] .truth.visible {
+            opacity: 0.6;
+            color: var(--quicksilver);
+        }
+
+        body[data-layer="3"] .truth.visible {
+            opacity: 0.8;
+            color: var(--gold-soft);
+        }
+
+        /* Sound toggle */
+        .sound-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--star-dim);
+            background: none;
+            border: 1px solid var(--star-dim);
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 100;
+            letter-spacing: 0.1em;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.8;
+            border-color: var(--star-white);
+        }
+
+        body:hover .sound-toggle {
+            opacity: 0.3;
+        }
+
+        .sound-toggle.active {
+            color: var(--amber-warm);
+            border-color: var(--amber-warm);
+        }
+
+        /* Keyboard hints */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--star-dim);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            z-index: 100;
+        }
+
+        .keyboard-hint.visible {
+            opacity: 0.25;
+        }
+
+        .keyboard-hint kbd {
+            display: inline-block;
+            padding: 0.1rem 0.2rem;
+            border: 1px solid var(--star-dim);
+            border-radius: 2px;
+            margin-right: 0.15rem;
+            font-size: 0.45rem;
+        }
+
+        /* Layer indicator */
+        .layer-indicator {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--star-dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            opacity: 0.3;
+            transition: all 1s ease;
+            z-index: 100;
+        }
+
+        body[data-layer="2"] .layer-indicator { color: var(--quicksilver); }
+        body[data-layer="3"] .layer-indicator { color: var(--amber-warm); }
+
+        /* Stillness progress */
+        .stillness-progress {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: linear-gradient(to right, var(--star-dim), var(--amber-warm));
+            transition: width 0.5s linear;
+            z-index: 100;
+            opacity: 0.3;
+        }
+
+        /* Deep stillness reward - appears after 30+ seconds */
+        .deep-stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--gold-soft);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 700;
+            max-width: 70%;
+            line-height: 2.2;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 30px var(--gold-glow);
+        }
+
+        .deep-stillness-message.visible {
+            animation: deepStillnessReveal 8s ease forwards;
+        }
+
+        @keyframes deepStillnessReveal {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.02); }
+        }
+
+        /* Zoom overlay for scroll interaction */
+        .zoom-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--void-deep);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 800;
+            transition: opacity 0.5s ease;
+        }
+
+        .zoom-core-vision {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmin;
+            height: 100vmin;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                var(--void) 0%,
+                var(--purple-deep) 30%,
+                var(--purple-mid) 60%,
+                var(--void-deep) 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 801;
+            transition: opacity 1s ease;
+        }
+
+        .zoom-core-vision.visible {
+            opacity: 1;
+        }
+
+        .zoom-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--amber-warm);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 802;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
+        /* Double-click secret reveal */
+        .secret-glyph {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--amber-warm);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 600;
+            text-shadow: 0 0 20px var(--gold-glow);
+            animation: glyphAppear 3s ease forwards;
+        }
+
+        @keyframes glyphAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(-10deg); }
+            20% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+            40% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2) translateY(-30px); }
+        }
+
+        /* Cursor proximity glow on Saturn */
+        .proximity-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                rgba(212, 160, 86, 0.1) 0%,
+                transparent 70%);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.8s ease;
+        }
+
+        /* Touch ripple effect */
+        .touch-ripple {
+            position: fixed;
+            border-radius: 50%;
+            border: 1px solid var(--amber-warm);
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+            animation: touchRipple 1.5s ease-out forwards;
+        }
+
+        @keyframes touchRipple {
+            0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+        }
+
+        /* Star interaction - stars respond to nearby cursor */
+        .star.awakened {
+            animation: starAwaken 2s ease forwards !important;
+        }
+
+        @keyframes starAwaken {
+            0% { opacity: 0.3; }
+            30% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: var(--max-opacity, 0.6); transform: scale(1); }
+        }
+
+        /* Constellation line between awakened stars */
+        .constellation-line {
+            position: fixed;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--star-dim), transparent);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+            transform-origin: left center;
+            animation: constellationFade 4s ease forwards;
+        }
+
+        @keyframes constellationFade {
+            0% { opacity: 0; }
+            20% { opacity: 0.3; }
+            80% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        /* Triple-click whisper - a deeper secret */
+        .deep-whisper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--gold-soft);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 700;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 40px var(--gold-glow);
+            animation: deepWhisperAppear 5s ease forwards;
+        }
+
+        @keyframes deepWhisperAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); filter: blur(4px); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        /* Long press anywhere reveals transient pattern */
+        .transient-pattern {
+            position: fixed;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .transient-ring {
+            position: absolute;
+            border: 1px solid var(--amber-warm);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            animation: transientRingExpand 3s ease-out forwards;
+        }
+
+        @keyframes transientRingExpand {
+            0% { opacity: 0; width: 20px; height: 20px; }
+            20% { opacity: 0.4; }
+            100% { opacity: 0; width: 200px; height: 200px; }
+        }
+
+        /* Return cycle message */
+        .cycle-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--gold-soft);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 600;
+            max-width: 80%;
+            line-height: 2;
+        }
+
+        .cycle-message.visible {
+            animation: cycleAppear 6s ease forwards;
+        }
+
+        @keyframes cycleAppear {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .layer-slider-container {
+                right: 1rem;
+                height: 200px;
+            }
+            .layer-slider {
+                width: 200px;
+            }
+            .saturn-core {
+                width: 80px;
+                height: 80px;
+            }
+            .ring-1 { width: 130px; height: 130px; }
+            .ring-2 { width: 155px; height: 155px; }
+            .ring-3 { width: 180px; height: 180px; }
+            .ring-4 { width: 215px; height: 215px; }
+            .ring-5 { width: 250px; height: 250px; }
+            .ring-6 { width: 280px; height: 280px; }
+            .ring-7 { width: 320px; height: 320px; }
+            .ring-8 { width: 360px; height: 360px; }
+            .ring-9 { width: 400px; height: 400px; }
+            .keyboard-hint { display: none; }
+            .god-rays { display: none; } /* Hide god rays on small screens for performance */
+        }
+    </style>
+</head>
+<body data-layer="1">
+    <a href="../index.html" class="back-link">return</a>
+
+    <!-- Depth system layers -->
+    <div class="vignette" id="vignette"></div>
+
+    <!-- Layer transition veils -->
+    <div class="layer-veil layer-veil-fear" id="veilFear"></div>
+    <div class="layer-veil layer-veil-understanding" id="veilUnderstanding"></div>
+    <div class="layer-veil layer-veil-peace" id="veilPeace"></div>
+
+    <!-- Hidden depth elements - emerge at deeper layers -->
+    <div class="hidden-depths" id="hiddenDepths"></div>
+
+    <!-- Archaeological strata lines -->
+    <div class="strata-lines" id="strataLines"></div>
+
+    <!-- Foreground dust for parallax -->
+    <div class="foreground-dust" id="foregroundDust"></div>
+
+    <!-- Atmospheric layers -->
+    <div class="nebula" id="nebula">
+        <div class="nebula-layer nebula-1"></div>
+        <div class="nebula-layer nebula-2"></div>
+        <div class="nebula-layer nebula-3"></div>
+    </div>
+
+    <div class="aurora" id="aurora">
+        <div class="aurora-band"></div>
+        <div class="aurora-band"></div>
+    </div>
+
+    <div class="cosmic-dust" id="cosmicDust"></div>
+
+    <div class="grain"></div>
+    <div class="stars" id="stars"></div>
+
+    <!-- God rays for peace layer -->
+    <div class="god-rays" id="godRays"></div>
+
+    <div class="saturn-container">
+        <div class="saturn-core" id="saturnCore"></div>
+        <div class="rings" id="rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="ring ring-4"></div>
+            <div class="ring ring-5"></div>
+            <div class="ring ring-6"></div>
+            <div class="ring ring-7"></div>
+            <div class="ring ring-8"></div>
+            <div class="ring ring-9"></div>
+        </div>
+    </div>
+
+    <div class="layer-slider-container">
+        <input type="range" class="layer-slider" id="layerSlider" min="0" max="100" value="0">
+        <div class="layer-label" id="layerLabel">fear</div>
+    </div>
+
+    <div class="layer-indicator" id="layerIndicator">layer i: fear</div>
+
+    <div class="truth" id="truth"></div>
+
+    <div class="mercury" id="mercury"></div>
+    <div class="mercury-message" id="mercuryMessage"></div>
+
+    <div class="janus" id="janus">
+        <div class="janus-face janus-past">
+            <div class="janus-eye"></div>
+        </div>
+        <div class="janus-door"></div>
+        <div class="janus-face janus-future">
+            <div class="janus-eye"></div>
+        </div>
+        <div class="janus-blessing" id="janusBlessing">you may pass</div>
+    </div>
+
+    <div class="stillness-progress" id="stillnessProgress"></div>
+
+    <div class="deep-stillness-message" id="deepStillnessMessage">
+        in the long silence, saturn speaks:<br><br>
+        "you have learned what the rings already knew.<br>
+        time is not the enemy.<br>
+        time is the embrace."
+    </div>
+
+    <div class="proximity-glow" id="proximityGlow"></div>
+
+    <div class="zoom-overlay" id="zoomOverlay"></div>
+    <div class="zoom-core-vision" id="zoomCoreVision"></div>
+    <div class="zoom-text" id="zoomText"></div>
+
+    <div class="cycle-message" id="cycleMessage">
+        saturn has not changed.<br>
+        you have.
+    </div>
+
+    <button class="sound-toggle" id="soundToggle">sound</button>
+
+    <div class="keyboard-hint" id="keyboardHint">
+        <kbd>m</kbd> mercury
+        <kbd>j</kbd> janus
+        <kbd>s</kbd> sound
+        <kbd>r</kbd> return
+        <kbd>space</kbd> advance
+        <kbd>arrows</kbd> navigate
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ===== STATE =====
+        let currentLayer = 1;
+        let stillnessTimer = 0;
+        let lastActivity = Date.now();
+        let soundEnabled = false;
+        let audioContext = null;
+        let oscillators = [];
+        let hasCompletedCycle = false;
+        let transformedFragments = 0;
+
+        // New interactive state
+        let deepStillnessReached = false;
+        let isHoldingCore = false;
+        let holdStartTime = 0;
+        let zoomLevel = 0;
+        let isDraggingRings = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let ringTiltX = 75;
+        let ringTiltY = 0;
+        let lastTouchTime = 0;
+        let touchHoldTimer = null;
+
+        // ===== DOM CACHE =====
+        const $ = id => document.getElementById(id);
+        const body = document.body;
+        const stars = $('stars');
+        const layerSlider = $('layerSlider');
+        const layerLabel = $('layerLabel');
+        const layerIndicator = $('layerIndicator');
+        const truth = $('truth');
+        const mercury = $('mercury');
+        const mercuryMessage = $('mercuryMessage');
+        const janus = $('janus');
+        const janusBlessing = $('janusBlessing');
+        const stillnessProgress = $('stillnessProgress');
+        const cycleMessage = $('cycleMessage');
+        const soundToggle = $('soundToggle');
+        const keyboardHint = $('keyboardHint');
+        const saturnCore = $('saturnCore');
+        const rings = $('rings');
+        const deepStillnessMessage = $('deepStillnessMessage');
+        const proximityGlow = $('proximityGlow');
+        const zoomOverlay = $('zoomOverlay');
+        const zoomCoreVision = $('zoomCoreVision');
+        const zoomText = $('zoomText');
+
+        // ===== TEXT CONTENT =====
+        const FEAR_TEXTS = [
+            'the vast indifference',
+            'what orbits in darkness',
+            'time devours',
+            'you are so small',
+            'the scythe waits',
+            'cycles end',
+            'cold rings of silence',
+            'forgotten by stars'
+        ];
+
+        const UNDERSTANDING_TEXTS = [
+            'limits protect',
+            'the severity has meaning',
+            'what ends also begins',
+            'structure is kindness',
+            'boundaries embrace',
+            'the rings hold you',
+            'time teaches',
+            'cycles continue'
+        ];
+
+        const PEACE_TEXTS = [
+            'lead becomes gold',
+            'rest is permitted',
+            'saturday\'s gift',
+            'the embrace of rings',
+            'transformation complete',
+            'you are held',
+            'beginning again',
+            'the kind father'
+        ];
+
+        const TRUTHS = {
+            1: 'the weight of time presses down. in saturn\'s shadow, mortality whispers.',
+            2: 'but look closer. the limits exist not to harm, but to hold. what seemed oppressive protects.',
+            3: 'and now you see. the rings are not a cage but an embrace. saturn was always kind. rest here.'
+        };
+
+        const MERCURY_MESSAGES = [
+            'transformation',
+            'the message arrives',
+            'lead to gold',
+            'quicksilver wisdom',
+            'the trickster smiles'
+        ];
+
+        const JANUS_BLESSINGS = [
+            'you may pass',
+            'the threshold opens',
+            'past and future meet',
+            'both doors are one',
+            'blessed crossing'
+        ];
+
+        // New content for enhanced interactions
+        const ZOOM_VISIONS = [
+            'at the center, there is no center',
+            'the core holds what you brought',
+            'look closer. look away. both are seeing.',
+            'inside saturn: another saturn',
+            'the void remembers being whole'
+        ];
+
+        const SECRET_GLYPHS = ['♄', '☿', '☽', '⚶', '⚷', '✧', '⊛', '◌'];
+
+        const DEEP_STILLNESS_MESSAGES = [
+            'in the long silence, saturn speaks:<br><br>"you have learned what the rings already knew.<br>time is not the enemy.<br>time is the embrace."',
+            'thirty seconds of nothing.<br><br>and in that nothing,<br>everything that needed to be said<br>was said.',
+            'the rings have noticed your patience.<br><br>they remember you now.<br>they will remember you<br>when you forget yourself.',
+            'saturn does not reward stillness.<br><br>stillness is the reward.<br>you already have it.'
+        ];
+
+        const HOLD_REVELATIONS = [
+            'hold longer. the planet listens.',
+            'your warmth reaches the core.',
+            'gravity is just attention sustained.',
+            'the rings slow for those who stay.'
+        ];
+
+        const INTERACTION_TONES = {
+            click: { freq: 220, duration: 0.15, type: 'sine' },
+            hold: { freq: 110, duration: 0.5, type: 'triangle' },
+            release: { freq: 330, duration: 0.2, type: 'sine' },
+            zoom: { freq: 165, duration: 0.3, type: 'sine' },
+            secret: { freq: 440, duration: 0.4, type: 'sine' }
+        };
+
+        // ===== STARS - Layered ethereal star field =====
+        function createStars() {
+            const frag = document.createDocumentFragment();
+
+            // Distant background stars - small, dim, slow twinkle
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'star distant';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--dur', `${6 + Math.random() * 6}s`);
+                star.style.setProperty('--del', `${Math.random() * 6}s`);
+                star.style.setProperty('--max-opacity', `${0.15 + Math.random() * 0.25}`);
+                frag.appendChild(star);
+            }
+
+            // Mid-layer stars - varied colors (golden and blue-white)
+            for (let i = 0; i < 40; i++) {
+                const star = document.createElement('div');
+                const colorClass = Math.random() < 0.3 ? 'golden' : (Math.random() < 0.5 ? 'blue' : '');
+                star.className = `star ${colorClass}`.trim();
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--dur', `${4 + Math.random() * 4}s`);
+                star.style.setProperty('--del', `${Math.random() * 4}s`);
+                star.style.setProperty('--max-opacity', `${0.3 + Math.random() * 0.4}`);
+                const size = 1.5 + Math.random() * 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                frag.appendChild(star);
+            }
+
+            // Near foreground stars - brighter, larger, with glow
+            for (let i = 0; i < 15; i++) {
+                const star = document.createElement('div');
+                const colorClass = Math.random() < 0.4 ? 'golden' : (Math.random() < 0.5 ? 'blue' : '');
+                star.className = `star near ${colorClass}`.trim();
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--dur', `${3 + Math.random() * 3}s`);
+                star.style.setProperty('--del', `${Math.random() * 3}s`);
+                star.style.setProperty('--max-opacity', `${0.5 + Math.random() * 0.3}`);
+                frag.appendChild(star);
+            }
+
+            stars.appendChild(frag);
+        }
+
+        // ===== COSMIC DUST =====
+        function createCosmicDust() {
+            const cosmicDust = $('cosmicDust');
+            const frag = document.createDocumentFragment();
+
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'dust-particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${100 + Math.random() * 20}%`; // Start below viewport
+                particle.style.setProperty('--drift-dur', `${40 + Math.random() * 60}s`);
+                particle.style.setProperty('--dust-opacity', `${0.08 + Math.random() * 0.12}`);
+                particle.style.animationDelay = `${-Math.random() * 60}s`; // Stagger start times
+                frag.appendChild(particle);
+            }
+
+            cosmicDust.appendChild(frag);
+        }
+
+        // ===== GOD RAYS =====
+        function createGodRays() {
+            const godRays = $('godRays');
+            const rayCount = 12;
+            const frag = document.createDocumentFragment();
+
+            for (let i = 0; i < rayCount; i++) {
+                const ray = document.createElement('div');
+                ray.className = 'god-ray';
+                const angle = (360 / rayCount) * i;
+                ray.style.transform = `rotate(${angle}deg)`;
+                // Vary the opacity slightly for organic feel
+                ray.style.opacity = 0.3 + Math.random() * 0.2;
+                frag.appendChild(ray);
+            }
+
+            godRays.appendChild(frag);
+        }
+
+        // ===== ORBITING ELEMENTS =====
+        const orbitTexts = [];
+        const ringFragments = [];
+
+        function createOrbitingElements() {
+            // Create orbiting text
+            FEAR_TEXTS.forEach((text, i) => {
+                const el = document.createElement('div');
+                el.className = 'orbit-text';
+                el.textContent = text;
+                el.dataset.fear = text;
+                el.dataset.understanding = UNDERSTANDING_TEXTS[i] || UNDERSTANDING_TEXTS[0];
+                el.dataset.peace = PEACE_TEXTS[i] || PEACE_TEXTS[0];
+                el.dataset.orbit = 150 + i * 50;
+                el.dataset.speed = 0.0002 + i * 0.00005;
+                el.dataset.offset = i * (Math.PI / 4);
+                document.querySelector('.saturn-container').appendChild(el);
+                orbitTexts.push(el);
+
+                el.addEventListener('click', () => {
+                    if (!el.classList.contains('shed')) {
+                        el.classList.add('transformed');
+                        transformedFragments++;
+                        checkTransformations();
+                    }
+                });
+            });
+
+            // Create ring fragments
+            for (let i = 0; i < 30; i++) {
+                const frag = document.createElement('div');
+                frag.className = 'ring-fragment';
+                frag.dataset.orbit = 180 + Math.random() * 300;
+                frag.dataset.speed = 0.0003 + Math.random() * 0.0003;
+                frag.dataset.offset = Math.random() * Math.PI * 2;
+                document.querySelector('.saturn-container').appendChild(frag);
+                ringFragments.push(frag);
+
+                frag.addEventListener('click', () => {
+                    if (!frag.classList.contains('shed')) {
+                        if (currentLayer < 3) {
+                            frag.classList.add('transformed');
+                        } else {
+                            frag.classList.add('shed');
+                        }
+                        transformedFragments++;
+                        checkTransformations();
+                    }
+                });
+            }
+        }
+
+        function animateOrbits() {
+            const time = Date.now();
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            orbitTexts.forEach(el => {
+                const orbit = parseFloat(el.dataset.orbit);
+                const speed = parseFloat(el.dataset.speed);
+                const offset = parseFloat(el.dataset.offset);
+                const angle = time * speed + offset;
+
+                const x = centerX + Math.cos(angle) * orbit - el.offsetWidth / 2;
+                const y = centerY + Math.sin(angle) * orbit * 0.3 - el.offsetHeight / 2;
+
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+
+                // Update text based on layer
+                if (currentLayer === 1) {
+                    el.textContent = el.dataset.fear;
+                } else if (currentLayer === 2) {
+                    el.textContent = el.dataset.understanding;
+                } else {
+                    el.textContent = el.dataset.peace;
+                }
+            });
+
+            ringFragments.forEach(frag => {
+                const orbit = parseFloat(frag.dataset.orbit);
+                const speed = parseFloat(frag.dataset.speed);
+                const offset = parseFloat(frag.dataset.offset);
+                const angle = time * speed + offset;
+
+                const x = centerX + Math.cos(angle) * orbit - 4;
+                const y = centerY + Math.sin(angle) * orbit * 0.2 - 1.5;
+
+                frag.style.left = `${x}px`;
+                frag.style.top = `${y}px`;
+                frag.style.transform = `rotate(${angle}rad)`;
+            });
+
+            requestAnimationFrame(animateOrbits);
+        }
+
+        // ===== LAYER CONTROL =====
+        function setLayer(layer) {
+            const prevLayer = currentLayer;
+            currentLayer = Math.max(1, Math.min(3, layer));
+            body.dataset.layer = currentLayer;
+
+            // Update slider
+            layerSlider.value = (currentLayer - 1) * 50;
+
+            // Update labels
+            const labels = ['fear', 'understanding', 'peace'];
+            const indicators = ['layer i: fear', 'layer ii: understanding', 'layer iii: peace'];
+            layerLabel.textContent = labels[currentLayer - 1];
+            layerIndicator.textContent = indicators[currentLayer - 1];
+
+            // Update truth
+            truth.textContent = TRUTHS[currentLayer];
+            truth.classList.add('visible');
+
+            // Trigger Janus on layer change
+            if (prevLayer !== currentLayer) {
+                showJanus();
+                updateSound();
+            }
+
+            // Check for cycle completion
+            if (currentLayer === 3 && !hasCompletedCycle) {
+                setTimeout(() => {
+                    hasCompletedCycle = true;
+                }, 5000);
+            }
+        }
+
+        layerSlider.addEventListener('input', e => {
+            resetActivity();
+            const value = parseInt(e.target.value);
+            if (value < 33) {
+                setLayer(1);
+            } else if (value < 66) {
+                setLayer(2);
+            } else {
+                setLayer(3);
+            }
+        });
+
+        // ===== MERCURY =====
+        function summonMercury() {
+            mercury.classList.remove('active');
+            void mercury.offsetWidth; // Reflow
+            mercury.classList.add('active');
+
+            // Mercury message
+            mercuryMessage.textContent = MERCURY_MESSAGES[Math.floor(Math.random() * MERCURY_MESSAGES.length)];
+            mercuryMessage.classList.add('visible');
+
+            // Create trails
+            let trailCount = 0;
+            const trailInterval = setInterval(() => {
+                if (trailCount >= 15) {
+                    clearInterval(trailInterval);
+                    return;
+                }
+                const trail = document.createElement('div');
+                trail.className = 'mercury-trail';
+                trail.style.left = `${10 + trailCount * 6}%`;
+                trail.style.top = `${30 + Math.sin(trailCount) * 20}%`;
+                document.body.appendChild(trail);
+                setTimeout(() => trail.remove(), 1000);
+                trailCount++;
+            }, 150);
+
+            // Mercury transforms things
+            setTimeout(() => {
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            }, 1500);
+
+            setTimeout(() => {
+                mercury.classList.remove('active');
+                mercuryMessage.classList.remove('visible');
+            }, 3000);
+        }
+
+        // ===== JANUS =====
+        function showJanus() {
+            janusBlessing.textContent = JANUS_BLESSINGS[Math.floor(Math.random() * JANUS_BLESSINGS.length)];
+            janus.classList.add('visible');
+            setTimeout(() => {
+                janus.classList.remove('visible');
+            }, 3000);
+        }
+
+        // ===== STILLNESS =====
+        function resetActivity() {
+            lastActivity = Date.now();
+            stillnessTimer = 0;
+            stillnessProgress.style.width = '0%';
+            deepStillnessReached = false;
+            saturnCore.classList.remove('deep-peace');
+        }
+
+        function checkStillness() {
+            const elapsed = (Date.now() - lastActivity) / 1000;
+            stillnessTimer = elapsed;
+
+            // Progress bar - now tracks up to 30 seconds for deep stillness
+            const progress = Math.min(elapsed / 30, 1) * 100;
+            stillnessProgress.style.width = `${progress}%`;
+
+            // Stillness reveals after 15-20 seconds
+            if (elapsed >= 15 && elapsed < 15.5) {
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            }
+
+            // Deep stillness reward at 30+ seconds
+            if (elapsed >= 30 && !deepStillnessReached) {
+                deepStillnessReached = true;
+                triggerDeepStillness();
+            }
+
+            // Saturn starts breathing after 5 seconds of stillness
+            if (elapsed >= 5 && !saturnCore.classList.contains('breathing')) {
+                saturnCore.classList.add('breathing');
+            } else if (elapsed < 5 && saturnCore.classList.contains('breathing')) {
+                saturnCore.classList.remove('breathing');
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function triggerDeepStillness() {
+            // Saturn core achieves deep peace
+            saturnCore.classList.add('deep-peace');
+
+            // Show the deep stillness message
+            const message = DEEP_STILLNESS_MESSAGES[Math.floor(Math.random() * DEEP_STILLNESS_MESSAGES.length)];
+            deepStillnessMessage.innerHTML = message;
+            deepStillnessMessage.classList.add('visible');
+
+            // Play a special tone if sound is enabled
+            if (soundEnabled && audioContext) {
+                playInteractionTone('secret');
+            }
+
+            setTimeout(() => {
+                deepStillnessMessage.classList.remove('visible');
+            }, 8000);
+        }
+
+        // ===== TRANSFORMATIONS =====
+        function checkTransformations() {
+            // After enough transformations, advance layer
+            if (transformedFragments >= 5 && currentLayer === 1) {
+                setLayer(2);
+            } else if (transformedFragments >= 12 && currentLayer === 2) {
+                setLayer(3);
+            }
+        }
+
+        // ===== CYCLE RETURN =====
+        function returnToFear() {
+            if (hasCompletedCycle) {
+                cycleMessage.classList.add('visible');
+                setTimeout(() => {
+                    cycleMessage.classList.remove('visible');
+                }, 6000);
+            }
+
+            // Reset transformed elements
+            orbitTexts.forEach(el => {
+                el.classList.remove('transformed', 'shed');
+            });
+            ringFragments.forEach(frag => {
+                frag.classList.remove('transformed', 'shed');
+            });
+            transformedFragments = 0;
+
+            setLayer(1);
+        }
+
+        // ===== SOUND =====
+        function initAudio() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function updateSound() {
+            if (!soundEnabled || !audioContext) return;
+
+            // Stop existing oscillators
+            oscillators.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            oscillators = [];
+
+            // Create drone based on layer
+            const baseFreq = currentLayer === 1 ? 55 : currentLayer === 2 ? 82.5 : 110;
+            const gainValue = currentLayer === 1 ? 0.08 : currentLayer === 2 ? 0.05 : 0.03;
+
+            for (let i = 0; i < 3; i++) {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.value = baseFreq * (i + 1);
+
+                filter.type = 'lowpass';
+                filter.frequency.value = currentLayer === 1 ? 200 : currentLayer === 2 ? 400 : 800;
+
+                gain.gain.value = gainValue / (i + 1);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start();
+                oscillators.push(osc);
+            }
+        }
+
+        function toggleSound() {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            soundToggle.classList.toggle('active', soundEnabled);
+
+            if (soundEnabled) {
+                audioContext.resume();
+                updateSound();
+            } else {
+                oscillators.forEach(osc => {
+                    try { osc.stop(); } catch(e) {}
+                });
+                oscillators = [];
+            }
+        }
+
+        soundToggle.addEventListener('click', toggleSound);
+
+        // ===== INTERACTION TONES =====
+        function playInteractionTone(type) {
+            if (!soundEnabled || !audioContext) return;
+
+            const config = INTERACTION_TONES[type];
+            if (!config) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = config.type;
+            osc.frequency.value = config.freq;
+
+            gain.gain.setValueAtTime(0, audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + config.duration);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start();
+            osc.stop(audioContext.currentTime + config.duration);
+        }
+
+        // ===== CURSOR PROXIMITY EFFECT =====
+        function updateProximityGlow(e) {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+            const maxDistance = 300;
+
+            if (distance < maxDistance) {
+                const intensity = 1 - (distance / maxDistance);
+                proximityGlow.style.left = `${e.clientX}px`;
+                proximityGlow.style.top = `${e.clientY}px`;
+                proximityGlow.style.opacity = intensity * 0.6;
+
+                // Subtle response from Saturn core
+                const scale = 1 + (intensity * 0.03);
+                if (!isHoldingCore && !saturnCore.classList.contains('breathing')) {
+                    saturnCore.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                }
+            } else {
+                proximityGlow.style.opacity = 0;
+                if (!isHoldingCore && !saturnCore.classList.contains('breathing')) {
+                    saturnCore.style.transform = 'translate(-50%, -50%) scale(1)';
+                }
+            }
+        }
+
+        // ===== DOUBLE-CLICK SECRET =====
+        function revealSecretGlyph(e) {
+            const glyph = document.createElement('div');
+            glyph.className = 'secret-glyph';
+            glyph.textContent = SECRET_GLYPHS[Math.floor(Math.random() * SECRET_GLYPHS.length)];
+            glyph.style.left = `${e.clientX}px`;
+            glyph.style.top = `${e.clientY}px`;
+            document.body.appendChild(glyph);
+
+            playInteractionTone('secret');
+
+            setTimeout(() => glyph.remove(), 3000);
+        }
+
+        document.addEventListener('dblclick', e => {
+            // Don't trigger on interactive elements
+            if (e.target.closest('.layer-slider-container') || e.target.closest('.sound-toggle')) return;
+            revealSecretGlyph(e);
+        });
+
+        // ===== HOLD INTERACTION ON SATURN CORE =====
+        let holdInterval = null;
+
+        saturnCore.addEventListener('mousedown', e => {
+            if (e.button !== 0) return; // Only left click
+            isHoldingCore = true;
+            holdStartTime = Date.now();
+            saturnCore.classList.add('held');
+            playInteractionTone('hold');
+
+            holdInterval = setInterval(() => {
+                const holdDuration = (Date.now() - holdStartTime) / 1000;
+                if (holdDuration >= 3 && holdDuration < 3.1) {
+                    // After 3 seconds of holding, show revelation
+                    showHoldRevelation();
+                }
+            }, 100);
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isHoldingCore) {
+                isHoldingCore = false;
+                saturnCore.classList.remove('held');
+                clearInterval(holdInterval);
+                playInteractionTone('release');
+            }
+        });
+
+        function showHoldRevelation() {
+            const revelation = HOLD_REVELATIONS[Math.floor(Math.random() * HOLD_REVELATIONS.length)];
+            const el = document.createElement('div');
+            el.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, calc(-50% + 100px));
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.85rem;
+                font-style: italic;
+                color: var(--amber-warm);
+                opacity: 0;
+                pointer-events: none;
+                z-index: 500;
+                text-shadow: 0 0 15px var(--gold-glow);
+                transition: opacity 0.5s ease;
+            `;
+            el.textContent = revelation;
+            document.body.appendChild(el);
+
+            requestAnimationFrame(() => el.style.opacity = '0.8');
+
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            }, 2500);
+        }
+
+        // ===== RING DRAGGING/TILTING =====
+        rings.addEventListener('mousedown', e => {
+            if (e.target === saturnCore) return;
+            isDraggingRings = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            rings.classList.add('dragging');
+            rings.classList.remove('tilted');
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDraggingRings) return;
+
+            const deltaX = (e.clientX - dragStartX) * 0.2;
+            const deltaY = (e.clientY - dragStartY) * 0.2;
+
+            // Constrain tilt angles
+            ringTiltX = Math.max(45, Math.min(85, 75 + deltaY));
+            ringTiltY = Math.max(-30, Math.min(30, deltaX));
+
+            rings.style.transform = `translate(-50%, -50%) rotateX(${ringTiltX}deg) rotateY(${ringTiltY}deg)`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingRings) {
+                isDraggingRings = false;
+                rings.classList.remove('dragging');
+                rings.classList.add('tilted');
+
+                // Slowly return to default after 3 seconds
+                setTimeout(() => {
+                    if (!isDraggingRings) {
+                        ringTiltX = 75;
+                        ringTiltY = 0;
+                        rings.style.transform = 'translate(-50%, -50%) rotateX(75deg) rotateY(0deg)';
+                    }
+                }, 3000);
+            }
+        });
+
+        // ===== SCROLL WHEEL ZOOM =====
+        let zoomTimeout = null;
+
+        document.addEventListener('wheel', e => {
+            e.preventDefault();
+            resetActivity();
+
+            // Accumulate zoom
+            zoomLevel = Math.max(0, Math.min(100, zoomLevel + (e.deltaY > 0 ? 5 : -5)));
+
+            if (zoomLevel > 50) {
+                // Begin zoom into core vision
+                const zoomProgress = (zoomLevel - 50) / 50;
+                zoomOverlay.style.opacity = zoomProgress * 0.8;
+
+                if (zoomLevel >= 90 && !zoomCoreVision.classList.contains('visible')) {
+                    zoomCoreVision.classList.add('visible');
+                    zoomText.textContent = ZOOM_VISIONS[Math.floor(Math.random() * ZOOM_VISIONS.length)];
+                    zoomText.style.opacity = '1';
+                    playInteractionTone('zoom');
+                }
+            } else {
+                zoomOverlay.style.opacity = 0;
+                zoomCoreVision.classList.remove('visible');
+                zoomText.style.opacity = '0';
+            }
+
+            // Reset zoom after inactivity
+            clearTimeout(zoomTimeout);
+            zoomTimeout = setTimeout(() => {
+                zoomLevel = 0;
+                zoomOverlay.style.opacity = 0;
+                zoomCoreVision.classList.remove('visible');
+                zoomText.style.opacity = '0';
+            }, 2000);
+        }, { passive: false });
+
+        // ===== TOUCH INTERACTIONS =====
+        function createTouchRipple(x, y, size = 60) {
+            const ripple = document.createElement('div');
+            ripple.className = 'touch-ripple';
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            ripple.style.width = `${size}px`;
+            ripple.style.height = `${size}px`;
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1500);
+        }
+
+        // Touch start - detect holds and double taps
+        document.addEventListener('touchstart', e => {
+            const touch = e.touches[0];
+            const now = Date.now();
+
+            // Double tap detection
+            if (now - lastTouchTime < 300) {
+                revealSecretGlyph({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+            lastTouchTime = now;
+
+            // Create ripple
+            createTouchRipple(touch.clientX, touch.clientY);
+
+            // Hold detection for core
+            const coreRect = saturnCore.getBoundingClientRect();
+            const touchedCore = touch.clientX >= coreRect.left && touch.clientX <= coreRect.right &&
+                                touch.clientY >= coreRect.top && touch.clientY <= coreRect.bottom;
+
+            if (touchedCore) {
+                touchHoldTimer = setTimeout(() => {
+                    saturnCore.classList.add('held');
+                    playInteractionTone('hold');
+                    setTimeout(() => {
+                        showHoldRevelation();
+                        saturnCore.classList.remove('held');
+                    }, 2000);
+                }, 500);
+            }
+
+            resetActivity();
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            clearTimeout(touchHoldTimer);
+            saturnCore.classList.remove('held');
+        }, { passive: true });
+
+        // Two-finger pinch for zoom
+        let lastPinchDistance = 0;
+
+        document.addEventListener('touchmove', e => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+
+                if (lastPinchDistance > 0) {
+                    const delta = distance - lastPinchDistance;
+                    zoomLevel = Math.max(0, Math.min(100, zoomLevel + delta * 0.5));
+
+                    if (zoomLevel > 50) {
+                        const zoomProgress = (zoomLevel - 50) / 50;
+                        zoomOverlay.style.opacity = zoomProgress * 0.8;
+
+                        if (zoomLevel >= 90 && !zoomCoreVision.classList.contains('visible')) {
+                            zoomCoreVision.classList.add('visible');
+                            zoomText.textContent = ZOOM_VISIONS[Math.floor(Math.random() * ZOOM_VISIONS.length)];
+                            zoomText.style.opacity = '1';
+                            playInteractionTone('zoom');
+                        }
+                    } else {
+                        zoomOverlay.style.opacity = 0;
+                        zoomCoreVision.classList.remove('visible');
+                        zoomText.style.opacity = '0';
+                    }
+                }
+
+                lastPinchDistance = distance;
+                e.preventDefault();
+            }
+
+            resetActivity();
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            lastPinchDistance = 0;
+            // Reset zoom after touch ends
+            setTimeout(() => {
+                zoomLevel = 0;
+                zoomOverlay.style.opacity = 0;
+                zoomCoreVision.classList.remove('visible');
+                zoomText.style.opacity = '0';
+            }, 1500);
+        }, { passive: true });
+
+        // Two-finger rotation for ring tilt
+        let lastTouchAngle = 0;
+
+        document.addEventListener('touchmove', e => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const angle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * (180 / Math.PI);
+
+                if (lastTouchAngle !== 0) {
+                    const deltaAngle = angle - lastTouchAngle;
+                    ringTiltY = Math.max(-30, Math.min(30, ringTiltY + deltaAngle * 0.3));
+                    rings.style.transform = `translate(-50%, -50%) rotateX(${ringTiltX}deg) rotateY(${ringTiltY}deg)`;
+                }
+
+                lastTouchAngle = angle;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            lastTouchAngle = 0;
+            // Return rings to default after touch ends
+            setTimeout(() => {
+                ringTiltX = 75;
+                ringTiltY = 0;
+                rings.style.transform = 'translate(-50%, -50%) rotateX(75deg) rotateY(0deg)';
+            }, 2000);
+        }, { passive: true });
+
+        // ===== KEYBOARD =====
+        document.addEventListener('keydown', e => {
+            resetActivity();
+            const key = e.key.toLowerCase();
+
+            if (key === 'm') {
+                summonMercury();
+            } else if (key === 'j') {
+                showJanus();
+            } else if (key === 's') {
+                toggleSound();
+            } else if (key === 'r') {
+                returnToFear();
+            } else if (key === ' ') {
+                e.preventDefault();
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            } else if (key === 'arrowright' || key === 'arrowup') {
+                e.preventDefault();
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            } else if (key === 'arrowleft' || key === 'arrowdown') {
+                e.preventDefault();
+                if (currentLayer > 1) {
+                    setLayer(currentLayer - 1);
+                }
+            }
+        });
+
+        // ===== MOUSE TRACKING =====
+        let moveThrottle = false;
+        document.addEventListener('mousemove', e => {
+            // Always update proximity glow for smooth effect
+            updateProximityGlow(e);
+
+            if (moveThrottle) return;
+            moveThrottle = true;
+            resetActivity();
+            setTimeout(() => moveThrottle = false, 100);
+        }, { passive: true });
+
+        // ===== RIGHT CLICK =====
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            const phrases = [
+                'the rings remember',
+                'time is patient',
+                'lead awaits gold',
+                'the threshold opens'
+            ];
+            const whisper = document.createElement('div');
+            whisper.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.8rem;
+                font-style: italic;
+                color: var(--amber-warm);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 1s ease, transform 2s ease;
+                z-index: 1000;
+                text-shadow: 0 0 10px var(--gold-glow);
+            `;
+            whisper.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.7';
+                whisper.style.transform = 'translate(-50%, -50%) translateY(-15px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 1000);
+            }, 2000);
+        });
+
+        // ===== CORE CLICK =====
+        saturnCore.addEventListener('click', () => {
+            if (currentLayer === 3 && hasCompletedCycle) {
+                returnToFear();
+            } else if (currentLayer < 3) {
+                summonMercury();
+            }
+        });
+
+        // ===== INITIALIZE =====
+        createStars();
+        createCosmicDust();
+        createGodRays();
+        createOrbitingElements();
+        animateOrbits();
+        checkStillness();
+        setLayer(1);
+
+        // Show keyboard hints after delay
+        setTimeout(() => {
+            keyboardHint.classList.add('visible');
+        }, 8000);
+
+        // ===== CONSOLE POETRY =====
+        setTimeout(() => {
+            console.log('%csaturn', 'font-size: 24px; font-family: Georgia, serif; color: #d4a056; font-weight: 100; letter-spacing: 0.4em;');
+            console.log('%cthe sixth day. the day of rest.', 'font-size: 11px; color: #4a5568; font-style: italic;');
+            console.log('%c', 'padding: 0');
+            console.log('%cthree layers await:', 'font-size: 10px; color: #718096;');
+            console.log('%c  fear → understanding → peace', 'font-size: 10px; color: #86b398; font-family: monospace;');
+            console.log('%c', 'padding: 0');
+            console.log('%cmercury carries messages between worlds.', 'font-size: 10px; color: #c0d8e8; font-style: italic;');
+            console.log('%cjanus guards the threshold.', 'font-size: 10px; color: #4d3d2d; font-style: italic;');
+            console.log('%c', 'padding: 0');
+            console.log('%c[m] mercury  [j] janus  [s] sound  [r] return  [space] advance', 'font-size: 9px; font-family: monospace; color: #a0aec0;');
+            console.log('%c', 'padding: 0');
+            console.log('%cstillness reveals. patience transforms.', 'font-size: 10px; color: #d4a056; font-style: italic;');
+        }, 500);
+    })();
+    </script>
+</body>
+</html>

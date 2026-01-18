@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>time - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: background 4s ease, filter 3s ease;
+        }
+
+        body.frozen {
+            filter: saturate(0) brightness(1.1) blur(1px);
+        }
+        body.eternal {
+            filter: sepia(0.2) contrast(1.05);
+        }
+        body.timeless {
+            filter: grayscale(0.3) brightness(1.05);
+        }
+        body.slow-time {
+            filter: saturate(1.2) contrast(0.95);
+        }
+
+        /* Time layers */
+        .time-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: opacity 4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Between - default - the liminal space */
+        .layer-between {
+            background: linear-gradient(180deg,
+                #3a3a4a 0%,
+                #5a5a6a 30%,
+                #7a7a8a 60%,
+                var(--bone) 100%);
+            z-index: 1;
+        }
+
+        /* Late night - the velvet hours */
+        .layer-late {
+            background: linear-gradient(180deg,
+                #050510 0%,
+                #0a0a1a 20%,
+                #121228 40%,
+                #1a1a35 60%,
+                #252550 80%,
+                #2d2d5a 100%);
+            opacity: 0;
+            z-index: 2;
+        }
+
+        /* Golden hour - honey light */
+        .layer-golden {
+            background: linear-gradient(180deg,
+                #4a6080 0%,
+                #8a7060 15%,
+                #c09050 30%,
+                #e0a040 45%,
+                #f0c060 60%,
+                #f8e0a0 80%,
+                #fff5e0 100%);
+            opacity: 0;
+            z-index: 2;
+        }
+
+        /* Dusk - the bruised hour */
+        .layer-dusk {
+            background: linear-gradient(180deg,
+                #1a1525 0%,
+                #2a2040 15%,
+                #3a3055 30%,
+                #5a4075 45%,
+                #7a5590 60%,
+                #9a70a5 75%,
+                #c090b5 90%,
+                #e0b0c5 100%);
+            opacity: 0;
+            z-index: 2;
+        }
+
+        /* Dawn - the threshold */
+        .layer-dawn {
+            background: linear-gradient(180deg,
+                #101520 0%,
+                #1a2535 10%,
+                #2a3a50 25%,
+                #3a5065 40%,
+                #5a7080 55%,
+                #8090a0 70%,
+                #b0c0c8 85%,
+                #e0d8d0 100%);
+            opacity: 0;
+            z-index: 2;
+        }
+
+        /* Ghost layers - faint echoes of other times always present */
+        .ghost-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 6s ease;
+            mix-blend-mode: soft-light;
+        }
+
+        body[data-time="between"] .ghost-layer.ghost-dawn,
+        body[data-time="between"] .ghost-layer.ghost-dusk {
+            opacity: 0.08;
+        }
+
+        body[data-time="late"] .ghost-layer.ghost-dawn {
+            opacity: 0.05;
+        }
+
+        body[data-time="golden"] .ghost-layer.ghost-dusk {
+            opacity: 0.06;
+        }
+
+        body[data-time="dusk"] .ghost-layer.ghost-late {
+            opacity: 0.05;
+        }
+
+        body[data-time="dawn"] .ghost-layer.ghost-golden {
+            opacity: 0.04;
+        }
+
+        /* Atmospheric effects overlay */
+        .atmosphere {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        /* Mist for dawn */
+        .mist {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(200, 210, 220, 0.1) 60%,
+                rgba(180, 190, 200, 0.2) 100%);
+            animation: mist-breathe 12s ease-in-out infinite;
+        }
+
+        @keyframes mist-breathe {
+            0%, 100% { opacity: 0; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-2%); }
+        }
+
+        /* Heat shimmer for golden hour */
+        .shimmer {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(255, 200, 100, 0.05) 70%,
+                rgba(255, 180, 80, 0.1) 100%);
+            animation: shimmer-wave 10s ease-in-out infinite;
+        }
+
+        @keyframes shimmer-wave {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* Dust particles for dusk */
+        .dust-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .dust {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 220, 180, 0.4);
+            border-radius: 50%;
+            animation: float-dust 25s linear infinite;
+        }
+
+        @keyframes float-dust {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-20px) translateX(50px); opacity: 0; }
+        }
+
+        /* Fireflies for late night - easter egg */
+        .firefly {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #ffffaa;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+            opacity: 0;
+            box-shadow: 0 0 6px 2px rgba(255, 255, 150, 0.5);
+            animation: firefly-glow 5s ease-in-out infinite;
+        }
+
+        @keyframes firefly-glow {
+            0%, 100% { opacity: 0; transform: scale(0.8) translate(0, 0); }
+            30% { opacity: 0.6; transform: scale(1) translate(5px, -3px); }
+            50% { opacity: 1; transform: scale(1.1) translate(-3px, 5px); }
+            70% { opacity: 0.7; transform: scale(1) translate(2px, -2px); }
+        }
+
+        /* Time display */
+        .time-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            font-weight: 300;
+            color: var(--bone);
+            opacity: 0.6;
+            z-index: 10;
+            text-align: center;
+            mix-blend-mode: difference;
+            transition: transform 1s ease, opacity 2s ease;
+            animation: time-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes time-breathe {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.01); opacity: 0.65; }
+        }
+
+        @keyframes time-echo {
+            0% { transform: translateY(4px); opacity: 0; }
+            40% { opacity: 0.15; }
+            100% { transform: translateY(8px); opacity: 0; }
+        }
+
+        .time-display::after {
+            content: attr(data-echo);
+            position: absolute;
+            animation: time-echo 8s ease-out infinite;
+            color: var(--bone);
+            opacity: 0;
+        }
+
+        .time-display:hover {
+            transform: scale(1.02);
+        }
+
+        .time-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+            margin-top: 1rem;
+            opacity: 0.5;
+            letter-spacing: 0.3em;
+            transition: letter-spacing 1s ease, opacity 1s ease;
+        }
+
+        .time-display:hover .time-name {
+            letter-spacing: 0.5em;
+            opacity: 0.6;
+        }
+
+        /* Poetic subtitle */
+        .time-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            opacity: 0;
+            transition: opacity 2s ease 0.5s;
+            letter-spacing: 0.15em;
+        }
+
+        .time-display:hover .time-subtitle {
+            opacity: 0.4;
+        }
+
+        /* Temporal mode indicator */
+        .temporal-mode {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 2s ease;
+            z-index: 20;
+            mix-blend-mode: difference;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .temporal-mode.visible {
+            opacity: 0.3;
+        }
+
+        /* Time controls */
+        .time-controls {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            z-index: 20;
+        }
+
+        .time-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid var(--bone);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.4;
+            position: relative;
+            animation: btn-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes btn-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .time-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            transition: all 0.5s ease;
+        }
+
+        .time-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.2);
+            animation: none;
+        }
+
+        .time-btn:hover::before {
+            border-color: currentColor;
+            opacity: 0.3;
+        }
+
+        .time-btn.active {
+            background: var(--bone);
+            opacity: 0.8;
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); }
+            50% { box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.1); }
+        }
+
+        .time-btn[data-time="late"] { border-color: #6a6a9a; color: #6a6a9a; }
+        .time-btn[data-time="late"].active { background: #6a6a9a; }
+
+        .time-btn[data-time="golden"] { border-color: #e0a040; color: #e0a040; }
+        .time-btn[data-time="golden"].active { background: #e0a040; }
+
+        .time-btn[data-time="dusk"] { border-color: #9a70a5; color: #9a70a5; }
+        .time-btn[data-time="dusk"].active { background: #9a70a5; }
+
+        .time-btn[data-time="dawn"] { border-color: #7090a0; color: #7090a0; }
+        .time-btn[data-time="dawn"].active { background: #7090a0; }
+
+        .time-btn[data-time="between"] { border-color: #8a8a9a; color: #8a8a9a; }
+        .time-btn[data-time="between"].active { background: #8a8a9a; }
+
+        /* Celestial bodies */
+        .celestial {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+        }
+
+        .sun {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle at 40% 40%,
+                #fffff0 0%,
+                #fff8d0 20%,
+                #ffe090 40%,
+                #f0b040 70%,
+                #e08020 100%);
+            box-shadow:
+                0 0 60px 20px rgba(255, 200, 100, 0.4),
+                0 0 120px 40px rgba(255, 180, 80, 0.2),
+                0 0 200px 80px rgba(255, 160, 60, 0.1);
+            opacity: 0;
+        }
+
+        .sun.visible {
+            opacity: 1;
+            animation: sun-breathe 10s ease-in-out infinite;
+        }
+
+        @keyframes sun-breathe {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow:
+                    0 0 60px 20px rgba(255, 200, 100, 0.4),
+                    0 0 120px 40px rgba(255, 180, 80, 0.2),
+                    0 0 200px 80px rgba(255, 160, 60, 0.1);
+            }
+            50% {
+                transform: scale(1.04);
+                box-shadow:
+                    0 0 80px 30px rgba(255, 200, 100, 0.5),
+                    0 0 150px 60px rgba(255, 180, 80, 0.25),
+                    0 0 250px 100px rgba(255, 160, 60, 0.15);
+            }
+        }
+
+        /* Sun corona rays */
+        .sun::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150%;
+            height: 150%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                rgba(255, 220, 150, 0.1) 10deg,
+                transparent 20deg,
+                transparent 45deg,
+                rgba(255, 220, 150, 0.1) 55deg,
+                transparent 65deg,
+                transparent 90deg,
+                rgba(255, 220, 150, 0.1) 100deg,
+                transparent 110deg,
+                transparent 135deg,
+                rgba(255, 220, 150, 0.1) 145deg,
+                transparent 155deg,
+                transparent 180deg,
+                rgba(255, 220, 150, 0.1) 190deg,
+                transparent 200deg,
+                transparent 225deg,
+                rgba(255, 220, 150, 0.1) 235deg,
+                transparent 245deg,
+                transparent 270deg,
+                rgba(255, 220, 150, 0.1) 280deg,
+                transparent 290deg,
+                transparent 315deg,
+                rgba(255, 220, 150, 0.1) 325deg,
+                transparent 335deg,
+                transparent 360deg
+            );
+            border-radius: 50%;
+            animation: sun-rotate 90s linear infinite;
+        }
+
+        @keyframes sun-rotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .moon {
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle at 35% 35%,
+                #f8f8ff 0%,
+                #e8e8f0 30%,
+                #d0d0e0 60%,
+                #b0b0c8 100%);
+            box-shadow:
+                0 0 40px 15px rgba(200, 200, 230, 0.25),
+                0 0 80px 30px rgba(180, 180, 210, 0.15),
+                inset -8px -5px 15px rgba(100, 100, 130, 0.3);
+            opacity: 0;
+        }
+
+        /* Moon craters - subtle texture */
+        .moon::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 25%;
+            width: 12px;
+            height: 12px;
+            background: rgba(150, 150, 170, 0.2);
+            border-radius: 50%;
+            box-shadow:
+                15px 8px 0 3px rgba(150, 150, 170, 0.15),
+                -5px 18px 0 1px rgba(150, 150, 170, 0.1),
+                8px 22px 0 2px rgba(150, 150, 170, 0.12);
+        }
+
+        .moon.visible {
+            opacity: 0.9;
+            animation: moon-float 15s ease-in-out infinite;
+        }
+
+        @keyframes moon-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        /* Stars with varied sizes and colors */
+        .star {
+            position: fixed;
+            background: #fff;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 3s ease;
+            z-index: 3;
+        }
+
+        .star.visible {
+            animation: twinkle var(--twinkle-duration, 4s) ease-in-out infinite;
+            animation-delay: var(--delay, 0s);
+        }
+
+        .star.bright {
+            box-shadow: 0 0 3px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .star.blue-tint {
+            background: #c8d4ff;
+        }
+
+        .star.warm-tint {
+            background: #ffe8d0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.15; }
+            50% { opacity: var(--max-opacity, 0.8); }
+        }
+
+        /* Constellation lines - easter egg */
+        .constellation-line {
+            position: fixed;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            transform-origin: left center;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        body.show-constellations .constellation-line {
+            opacity: 1;
+        }
+
+        /* Stillness message - appears after patience */
+        .stillness-message {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 3s ease;
+            z-index: 25;
+            mix-blend-mode: difference;
+            text-align: center;
+            max-width: 60%;
+            line-height: 2;
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.4;
+        }
+
+        /* Message */
+        .message {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 3s ease, transform 3s ease;
+            z-index: 20;
+            mix-blend-mode: difference;
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.8;
+        }
+
+        .message.visible {
+            opacity: 0.5;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .back-link {
+            color: var(--bone);
+            mix-blend-mode: difference;
+            z-index: 30;
+        }
+
+        /* Shooting star - enhanced */
+        .shooting-star {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+            box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.6);
+        }
+
+        .shooting-star::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg,
+                rgba(255,255,255,0.8) 0%,
+                rgba(200,220,255,0.4) 30%,
+                transparent 100%);
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .shooting-star.animate {
+            animation: shoot 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes shoot {
+            0% {
+                transform: translate(0, 0) rotate(-30deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(300px, 200px) rotate(-30deg);
+                opacity: 0;
+            }
+        }
+
+        /* Sun flare - enhanced */
+        .sun-flare {
+            position: fixed;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle,
+                rgba(255,240,200,0.6) 0%,
+                rgba(255,200,100,0.3) 30%,
+                rgba(255,180,80,0.1) 60%,
+                transparent 80%);
+            pointer-events: none;
+            z-index: 15;
+            animation: flare 3s ease forwards;
+        }
+
+        .sun-flare::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                rgba(255, 220, 150, 0.2) 5deg,
+                transparent 10deg,
+                transparent 30deg,
+                rgba(255, 220, 150, 0.2) 35deg,
+                transparent 40deg,
+                transparent 60deg,
+                rgba(255, 220, 150, 0.2) 65deg,
+                transparent 70deg,
+                transparent 90deg,
+                rgba(255, 220, 150, 0.2) 95deg,
+                transparent 100deg,
+                transparent 120deg,
+                rgba(255, 220, 150, 0.2) 125deg,
+                transparent 130deg,
+                transparent 150deg,
+                rgba(255, 220, 150, 0.2) 155deg,
+                transparent 160deg,
+                transparent 180deg,
+                rgba(255, 220, 150, 0.2) 185deg,
+                transparent 190deg,
+                transparent 210deg,
+                rgba(255, 220, 150, 0.2) 215deg,
+                transparent 220deg,
+                transparent 240deg,
+                rgba(255, 220, 150, 0.2) 245deg,
+                transparent 250deg,
+                transparent 270deg,
+                rgba(255, 220, 150, 0.2) 275deg,
+                transparent 280deg,
+                transparent 300deg,
+                rgba(255, 220, 150, 0.2) 305deg,
+                transparent 310deg,
+                transparent 330deg,
+                rgba(255, 220, 150, 0.2) 335deg,
+                transparent 340deg,
+                transparent 360deg
+            );
+        }
+
+        @keyframes flare {
+            0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+            30% { opacity: 1; }
+            100% { transform: scale(2.5) rotate(45deg); opacity: 0; }
+        }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 1.8;
+            z-index: 40;
+            mix-blend-mode: difference;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        /* All times at once - enhanced */
+        body.merged .layer-late,
+        body.merged .layer-golden,
+        body.merged .layer-dusk,
+        body.merged .layer-dawn {
+            opacity: 0.25 !important;
+            mix-blend-mode: screen;
+        }
+
+        body.merged .time-display {
+            animation: eternal-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes eternal-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.9; }
+        }
+
+        /* Horizon line - subtle ground reference */
+        .horizon {
+            position: fixed;
+            bottom: 15%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.05) 20%,
+                rgba(255, 255, 255, 0.08) 50%,
+                rgba(255, 255, 255, 0.05) 80%,
+                transparent 100%);
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        body[data-time="golden"] .horizon,
+        body[data-time="dusk"] .horizon,
+        body[data-time="dawn"] .horizon {
+            opacity: 1;
+        }
+
+        /* Secret phrase - triple click easter egg */
+        .secret-phrase {
+            position: fixed;
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, 50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 4s ease;
+            z-index: 50;
+            mix-blend-mode: difference;
+            pointer-events: none;
+            text-align: center;
+            line-height: 2;
+        }
+
+        .secret-phrase.visible {
+            opacity: 0.4;
+        }
+
+        /* Click ripple effect */
+        .time-ripple {
+            position: fixed;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+            animation: ripple-expand 2s ease-out forwards;
+        }
+
+        @keyframes ripple-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.5;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+
+        /* Sound toggle - hidden */
+        .sound-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 2s ease;
+            z-index: 40;
+        }
+
+        .sound-toggle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border: 1px solid var(--bone);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.5;
+        }
+
+        body:hover .sound-toggle {
+            opacity: 0.15;
+        }
+
+        .sound-toggle.active::before {
+            background: var(--bone);
+        }
+
+        /* Paradox text - appears rarely */
+        .paradox {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 5s ease;
+            z-index: 15;
+            mix-blend-mode: difference;
+            pointer-events: none;
+            letter-spacing: 0.1em;
+        }
+
+        .paradox.visible {
+            opacity: 0.25;
+        }
+
+        .paradox.top-left {
+            top: 15%;
+            left: 10%;
+        }
+
+        .paradox.bottom-right {
+            bottom: 25%;
+            right: 10%;
+        }
+    </style>
+</head>
+<body data-time="between">
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="time-layer layer-between"></div>
+    <div class="time-layer layer-late" id="late"></div>
+    <div class="time-layer layer-golden" id="golden"></div>
+    <div class="time-layer layer-dusk" id="dusk"></div>
+    <div class="time-layer layer-dawn" id="dawn"></div>
+
+    <!-- Ghost layers - other times bleeding through -->
+    <div class="ghost-layer ghost-dawn" style="background: linear-gradient(180deg, #2a3a50 0%, #8090a0 100%);"></div>
+    <div class="ghost-layer ghost-golden" style="background: linear-gradient(180deg, #c09050 0%, #f8e0a0 100%);"></div>
+    <div class="ghost-layer ghost-dusk" style="background: linear-gradient(180deg, #5a4075 0%, #c090b5 100%);"></div>
+    <div class="ghost-layer ghost-late" style="background: linear-gradient(180deg, #0a0a1a 0%, #2d2d5a 100%);"></div>
+
+    <div class="atmosphere mist" id="mist"></div>
+    <div class="atmosphere shimmer" id="shimmer"></div>
+    <div class="dust-container" id="dustContainer"></div>
+
+    <div class="horizon"></div>
+
+    <div class="celestial sun" id="sun"></div>
+    <div class="celestial moon" id="moon"></div>
+
+    <div class="time-display" id="display">
+        <div id="clock">--:--</div>
+        <div class="time-name" id="timeName">between</div>
+        <div class="time-subtitle" id="timeSubtitle">the liminal hour</div>
+    </div>
+
+    <div class="temporal-mode" id="temporalMode">timeless</div>
+
+    <div class="time-controls" id="controls">
+        <button class="time-btn" data-time="late" title="late night"></button>
+        <button class="time-btn" data-time="dawn" title="dawn"></button>
+        <button class="time-btn active" data-time="between" title="between"></button>
+        <button class="time-btn" data-time="golden" title="golden hour"></button>
+        <button class="time-btn" data-time="dusk" title="dusk"></button>
+    </div>
+
+    <p class="message" id="message"></p>
+    <p class="stillness-message" id="stillnessMessage"></p>
+    <p class="secret-phrase" id="secretPhrase"></p>
+
+    <p class="paradox top-left" id="paradoxLeft"></p>
+    <p class="paradox bottom-right" id="paradoxRight"></p>
+
+    <button class="sound-toggle" id="soundToggle" title="sound"></button>
+
+    <div class="key-hint">
+        [1-5] times<br>
+        [t] timeless<br>
+        [s] slow time<br>
+        [e] eternal present<br>
+        [m] all times at once<br>
+        [a] auto-cycle<br>
+        [c] constellations<br>
+        be still to listen
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const layers = {
+            late: document.getElementById('late'),
+            golden: document.getElementById('golden'),
+            dusk: document.getElementById('dusk'),
+            dawn: document.getElementById('dawn')
+        };
+        const sun = document.getElementById('sun');
+        const moon = document.getElementById('moon');
+        const clock = document.getElementById('clock');
+        const timeName = document.getElementById('timeName');
+        const timeSubtitle = document.getElementById('timeSubtitle');
+        const message = document.getElementById('message');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const controls = document.getElementById('controls');
+        const mist = document.getElementById('mist');
+        const shimmer = document.getElementById('shimmer');
+        const dustContainer = document.getElementById('dustContainer');
+        const secretPhrase = document.getElementById('secretPhrase');
+        const temporalMode = document.getElementById('temporalMode');
+        const paradoxLeft = document.getElementById('paradoxLeft');
+        const paradoxRight = document.getElementById('paradoxRight');
+        const soundToggle = document.getElementById('soundToggle');
+
+        const stars = [];
+        const fireflies = [];
+        const constellationLines = [];
+
+        // Stillness detection
+        let lastMove = Date.now();
+        let stillnessLevel = 0;
+        let stillnessRevealed = false;
+        let stillnessTimer = null;
+
+        const stillnessMessages = [
+            'time notices those who wait',
+            'stillness is its own hour',
+            'the clock pauses for the patient',
+            'between moments, you found this one',
+            'patience is a form of presence',
+            'the seconds stretch for those who listen',
+            'in stillness, all times overlap',
+            'you have been still long enough to hear'
+        ];
+
+        const paradoxes = [
+            ['now is', 'also then'],
+            ['the moment', 'already passed'],
+            ['waiting is', 'arriving'],
+            ['time moves', 'yet stays'],
+            ['this instant', 'contains all others'],
+            ['the clock', 'measures nothing'],
+            ['before and after', 'are the same place'],
+            ['duration', 'is an illusion']
+        ];
+
+        // Create varied stars
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+
+            const size = Math.random() < 0.1 ? 3 : Math.random() < 0.3 ? 2 : 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+
+            if (Math.random() < 0.15) star.classList.add('blue-tint');
+            else if (Math.random() < 0.1) star.classList.add('warm-tint');
+            if (size > 1) star.classList.add('bright');
+
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 65 + '%';
+            star.style.setProperty('--delay', (Math.random() * 6) + 's');
+            star.style.setProperty('--twinkle-duration', (3 + Math.random() * 5) + 's');
+            star.style.setProperty('--max-opacity', (0.4 + Math.random() * 0.5));
+
+            document.body.appendChild(star);
+            stars.push(star);
+        }
+
+        // Create fireflies
+        for (let i = 0; i < 8; i++) {
+            const firefly = document.createElement('div');
+            firefly.className = 'firefly';
+            firefly.style.left = (20 + Math.random() * 60) + '%';
+            firefly.style.top = (40 + Math.random() * 40) + '%';
+            firefly.style.animationDelay = (Math.random() * 5) + 's';
+            firefly.style.animationDuration = (4 + Math.random() * 4) + 's';
+            document.body.appendChild(firefly);
+            fireflies.push(firefly);
+        }
+
+        // Create dust particles
+        for (let i = 0; i < 30; i++) {
+            const dust = document.createElement('div');
+            dust.className = 'dust';
+            dust.style.left = Math.random() * 100 + '%';
+            dust.style.animationDelay = (Math.random() * 25) + 's';
+            dust.style.animationDuration = (18 + Math.random() * 12) + 's';
+            dustContainer.appendChild(dust);
+        }
+
+        // Create constellation lines
+        function createConstellations() {
+            const brightStars = stars.filter(s => s.classList.contains('bright'));
+            for (let i = 0; i < brightStars.length - 1; i += 2) {
+                if (i + 1 < brightStars.length && Math.random() < 0.6) {
+                    const line = document.createElement('div');
+                    line.className = 'constellation-line';
+                    document.body.appendChild(line);
+                    constellationLines.push({ line, star1: brightStars[i], star2: brightStars[i + 1] });
+                }
+            }
+        }
+        createConstellations();
+
+        function updateConstellationLines() {
+            constellationLines.forEach(({ line, star1, star2 }) => {
+                const rect1 = star1.getBoundingClientRect();
+                const rect2 = star2.getBoundingClientRect();
+                const x1 = rect1.left + rect1.width / 2;
+                const y1 = rect1.top + rect1.height / 2;
+                const x2 = rect2.left + rect2.width / 2;
+                const y2 = rect2.top + rect2.height / 2;
+
+                const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+                line.style.left = x1 + 'px';
+                line.style.top = y1 + 'px';
+                line.style.width = length + 'px';
+                line.style.transform = `rotate(${angle}deg)`;
+            });
+        }
+
+        // Poetic time data
+        const times = {
+            between: {
+                clock: '--:--',
+                subtitle: 'the liminal hour',
+                messages: [
+                    'all times exist here',
+                    'neither then nor now',
+                    'the pause between heartbeats',
+                    'where clocks forget themselves',
+                    'the threshold that is always open'
+                ]
+            },
+            late: {
+                clock: '03:47',
+                subtitle: 'the velvet hours',
+                messages: [
+                    'the hour when secrets feel safe',
+                    'only the moon is listening',
+                    'thoughts that only exist past midnight',
+                    'the world belongs to the sleepless',
+                    'when the veil between worlds is thin'
+                ]
+            },
+            golden: {
+                clock: '18:23',
+                subtitle: 'honey light',
+                messages: [
+                    'everything looks like a memory',
+                    'the light that makes strangers beautiful',
+                    'photographers call this magic hour',
+                    'shadows growing long and soft',
+                    'when the world turns amber'
+                ]
+            },
+            dusk: {
+                clock: '20:15',
+                subtitle: 'the bruised hour',
+                messages: [
+                    'purple settling into the corners',
+                    'the day exhaling its last breath',
+                    'streetlights awakening one by one',
+                    'the sky remembering the sun',
+                    'when colors say goodbye'
+                ]
+            },
+            dawn: {
+                clock: '05:12',
+                subtitle: 'the threshold',
+                messages: [
+                    'the birds have not started yet',
+                    'possibility wrapped in mist',
+                    'the hour of second chances',
+                    'silence before the world wakes',
+                    'light arriving on quiet feet'
+                ]
+            }
+        };
+
+        const secretPhrases = [
+            'time is a flat circle',
+            'all moments are one moment',
+            'the eternal now',
+            'yesterday, today, tomorrow - all here',
+            'you have been here before',
+            'you will be here again',
+            'the clock face contains every hour',
+            'what time is it when all times are?'
+        ];
+
+        let currentTime = 'between';
+        let autoShift = true;
+        let currentTemporalMode = 'timeless';
+        let clickCount = 0;
+        let clickTimer = null;
+        let soundEnabled = false;
+
+        // Temporal modes
+        const temporalModes = {
+            timeless: {
+                name: 'timeless',
+                description: 'it has always been this way',
+                filter: 'timeless',
+                clockBehavior: 'static'
+            },
+            slow: {
+                name: 'slow time',
+                description: 'seconds stretch, patience rewarded',
+                filter: 'slow-time',
+                clockBehavior: 'slow'
+            },
+            eternal: {
+                name: 'eternal present',
+                description: 'there is only now',
+                filter: 'eternal',
+                clockBehavior: 'now'
+            },
+            all: {
+                name: 'all times at once',
+                description: 'past and future collapsed into here',
+                filter: 'merged',
+                clockBehavior: 'all'
+            }
+        };
+
+        function setTemporalMode(mode) {
+            currentTemporalMode = mode;
+            const modeData = temporalModes[mode];
+
+            // Remove all temporal filters
+            document.body.classList.remove('timeless', 'slow-time', 'eternal', 'merged', 'frozen');
+
+            // Apply new filter
+            if (modeData.filter) {
+                document.body.classList.add(modeData.filter);
+            }
+
+            // Update indicator
+            temporalMode.textContent = modeData.name;
+            temporalMode.classList.add('visible');
+            setTimeout(() => temporalMode.classList.remove('visible'), 4000);
+
+            // Show description
+            message.textContent = modeData.description;
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), 5000);
+
+            // Handle merged mode specially
+            if (mode === 'all') {
+                stars.forEach(s => s.classList.add('visible'));
+                sun.classList.add('visible');
+                moon.classList.add('visible');
+                fireflies.forEach(f => f.style.opacity = 0.6);
+                Object.values(layers).forEach(l => l.style.opacity = 0.25);
+                clock.textContent = '\u221E';
+                timeName.textContent = 'all times';
+                timeSubtitle.textContent = 'the eternal moment';
+                updateConstellationLines();
+
+                setTimeout(() => {
+                    document.body.classList.remove('merged');
+                    setTime(currentTime);
+                }, 10000);
+            }
+
+            // Clock behavior
+            updateClockDisplay();
+        }
+
+        let slowClockOffset = 0;
+        function updateClockDisplay() {
+            if (!temporalModes[currentTemporalMode]) return;
+
+            const behavior = temporalModes[currentTemporalMode].clockBehavior;
+
+            if (behavior === 'slow') {
+                // Clock moves very slowly
+                slowClockOffset += 0.001;
+                const baseTime = times[currentTime].clock;
+                if (baseTime !== '--:--') {
+                    const [h, m] = baseTime.split(':').map(Number);
+                    const totalMins = h * 60 + m + Math.floor(slowClockOffset);
+                    const newH = Math.floor(totalMins / 60) % 24;
+                    const newM = totalMins % 60;
+                    clock.textContent = String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
+                }
+            } else if (behavior === 'now') {
+                clock.textContent = 'now';
+            } else if (behavior === 'all') {
+                clock.textContent = '\u221E';
+            } else {
+                clock.textContent = times[currentTime].clock;
+            }
+
+            // Update echo
+            document.getElementById('display').setAttribute('data-echo', clock.textContent);
+        }
+
+        function setTime(time) {
+            currentTime = time;
+            document.body.setAttribute('data-time', time);
+
+            // Reset all layers
+            Object.values(layers).forEach(l => l.style.opacity = 0);
+
+            // Reset atmospheric effects
+            mist.style.opacity = 0;
+            shimmer.style.opacity = 0;
+            dustContainer.style.opacity = 0;
+
+            // Show selected layer
+            if (layers[time]) {
+                layers[time].style.opacity = 1;
+            }
+
+            // Update display
+            updateClockDisplay();
+            timeName.textContent = time;
+            timeSubtitle.textContent = times[time].subtitle;
+
+            // Show message
+            const msgs = times[time].messages;
+            message.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), 6000);
+
+            // Update buttons
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.time === time);
+            });
+
+            // Celestial bodies and atmosphere
+            sun.classList.remove('visible');
+            moon.classList.remove('visible');
+            stars.forEach(s => s.classList.remove('visible'));
+            fireflies.forEach(f => f.style.opacity = 0);
+
+            if (time === 'late') {
+                moon.style.top = '12%';
+                moon.style.right = '18%';
+                moon.style.left = 'auto';
+                moon.style.bottom = 'auto';
+                moon.classList.add('visible');
+                stars.forEach(s => s.classList.add('visible'));
+
+                // Fireflies appear after stillness
+                setTimeout(() => {
+                    if (currentTime === 'late' && stillnessLevel > 0) {
+                        fireflies.forEach(f => f.style.opacity = 0.8);
+                    }
+                }, 12000);
+
+                updateConstellationLines();
+            } else if (time === 'golden') {
+                sun.style.bottom = '25%';
+                sun.style.left = '15%';
+                sun.style.right = 'auto';
+                sun.style.top = 'auto';
+                sun.classList.add('visible');
+                shimmer.style.opacity = 1;
+            } else if (time === 'dusk') {
+                sun.style.bottom = '8%';
+                sun.style.right = '25%';
+                sun.style.left = 'auto';
+                sun.style.top = 'auto';
+                sun.classList.add('visible');
+                dustContainer.style.opacity = 1;
+                stars.forEach((s, i) => {
+                    if (i < 20) s.classList.add('visible');
+                });
+                updateConstellationLines();
+            } else if (time === 'dawn') {
+                sun.style.bottom = '3%';
+                sun.style.left = '35%';
+                sun.style.right = 'auto';
+                sun.style.top = 'auto';
+                sun.classList.add('visible');
+                mist.style.opacity = 1;
+                stars.forEach((s, i) => {
+                    if (i < 8) s.classList.add('visible');
+                });
+            }
+        }
+
+        // Stillness detection
+        function checkStillness() {
+            const now = Date.now();
+            const stillDuration = now - lastMove;
+
+            if (stillDuration > 5000 && !stillnessRevealed) {
+                stillnessLevel = Math.min(3, Math.floor(stillDuration / 5000));
+
+                if (stillDuration > 8000 && stillDuration < 10000) {
+                    // First stillness reward
+                    stillnessMessage.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                    stillnessMessage.classList.add('visible');
+                    stillnessRevealed = true;
+
+                    setTimeout(() => {
+                        stillnessMessage.classList.remove('visible');
+                    }, 7000);
+                }
+
+                if (stillDuration > 15000 && stillDuration < 17000) {
+                    // Second reward - paradox appears
+                    const paradox = paradoxes[Math.floor(Math.random() * paradoxes.length)];
+                    paradoxLeft.textContent = paradox[0];
+                    paradoxRight.textContent = paradox[1];
+                    paradoxLeft.classList.add('visible');
+                    paradoxRight.classList.add('visible');
+
+                    setTimeout(() => {
+                        paradoxLeft.classList.remove('visible');
+                        paradoxRight.classList.remove('visible');
+                    }, 10000);
+                }
+
+                if (stillDuration > 25000) {
+                    // Deep stillness - fireflies regardless of time
+                    fireflies.forEach(f => f.style.opacity = 0.5);
+                }
+            }
+        }
+
+        // Track movement
+        document.addEventListener('mousemove', () => {
+            lastMove = Date.now();
+            stillnessRevealed = false;
+            stillnessLevel = 0;
+        });
+
+        // Check stillness periodically
+        setInterval(checkStillness, 1000);
+
+        // Control clicks
+        controls.addEventListener('click', (e) => {
+            if (e.target.classList.contains('time-btn')) {
+                autoShift = false;
+                setTime(e.target.dataset.time);
+                createRipple(e.clientX, e.clientY);
+            }
+        });
+
+        // Create ripple effect
+        function createRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'time-ripple';
+            ripple.style.left = (x - 100) + 'px';
+            ripple.style.top = (y - 100) + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 2000);
+        }
+
+        // Auto-shift times (slower, more patient)
+        const timeOrder = ['between', 'dawn', 'golden', 'dusk', 'late'];
+        let timeIndex = 0;
+
+        setInterval(() => {
+            if (autoShift && currentTemporalMode !== 'all') {
+                timeIndex = (timeIndex + 1) % timeOrder.length;
+                setTime(timeOrder[timeIndex]);
+            }
+        }, 25000); // Slower cycling - no urgency
+
+        // Initialize
+        setTime('between');
+
+        let isReversed = false;
+
+        // Right-click creates shooting star or sun flare
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                if (currentTime === 'late' || currentTime === 'dusk') {
+                    const star = document.createElement('div');
+                    star.className = 'shooting-star';
+                    star.style.left = e.clientX + 'px';
+                    star.style.top = e.clientY + 'px';
+                    document.body.appendChild(star);
+                    requestAnimationFrame(() => star.classList.add('animate'));
+                    setTimeout(() => star.remove(), 1500);
+                } else if (currentTime === 'golden' || currentTime === 'dawn') {
+                    const flare = document.createElement('div');
+                    flare.className = 'sun-flare';
+                    flare.style.left = (e.clientX - 60) + 'px';
+                    flare.style.top = (e.clientY - 60) + 'px';
+                    document.body.appendChild(flare);
+                    setTimeout(() => flare.remove(), 3000);
+                }
+            }
+        });
+
+        // Triple-click easter egg
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('time-btn') || e.target.classList.contains('back-link')) return;
+
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => clickCount = 0, 600);
+
+            if (clickCount === 3) {
+                clickCount = 0;
+                secretPhrase.textContent = secretPhrases[Math.floor(Math.random() * secretPhrases.length)];
+                secretPhrase.classList.add('visible');
+                setTimeout(() => secretPhrase.classList.remove('visible'), 6000);
+            }
+        });
+
+        // Sound toggle (hidden)
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.classList.toggle('active', soundEnabled);
+            if (soundEnabled) {
+                message.textContent = 'listening...';
+            } else {
+                message.textContent = 'silence returns';
+            }
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), 3000);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Time selection
+            if (e.code === 'Digit1') {
+                autoShift = false;
+                setTime('late');
+            }
+            if (e.code === 'Digit2') {
+                autoShift = false;
+                setTime('dawn');
+            }
+            if (e.code === 'Digit3') {
+                autoShift = false;
+                setTime('between');
+            }
+            if (e.code === 'Digit4') {
+                autoShift = false;
+                setTime('golden');
+            }
+            if (e.code === 'Digit5') {
+                autoShift = false;
+                setTime('dusk');
+            }
+
+            // Temporal modes
+            if (e.code === 'KeyT') {
+                setTemporalMode('timeless');
+            }
+            if (e.code === 'KeyS') {
+                setTemporalMode('slow');
+            }
+            if (e.code === 'KeyE') {
+                setTemporalMode('eternal');
+            }
+            if (e.code === 'KeyM' || e.code === 'Space') {
+                e.preventDefault();
+                setTemporalMode('all');
+            }
+
+            // Auto cycle
+            if (e.code === 'KeyA') {
+                autoShift = !autoShift;
+                message.textContent = autoShift ? 'time flows once more' : 'time rests';
+                message.classList.add('visible');
+                setTimeout(() => message.classList.remove('visible'), 4000);
+            }
+
+            // Reverse
+            if (e.code === 'KeyR') {
+                isReversed = !isReversed;
+                timeOrder.reverse();
+                message.textContent = isReversed ? 'time flows backward' : 'time flows forward';
+                message.classList.add('visible');
+                setTimeout(() => message.classList.remove('visible'), 4000);
+            }
+
+            // Freeze
+            if (e.code === 'KeyF') {
+                document.body.classList.toggle('frozen');
+                message.textContent = document.body.classList.contains('frozen') ? 'frozen in amber' : 'time thaws';
+                message.classList.add('visible');
+                setTimeout(() => message.classList.remove('visible'), 4000);
+            }
+
+            // Constellations
+            if (e.code === 'KeyC') {
+                document.body.classList.toggle('show-constellations');
+                if (document.body.classList.contains('show-constellations')) {
+                    updateConstellationLines();
+                    message.textContent = 'ancient patterns revealed';
+                } else {
+                    message.textContent = 'constellations fade';
+                }
+                message.classList.add('visible');
+                setTimeout(() => message.classList.remove('visible'), 4000);
+            }
+
+            // Arrow navigation
+            if (e.code === 'ArrowRight') {
+                autoShift = false;
+                timeIndex = (timeIndex + 1) % timeOrder.length;
+                setTime(timeOrder[timeIndex]);
+            }
+            if (e.code === 'ArrowLeft') {
+                autoShift = false;
+                timeIndex = (timeIndex - 1 + timeOrder.length) % timeOrder.length;
+                setTime(timeOrder[timeIndex]);
+            }
+
+            // Escape
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Update constellation lines on resize
+        window.addEventListener('resize', updateConstellationLines);
+
+        // Slow time clock update
+        setInterval(() => {
+            if (currentTemporalMode === 'slow') {
+                updateClockDisplay();
+            }
+        }, 100);
+
+        // Occasional paradox appearance (rare)
+        setInterval(() => {
+            if (Math.random() < 0.1 && stillnessLevel > 0) {
+                const paradox = paradoxes[Math.floor(Math.random() * paradoxes.length)];
+                paradoxLeft.textContent = paradox[0];
+                paradoxRight.textContent = paradox[1];
+                paradoxLeft.classList.add('visible');
+
+                setTimeout(() => {
+                    paradoxRight.classList.add('visible');
+                }, 2000);
+
+                setTimeout(() => {
+                    paradoxLeft.classList.remove('visible');
+                    paradoxRight.classList.remove('visible');
+                }, 12000);
+            }
+        }, 60000);
+
+        // Console poetry
+        console.log('%c', 'padding: 20px');
+        console.log('%ctime', 'font-size: 24px; color: #d4a056; font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 300;');
+        console.log('%c', 'padding: 5px');
+        console.log('%call times exist at once', 'font-size: 12px; color: #718096; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%c', 'padding: 3px');
+        console.log('%cbetween dawn golden dusk late', 'font-size: 10px; color: #4a5568; letter-spacing: 0.15em;');
+        console.log('%c', 'padding: 10px');
+        console.log('%c"the clock measures nothing"', 'font-size: 9px; color: #2d3748; font-style: italic;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cbe still. time responds to patience.', 'font-size: 8px; color: #1a202c; font-style: italic;');
+        console.log('%c', 'padding: 3px');
+        console.log('%c[t] timeless  [s] slow  [e] eternal  [m] all', 'font-size: 8px; color: #2d3748;');
+        console.log('%ctriple-click for secrets', 'font-size: 7px; color: #1a202c; font-style: italic; opacity: 0.7;');
+    </script>
+</body>
+</html>

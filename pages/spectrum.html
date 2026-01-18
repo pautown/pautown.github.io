@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>spectrum - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: background-color 3s ease;
+        }
+
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .color-field {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        /* The space between colors - visible absence */
+        .color-space {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                hsla(0, 0%, 100%, 0.03) 0%,
+                transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .color-space.resonating {
+            opacity: 1;
+            animation: space-breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes space-breathe {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+
+        /* Floating color orbs */
+        .color-orb {
+            position: absolute;
+            border-radius: 50%;
+            cursor: grab;
+            transition: transform 0.3s ease, box-shadow 0.5s ease, filter 0.5s ease;
+            animation: drift var(--drift-duration, 20s) ease-in-out infinite;
+            animation-delay: var(--drift-delay, 0s);
+            filter: blur(0.5px);
+        }
+
+        .color-orb::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            background: transparent;
+            transition: box-shadow 1s ease;
+        }
+
+        /* Temperature indicator - warm colors glow warm */
+        .color-orb.warm::before {
+            box-shadow: 0 0 20px hsla(30, 80%, 60%, 0.2);
+        }
+
+        .color-orb.cool::before {
+            box-shadow: 0 0 20px hsla(200, 60%, 60%, 0.15);
+        }
+
+        .color-orb:hover {
+            transform: scale(1.15);
+            filter: blur(0);
+        }
+
+        /* Friendship/avoidance indicators */
+        .color-orb.attracted {
+            animation-duration: 12s !important;
+        }
+
+        .color-orb.repelled {
+            animation-duration: 8s !important;
+            filter: blur(0.8px);
+        }
+
+        .color-orb.caught {
+            cursor: grabbing;
+            animation-play-state: paused;
+            filter: blur(0);
+        }
+
+        .color-orb.caught-gentle {
+            transform: scale(1.2);
+            box-shadow: 0 0 40px var(--glow-color, hsla(45, 50%, 60%, 0.4));
+        }
+
+        .color-orb.caught-firm {
+            transform: scale(1.35);
+            filter: brightness(1.1);
+        }
+
+        .color-orb.releasing {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(2);
+        }
+
+        .color-orb.ascending {
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(-100px) scale(0.5);
+            opacity: 0;
+        }
+
+        .color-orb.descending {
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(100px) scale(1.5);
+            opacity: 0;
+            filter: blur(3px);
+        }
+
+        .color-orb.splitting {
+            animation: split-pulse 0.6s ease-out forwards;
+        }
+
+        .color-orb.remembering {
+            animation: remember-pulse 2s ease-in-out;
+        }
+
+        @keyframes split-pulse {
+            0% { transform: scale(1.3); }
+            50% { transform: scale(1.8); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        @keyframes remember-pulse {
+            0%, 100% { filter: blur(0.5px); }
+            50% { filter: blur(2px) brightness(1.2); }
+        }
+
+        @keyframes drift {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(calc(var(--drift-x, 30px)), calc(var(--drift-y, -20px))) rotate(5deg);
+            }
+            50% {
+                transform: translate(calc(var(--drift-x2, -20px)), calc(var(--drift-y2, 25px))) rotate(-3deg);
+            }
+            75% {
+                transform: translate(calc(var(--drift-x3, 15px)), calc(var(--drift-y3, -15px))) rotate(2deg);
+            }
+        }
+
+        /* Child colors that emerge from splits */
+        .child-color {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: child-emerge 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            filter: blur(0.3px);
+        }
+
+        @keyframes child-emerge {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            30% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translate(calc(-50% + var(--emerge-x)), calc(-50% + var(--emerge-y))) scale(1);
+                opacity: 0.7;
+            }
+        }
+
+        /* Memory trail - colors leave traces of their former selves */
+        .memory-trace {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: memory-fade 8s ease-out forwards;
+        }
+
+        @keyframes memory-fade {
+            0% { opacity: 0.4; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.3); }
+        }
+
+        /* The nameless color - shifts and cannot be pinned */
+        .nameless-color {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: help;
+            animation: nameless-shift 8s ease-in-out infinite, drift 25s ease-in-out infinite;
+            filter: blur(1px);
+            transition: filter 0.5s ease;
+        }
+
+        .nameless-color:hover {
+            filter: blur(2px);
+            animation-duration: 4s, 25s;
+        }
+
+        .nameless-color::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            border: 1px dashed var(--slate-light);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .nameless-color:hover::after {
+            opacity: 0.3;
+        }
+
+        @keyframes nameless-shift {
+            0%, 100% {
+                background: linear-gradient(135deg,
+                    hsl(280, 30%, 70%) 0%,
+                    hsl(200, 40%, 65%) 50%,
+                    hsl(340, 35%, 68%) 100%);
+                box-shadow: 0 0 30px hsla(280, 30%, 60%, 0.3);
+            }
+            25% {
+                background: linear-gradient(135deg,
+                    hsl(190, 35%, 68%) 0%,
+                    hsl(260, 30%, 72%) 50%,
+                    hsl(30, 40%, 65%) 100%);
+                box-shadow: 0 0 30px hsla(190, 35%, 58%, 0.3);
+            }
+            50% {
+                background: linear-gradient(135deg,
+                    hsl(320, 25%, 70%) 0%,
+                    hsl(180, 35%, 67%) 50%,
+                    hsl(240, 30%, 72%) 100%);
+                box-shadow: 0 0 30px hsla(320, 25%, 60%, 0.3);
+            }
+            75% {
+                background: linear-gradient(135deg,
+                    hsl(45, 35%, 68%) 0%,
+                    hsl(300, 28%, 70%) 50%,
+                    hsl(160, 32%, 66%) 100%);
+                box-shadow: 0 0 30px hsla(45, 35%, 58%, 0.3);
+            }
+        }
+
+        /* The forgotten color - the color of things almost said */
+        .forgotten-color {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,
+                hsl(52, 45%, 72%) 0%,
+                hsl(45, 30%, 55%) 40%,
+                hsl(38, 20%, 45%) 100%);
+            box-shadow: 0 0 25px hsla(48, 35%, 50%, 0.25);
+            cursor: pointer;
+            opacity: 0;
+            filter: blur(0.5px);
+            transition: all 1s ease;
+            pointer-events: none;
+        }
+
+        .forgotten-color.manifesting {
+            opacity: 0.5;
+            pointer-events: auto;
+            animation: forgotten-breathe 6s ease-in-out infinite;
+        }
+
+        .forgotten-color:hover {
+            filter: blur(0);
+            box-shadow: 0 0 40px hsla(48, 40%, 55%, 0.4);
+        }
+
+        .forgotten-color::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                hsla(55, 50%, 80%, 0.4) 0%,
+                transparent 50%);
+        }
+
+        .forgotten-color::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            background: radial-gradient(circle, transparent 50%, hsla(48, 30%, 60%, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .forgotten-color:hover::after {
+            opacity: 1;
+        }
+
+        @keyframes forgotten-breathe {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.05); opacity: 0.6; }
+        }
+
+        /* Harmony lines between friendly colors */
+        .harmony-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--line-color, hsla(45, 40%, 60%, 0.15)) 50%,
+                transparent 100%);
+            pointer-events: none;
+            transform-origin: left center;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .harmony-line.visible {
+            opacity: 1;
+        }
+
+        .harmony-line.dissonant {
+            background: linear-gradient(90deg,
+                transparent 0%,
+                hsla(0, 30%, 50%, 0.1) 30%,
+                transparent 50%,
+                hsla(0, 30%, 50%, 0.1) 70%,
+                transparent 100%);
+            animation: dissonance-flicker 0.5s ease-in-out infinite;
+        }
+
+        @keyframes dissonance-flicker {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.1; }
+        }
+
+        /* Sound visualization rings */
+        .sound-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid var(--slate);
+            pointer-events: none;
+            animation: sound-expand 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes sound-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.5;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+
+        /* Chord visualization - multiple colors sounding together */
+        .chord-aura {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmax;
+            height: 100vmax;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease;
+            background: radial-gradient(circle,
+                var(--chord-color-1, transparent) 0%,
+                var(--chord-color-2, transparent) 30%,
+                var(--chord-color-3, transparent) 60%,
+                transparent 100%);
+        }
+
+        .chord-aura.sounding {
+            opacity: 0.15;
+            animation: chord-pulse 3s ease-in-out;
+        }
+
+        @keyframes chord-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1); opacity: 0.15; }
+        }
+
+        /* Fading sound visualization */
+        .fade-trail {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fade-drift 4s ease-out forwards;
+        }
+
+        @keyframes fade-drift {
+            0% { opacity: 0.6; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.2); }
+        }
+
+        /* Whisper text for color revelations */
+        .color-whisper {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            animation: whisper-fade 4s ease forwards;
+            letter-spacing: 0.08em;
+        }
+
+        @keyframes whisper-fade {
+            0% { opacity: 0; transform: translateY(10px); }
+            20% { opacity: 0.5; transform: translateY(0); }
+            80% { opacity: 0.5; }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* Personality emergence - colors developing character */
+        .personality-hint {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 1s ease;
+            letter-spacing: 0.1em;
+        }
+
+        /* Synesthesia hint at bottom */
+        .synesthesia-hint {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            letter-spacing: 0.15em;
+            text-align: center;
+        }
+
+        body:hover .synesthesia-hint {
+            opacity: 0.25;
+        }
+
+        /* Instruction that fades */
+        .instruction {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            animation: instruction-appear 4s ease 2s forwards;
+            letter-spacing: 0.12em;
+        }
+
+        @keyframes instruction-appear {
+            0% { opacity: 0; }
+            100% { opacity: 0.35; }
+        }
+
+        .instruction.hidden {
+            opacity: 0 !important;
+            transition: opacity 2s ease;
+        }
+
+        /* Key hint */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 2.2;
+        }
+
+        body:hover .key-hint {
+            opacity: 0.18;
+        }
+
+        /* Rainbow revelation mode */
+        body.rainbow-mode {
+            background: linear-gradient(135deg,
+                hsla(0, 60%, 95%, 1) 0%,
+                hsla(60, 60%, 95%, 1) 25%,
+                hsla(120, 60%, 95%, 1) 50%,
+                hsla(240, 60%, 95%, 1) 75%,
+                hsla(300, 60%, 95%, 1) 100%);
+            animation: rainbow-shift 20s ease infinite;
+        }
+
+        @keyframes rainbow-shift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+
+        /* Color frequency display */
+        .frequency-display {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate-light);
+            opacity: 0;
+            letter-spacing: 0.2em;
+            transition: opacity 1s ease;
+        }
+
+        .frequency-display.visible {
+            opacity: 0.4;
+        }
+
+        /* Temperature display */
+        .temperature-display {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate-light);
+            opacity: 0;
+            letter-spacing: 0.15em;
+            transition: opacity 1s ease;
+        }
+
+        .temperature-display.visible {
+            opacity: 0.3;
+        }
+
+        /* Weight indicator */
+        .weight-indicator {
+            position: fixed;
+            bottom: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1s ease, transform 0.5s ease;
+        }
+
+        .weight-indicator.visible {
+            opacity: 0.2;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.95rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            text-align: center;
+            pointer-events: none;
+            letter-spacing: 0.05em;
+            max-width: 80%;
+            line-height: 1.9;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Sound enabled indicator */
+        .sound-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+            letter-spacing: 0.1em;
+        }
+
+        body:hover .sound-indicator {
+            opacity: 0.2;
+        }
+
+        .sound-indicator:hover {
+            opacity: 0.5 !important;
+        }
+
+        .sound-indicator.enabled::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: var(--amber);
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* Pre-language glow effect */
+        .prelanguage-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                hsla(var(--glow-hue, 45), 40%, 70%, 0.08) 0%,
+                transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease, background 1s ease;
+        }
+
+        .prelanguage-glow.visible {
+            opacity: 1;
+        }
+
+        /* Essence meditation - what IS color */
+        .essence-meditation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            text-align: center;
+            max-width: 70%;
+            line-height: 2.2;
+            letter-spacing: 0.03em;
+            transition: opacity 4s ease;
+        }
+
+        .essence-meditation.visible {
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+    <div class="grain"></div>
+
+    <div class="color-field" id="colorField"></div>
+    <div class="chord-aura" id="chordAura"></div>
+    <div class="prelanguage-glow" id="prelanguageGlow"></div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+    <div class="essence-meditation" id="essenceMeditation"></div>
+    <div class="frequency-display" id="frequencyDisplay"></div>
+    <div class="temperature-display" id="temperatureDisplay"></div>
+    <div class="weight-indicator" id="weightIndicator"></div>
+
+    <p class="instruction" id="instruction">catch a color gently. how you hold it matters.</p>
+    <p class="synesthesia-hint">light's way of being specific</p>
+
+    <div class="key-hint">
+        [r] rainbow revelation<br>
+        [n] summon nameless<br>
+        [f] await the forgotten<br>
+        [h] show harmonies<br>
+        [e] essence meditation
+    </div>
+
+    <div class="sound-indicator" id="soundIndicator">sound</div>
+
+    <script>
+        // Web Audio API setup
+        let audioContext = null;
+        let soundEnabled = false;
+        let masterGain = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioContext.createGain();
+                masterGain.connect(audioContext.destination);
+                masterGain.gain.setValueAtTime(0.15, audioContext.currentTime);
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function playTone(frequency, duration = 1.5, type = 'sine', volume = 0.08) {
+            if (!soundEnabled || !audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(masterGain);
+
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+            // Gentle envelope
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playChord(frequencies, duration = 2, stagger = 100) {
+            if (!soundEnabled || !audioContext) return;
+
+            frequencies.forEach((freq, i) => {
+                setTimeout(() => playTone(freq, duration, 'sine', 0.05), i * stagger);
+            });
+        }
+
+        // Play harmony between two colors
+        function playHarmony(freq1, freq2, harmonious = true) {
+            if (!soundEnabled || !audioContext) return;
+
+            const interval = harmonious ? 1.5 : 1.414; // Perfect fifth vs tritone
+            playTone(freq1, 2, 'sine', 0.04);
+            setTimeout(() => playTone(freq2, 1.8, 'sine', 0.04), 100);
+            if (harmonious) {
+                setTimeout(() => playTone(freq1 * interval, 1.5, 'triangle', 0.02), 200);
+            }
+        }
+
+        // Play the sound of a color fading
+        function playFade(frequency, duration = 3) {
+            if (!soundEnabled || !audioContext) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(frequency * 0.5, audioContext.currentTime + duration);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, audioContext.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + duration);
+
+            gain.gain.setValueAtTime(0.06, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        // Color definitions with deep properties
+        const colorDefinitions = [
+            {
+                hue: 0, sat: 65, light: 65,
+                name: 'red',
+                frequency: 440, // A4
+                temperature: 'hot',
+                weight: 'heavy',
+                texture: 'velvet',
+                personality: { trait: 'passionate', emergesAfter: 3 },
+                friends: ['orange', 'magenta'],
+                avoids: ['cyan', 'green'],
+                history: 'remembers fire, first seen at dusk of creation',
+                hiddenColors: [
+                    { hue: 350, sat: 70, light: 70 },
+                    { hue: 15, sat: 80, light: 60 },
+                    { hue: 330, sat: 55, light: 65 }
+                ],
+                formerSelf: { hue: 30, sat: 50, light: 70, when: 'before it learned intensity' },
+                whispers: [
+                    'red remembers fire',
+                    'blood is red because life insists',
+                    'the first color was red, or so red claims'
+                ]
+            },
+            {
+                hue: 30, sat: 70, light: 65,
+                name: 'orange',
+                frequency: 493.88, // B4
+                temperature: 'warm',
+                weight: 'medium',
+                texture: 'citrus-rough',
+                personality: { trait: 'generous', emergesAfter: 4 },
+                friends: ['red', 'yellow'],
+                avoids: ['blue', 'violet'],
+                history: 'holds sunset prisoner, dawn\'s favorite child',
+                hiddenColors: [
+                    { hue: 20, sat: 75, light: 60 },
+                    { hue: 45, sat: 65, light: 70 },
+                    { hue: 10, sat: 60, light: 55 }
+                ],
+                formerSelf: { hue: 45, sat: 60, light: 65, when: 'when it was younger and more golden' },
+                whispers: [
+                    'orange holds sunset prisoner',
+                    'between red and yellow, orange chose both',
+                    'orange is compromise as celebration'
+                ]
+            },
+            {
+                hue: 55, sat: 70, light: 65,
+                name: 'yellow',
+                frequency: 523.25, // C5
+                temperature: 'bright-warm',
+                weight: 'light',
+                texture: 'smooth-electric',
+                personality: { trait: 'anxious-joyful', emergesAfter: 2 },
+                friends: ['orange', 'green'],
+                avoids: ['violet', 'blue'],
+                history: 'joy pretending, closest to light itself',
+                hiddenColors: [
+                    { hue: 50, sat: 80, light: 75 },
+                    { hue: 65, sat: 60, light: 60 },
+                    { hue: 42, sat: 75, light: 55 }
+                ],
+                formerSelf: { hue: 48, sat: 40, light: 80, when: 'before it learned to shout' },
+                whispers: [
+                    'yellow is joy pretending',
+                    'closest to light, yellow forgets it is color',
+                    'yellow and grief share a wavelength'
+                ]
+            },
+            {
+                hue: 120, sat: 45, light: 55,
+                name: 'green',
+                frequency: 587.33, // D5
+                temperature: 'neutral',
+                weight: 'grounded',
+                texture: 'moss-soft',
+                personality: { trait: 'patient', emergesAfter: 5 },
+                friends: ['cyan', 'yellow'],
+                avoids: ['red', 'magenta'],
+                history: 'patience growing, forest\'s first language',
+                hiddenColors: [
+                    { hue: 140, sat: 50, light: 50 },
+                    { hue: 100, sat: 55, light: 60 },
+                    { hue: 160, sat: 40, light: 55 }
+                ],
+                formerSelf: { hue: 80, sat: 60, light: 60, when: 'as a young leaf' },
+                whispers: [
+                    'green is patience growing',
+                    'green holds its breath for centuries',
+                    'all other colors visit; green remains'
+                ]
+            },
+            {
+                hue: 200, sat: 60, light: 60,
+                name: 'cyan',
+                frequency: 659.25, // E5
+                temperature: 'cool',
+                weight: 'flowing',
+                texture: 'water-glass',
+                personality: { trait: 'contemplative', emergesAfter: 4 },
+                friends: ['blue', 'green'],
+                avoids: ['red', 'orange'],
+                history: 'whispers of depth, where sky meets sea',
+                hiddenColors: [
+                    { hue: 185, sat: 55, light: 65 },
+                    { hue: 210, sat: 50, light: 55 },
+                    { hue: 175, sat: 45, light: 60 }
+                ],
+                formerSelf: { hue: 190, sat: 30, light: 70, when: 'before learning depth' },
+                whispers: [
+                    'cyan whispers of depth',
+                    'where air and water agree, cyan appears',
+                    'cyan is blue learning to breathe'
+                ]
+            },
+            {
+                hue: 240, sat: 55, light: 60,
+                name: 'blue',
+                frequency: 698.46, // F5
+                temperature: 'cold',
+                weight: 'vast',
+                texture: 'silk-distance',
+                personality: { trait: 'melancholic', emergesAfter: 3 },
+                friends: ['cyan', 'violet'],
+                avoids: ['orange', 'yellow'],
+                history: 'holds distance, the color of longing',
+                hiddenColors: [
+                    { hue: 220, sat: 60, light: 55 },
+                    { hue: 255, sat: 50, light: 65 },
+                    { hue: 230, sat: 45, light: 50 }
+                ],
+                formerSelf: { hue: 200, sat: 40, light: 65, when: 'when it was still becoming' },
+                whispers: [
+                    'blue holds distance',
+                    'every horizon is blue\'s way of hiding',
+                    'blue is the color of almost-touching'
+                ]
+            },
+            {
+                hue: 280, sat: 50, light: 60,
+                name: 'violet',
+                frequency: 783.99, // G5
+                temperature: 'mysterious-cool',
+                weight: 'ethereal',
+                texture: 'bruise-soft',
+                personality: { trait: 'regal-wounded', emergesAfter: 4 },
+                friends: ['blue', 'magenta'],
+                avoids: ['yellow', 'orange'],
+                history: 'remembers royalty and bruises equally',
+                hiddenColors: [
+                    { hue: 270, sat: 55, light: 55 },
+                    { hue: 295, sat: 45, light: 65 },
+                    { hue: 260, sat: 40, light: 50 }
+                ],
+                formerSelf: { hue: 300, sat: 35, light: 70, when: 'before it learned suffering' },
+                whispers: [
+                    'violet remembers royalty and bruises',
+                    'at spectrum\'s edge, violet almost disappears',
+                    'violet is red that traveled too far'
+                ]
+            },
+            {
+                hue: 320, sat: 55, light: 65,
+                name: 'magenta',
+                frequency: 880, // A5
+                temperature: 'warm-impossible',
+                weight: 'paradox',
+                texture: 'electric-velvet',
+                personality: { trait: 'liminal', emergesAfter: 5 },
+                friends: ['violet', 'red'],
+                avoids: ['green', 'cyan'],
+                history: 'exists between, has no wavelength of its own',
+                hiddenColors: [
+                    { hue: 330, sat: 60, light: 60 },
+                    { hue: 300, sat: 50, light: 55 },
+                    { hue: 345, sat: 45, light: 70 }
+                ],
+                formerSelf: { hue: 350, sat: 40, light: 65, when: 'before becoming impossible' },
+                whispers: [
+                    'magenta exists between',
+                    'magenta has no wavelength, only presence',
+                    'the brain invents magenta; magenta invents back'
+                ]
+            }
+        ];
+
+        // Stillness messages - deeper meditations
+        const stillnessMessages = [
+            'colors have always been speaking',
+            'every hue is a chord',
+            'what you see is what you almost hear',
+            'before words, there was wavelength',
+            'the spectrum holds secrets in plain sight',
+            'some colors have no names yet',
+            'between yellow and grief, something waits',
+            'sound and light are translations of the same truth',
+            'light chooses to be specific. this is color.',
+            'wavelengths deciding to be seen',
+            'the space between colors is also color',
+            'what you catch is what catches you',
+            'colors remember being other colors',
+            'every shade is several shades in agreement'
+        ];
+
+        // Essence meditations - the deepest truths
+        const essenceMeditations = [
+            'color is light deciding to mean something',
+            'wavelength choosing to be visible',
+            'the universe speaking in specifics',
+            'what if color is light\'s way of being honest?',
+            'electromagnetic truth dressed for perception',
+            'the difference between 400 and 700 nanometers\nis the difference between everything',
+            'light slowing down enough to be noticed',
+            'energy wearing a frequency like a name',
+            'the visible is a narrow kindness'
+        ];
+
+        // Right-click whispers
+        const rightClickWhispers = [
+            'colors do not lie',
+            'what did you expect to find?',
+            'the spectrum continues beyond sight',
+            'every shade is several shades pretending',
+            'listen with your eyes',
+            'see with your ears',
+            'synesthesia is honesty',
+            'the space between colors is itself a color',
+            'some frequencies refuse to be seen',
+            'you are mostly empty space viewing empty space'
+        ];
+
+        // State
+        const colorField = document.getElementById('colorField');
+        const frequencyDisplay = document.getElementById('frequencyDisplay');
+        const temperatureDisplay = document.getElementById('temperatureDisplay');
+        const weightIndicator = document.getElementById('weightIndicator');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const essenceMeditation = document.getElementById('essenceMeditation');
+        const instruction = document.getElementById('instruction');
+        const soundIndicator = document.getElementById('soundIndicator');
+        const prelanguageGlow = document.getElementById('prelanguageGlow');
+        const chordAura = document.getElementById('chordAura');
+
+        let activeOrbs = [];
+        let harmonyLines = [];
+        let colorSpaces = [];
+        let caughtOrb = null;
+        let catchStartTime = 0;
+        let catchY = 0;
+        let catchVelocity = 0;
+        let lastMouseY = 0;
+        let lastMouseTime = 0;
+        let lastMove = Date.now();
+        let interactionCount = 0;
+        let colorInteractions = {}; // Track interactions per color for personality emergence
+        let namelessColor = null;
+        let forgottenColor = null;
+        let showingHarmonies = false;
+        let notLookingTimer = null;
+        let isLooking = true;
+
+        // Determine catch style based on velocity and duration
+        function getCatchStyle(velocity, duration) {
+            const speed = Math.abs(velocity);
+            if (speed > 3) return 'grabbing';
+            if (speed < 0.5 && duration > 500) return 'gentle';
+            return 'normal';
+        }
+
+        // Determine release direction
+        function getReleaseDirection(startY, endY) {
+            const diff = endY - startY;
+            if (diff < -30) return 'ascending';
+            if (diff > 30) return 'descending';
+            return 'neutral';
+        }
+
+        // Create the space between two colors
+        function createColorSpace(orb1, orb2) {
+            const rect1 = orb1.getBoundingClientRect();
+            const rect2 = orb2.getBoundingClientRect();
+
+            const x = (rect1.left + rect2.left) / 2 + rect1.width / 2;
+            const y = (rect1.top + rect2.top) / 2 + rect1.height / 2;
+
+            const space = document.createElement('div');
+            space.className = 'color-space';
+            space.style.left = x + 'px';
+            space.style.top = y + 'px';
+            space.style.width = '80px';
+            space.style.height = '80px';
+            space.style.transform = 'translate(-50%, -50%)';
+
+            colorField.appendChild(space);
+            return space;
+        }
+
+        // Create harmony line between friendly colors
+        function createHarmonyLine(orb1, orb2, harmonious = true) {
+            const rect1 = orb1.getBoundingClientRect();
+            const rect2 = orb2.getBoundingClientRect();
+
+            const x1 = rect1.left + rect1.width / 2;
+            const y1 = rect1.top + rect1.height / 2;
+            const x2 = rect2.left + rect2.width / 2;
+            const y2 = rect2.top + rect2.height / 2;
+
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+            const line = document.createElement('div');
+            line.className = 'harmony-line' + (harmonious ? '' : ' dissonant');
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.width = length + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+
+            const colorDef1 = JSON.parse(orb1.dataset.colorDef);
+            line.style.setProperty('--line-color', `hsla(${colorDef1.hue}, 40%, 60%, 0.2)`);
+
+            colorField.appendChild(line);
+            return line;
+        }
+
+        // Update harmony lines
+        function updateHarmonies() {
+            // Remove old lines
+            harmonyLines.forEach(line => line.remove());
+            harmonyLines = [];
+
+            if (!showingHarmonies) return;
+
+            // Create new lines between friends
+            activeOrbs.forEach((orb1, i) => {
+                const colorDef1 = JSON.parse(orb1.dataset.colorDef);
+
+                activeOrbs.slice(i + 1).forEach(orb2 => {
+                    const colorDef2 = JSON.parse(orb2.dataset.colorDef);
+
+                    const isFriend = colorDef1.friends.includes(colorDef2.name);
+                    const isAvoiding = colorDef1.avoids.includes(colorDef2.name);
+
+                    if (isFriend || isAvoiding) {
+                        const line = createHarmonyLine(orb1, orb2, isFriend);
+                        line.classList.add('visible');
+                        harmonyLines.push(line);
+                    }
+                });
+            });
+        }
+
+        // Create color orb with full depth
+        function createColorOrb(colorDef, x, y) {
+            const orb = document.createElement('div');
+            orb.className = 'color-orb';
+            orb.classList.add(colorDef.temperature.includes('warm') || colorDef.temperature === 'hot' ? 'warm' : 'cool');
+
+            const size = 25 + Math.random() * 25;
+            const hsl = `hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light}%)`;
+            const shadow = `hsla(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light - 10}%, 0.4)`;
+
+            orb.style.width = size + 'px';
+            orb.style.height = size + 'px';
+            orb.style.background = `radial-gradient(circle at 35% 35%,
+                hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light + 15}%) 0%,
+                ${hsl} 50%,
+                hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light - 10}%) 100%)`;
+            orb.style.boxShadow = `0 0 20px ${shadow}`;
+            orb.style.left = x + 'px';
+            orb.style.top = y + 'px';
+            orb.style.setProperty('--glow-color', shadow);
+
+            // Random drift parameters
+            orb.style.setProperty('--drift-duration', (18 + Math.random() * 10) + 's');
+            orb.style.setProperty('--drift-delay', Math.random() * -20 + 's');
+            orb.style.setProperty('--drift-x', (Math.random() * 60 - 30) + 'px');
+            orb.style.setProperty('--drift-y', (Math.random() * 60 - 30) + 'px');
+            orb.style.setProperty('--drift-x2', (Math.random() * 60 - 30) + 'px');
+            orb.style.setProperty('--drift-y2', (Math.random() * 60 - 30) + 'px');
+            orb.style.setProperty('--drift-x3', (Math.random() * 60 - 30) + 'px');
+            orb.style.setProperty('--drift-y3', (Math.random() * 60 - 30) + 'px');
+
+            orb.dataset.colorDef = JSON.stringify(colorDef);
+            orb.dataset.frequency = colorDef.frequency;
+            orb.dataset.interactions = '0';
+
+            // Event listeners
+            orb.addEventListener('mousedown', catchOrb);
+            orb.addEventListener('touchstart', catchOrb, { passive: false });
+
+            colorField.appendChild(orb);
+            activeOrbs.push(orb);
+
+            return orb;
+        }
+
+        // Catch an orb - now with nuance
+        function catchOrb(e) {
+            e.preventDefault();
+            initAudio();
+            lastMove = Date.now();
+
+            const orb = e.target.closest('.color-orb');
+            if (!orb || orb.classList.contains('caught')) return;
+
+            caughtOrb = orb;
+            catchStartTime = Date.now();
+            catchY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+            catchVelocity = 0;
+
+            orb.classList.add('caught');
+
+            const colorDef = JSON.parse(orb.dataset.colorDef);
+
+            // Track interactions for personality emergence
+            const interactions = parseInt(orb.dataset.interactions) + 1;
+            orb.dataset.interactions = interactions.toString();
+
+            if (!colorInteractions[colorDef.name]) {
+                colorInteractions[colorDef.name] = 0;
+            }
+            colorInteractions[colorDef.name]++;
+
+            // Show personality if enough interactions
+            if (colorInteractions[colorDef.name] >= colorDef.personality.emergesAfter) {
+                setTimeout(() => {
+                    showWhisper(`${colorDef.name} is ${colorDef.personality.trait}`,
+                        orb.getBoundingClientRect().left,
+                        orb.getBoundingClientRect().top - 30);
+                }, 1000);
+            }
+
+            // Show frequency, temperature, weight
+            if (soundEnabled) {
+                frequencyDisplay.textContent = `${colorDef.frequency.toFixed(2)} Hz`;
+                frequencyDisplay.classList.add('visible');
+            }
+            temperatureDisplay.textContent = colorDef.temperature;
+            temperatureDisplay.classList.add('visible');
+
+            // Weight indicator
+            const weights = { light: 0.3, medium: 0.5, heavy: 0.7, grounded: 0.6, vast: 0.8, flowing: 0.4, ethereal: 0.2, paradox: 0.5 };
+            const weightValue = weights[colorDef.weight] || 0.5;
+            weightIndicator.style.transform = `translateX(-50%) scaleX(${weightValue * 2})`;
+            weightIndicator.classList.add('visible');
+
+            // Play a soft tone while holding
+            if (soundEnabled && audioContext) {
+                const holdOsc = audioContext.createOscillator();
+                const holdGain = audioContext.createGain();
+                holdOsc.connect(holdGain);
+                holdGain.connect(masterGain);
+                holdOsc.type = 'sine';
+                holdOsc.frequency.setValueAtTime(colorDef.frequency * 0.5, audioContext.currentTime);
+                holdGain.gain.setValueAtTime(0.02, audioContext.currentTime);
+                holdOsc.start();
+
+                orb._holdOsc = holdOsc;
+                orb._holdGain = holdGain;
+            }
+
+            // Update glow
+            prelanguageGlow.style.setProperty('--glow-hue', colorDef.hue);
+            prelanguageGlow.classList.add('visible');
+
+            interactionCount++;
+            if (interactionCount > 2) {
+                instruction.classList.add('hidden');
+            }
+        }
+
+        // Track mouse velocity
+        document.addEventListener('mousemove', (e) => {
+            const now = Date.now();
+            if (caughtOrb && lastMouseTime) {
+                const dt = now - lastMouseTime;
+                if (dt > 0) {
+                    catchVelocity = (e.clientY - lastMouseY) / dt * 10;
+                }
+            }
+            lastMouseY = e.clientY;
+            lastMouseTime = now;
+            lastMove = now;
+        });
+
+        // Release orb - with catch style and direction effects
+        function releaseOrb(e) {
+            if (!caughtOrb) return;
+
+            const orb = caughtOrb;
+            const colorDef = JSON.parse(orb.dataset.colorDef);
+            const rect = orb.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const holdDuration = Date.now() - catchStartTime;
+            const releaseY = e?.clientY || (e?.changedTouches && e.changedTouches[0].clientY) || centerY;
+            const catchStyle = getCatchStyle(catchVelocity, holdDuration);
+            const releaseDirection = getReleaseDirection(catchY, releaseY);
+
+            // Stop hold tone
+            if (orb._holdOsc) {
+                orb._holdGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+                orb._holdOsc.stop(audioContext.currentTime + 0.3);
+            }
+
+            frequencyDisplay.classList.remove('visible');
+            temperatureDisplay.classList.remove('visible');
+            weightIndicator.classList.remove('visible');
+            prelanguageGlow.classList.remove('visible');
+
+            // Respond differently based on how it was caught
+            if (catchStyle === 'gentle' && holdDuration > 2000) {
+                // Gentle long hold - reveal history
+                orb.classList.remove('caught');
+                orb.classList.add('remembering');
+
+                showWhisper(colorDef.history, centerX, centerY);
+                playTone(colorDef.frequency * 0.75, 3, 'sine', 0.05);
+
+                // Show memory of former self
+                setTimeout(() => {
+                    const memory = document.createElement('div');
+                    memory.className = 'memory-trace';
+                    memory.style.left = (centerX + (Math.random() * 40 - 20)) + 'px';
+                    memory.style.top = (centerY + (Math.random() * 40 - 20)) + 'px';
+                    memory.style.width = rect.width * 0.7 + 'px';
+                    memory.style.height = rect.height * 0.7 + 'px';
+                    memory.style.background = `radial-gradient(circle,
+                        hsl(${colorDef.formerSelf.hue}, ${colorDef.formerSelf.sat}%, ${colorDef.formerSelf.light}%) 0%,
+                        transparent 70%)`;
+                    colorField.appendChild(memory);
+
+                    showWhisper(colorDef.formerSelf.when, centerX, centerY + 50);
+
+                    setTimeout(() => memory.remove(), 8000);
+                }, 1000);
+
+                setTimeout(() => orb.classList.remove('remembering'), 2000);
+
+            } else if (releaseDirection === 'ascending') {
+                // Released upward - color ascends, becomes more ethereal
+                orb.classList.remove('caught');
+                orb.classList.add('ascending');
+
+                playFade(colorDef.frequency * 1.5, 2);
+                showWhisper('ascending toward light', centerX, centerY - 30);
+
+                // Create fade trail
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        const trail = document.createElement('div');
+                        trail.className = 'fade-trail';
+                        trail.style.left = centerX + (Math.random() * 20 - 10) + 'px';
+                        trail.style.top = centerY + 'px';
+                        trail.style.background = `hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light}%)`;
+                        colorField.appendChild(trail);
+                        setTimeout(() => trail.remove(), 4000);
+                    }, i * 100);
+                }
+
+                setTimeout(() => {
+                    orb.remove();
+                    activeOrbs = activeOrbs.filter(o => o !== orb);
+                    // Respawn lighter version
+                    setTimeout(() => {
+                        const x = Math.random() * (window.innerWidth - 100) + 50;
+                        const y = 50 + Math.random() * 100;
+                        const lighterDef = { ...colorDef, light: Math.min(colorDef.light + 10, 85) };
+                        createColorOrb(lighterDef, x, y);
+                    }, 3000);
+                }, 1200);
+
+            } else if (releaseDirection === 'descending') {
+                // Released downward - color becomes heavier, more saturated
+                orb.classList.remove('caught');
+                orb.classList.add('descending');
+
+                playTone(colorDef.frequency * 0.5, 2, 'triangle', 0.06);
+                showWhisper('sinking into weight', centerX, centerY + 30);
+
+                setTimeout(() => {
+                    orb.remove();
+                    activeOrbs = activeOrbs.filter(o => o !== orb);
+                    // Respawn darker/heavier version
+                    setTimeout(() => {
+                        const x = Math.random() * (window.innerWidth - 100) + 50;
+                        const y = window.innerHeight - 150 + Math.random() * 100;
+                        const heavierDef = { ...colorDef, sat: Math.min(colorDef.sat + 10, 85), light: Math.max(colorDef.light - 10, 35) };
+                        createColorOrb(heavierDef, x, y);
+                    }, 3000);
+                }, 1200);
+
+            } else if (catchStyle === 'grabbing') {
+                // Grabbed quickly - color splits in startlement
+                orb.classList.remove('caught');
+                orb.classList.add('splitting');
+
+                // Play dissonant chord
+                playChord([colorDef.frequency, colorDef.frequency * 1.4, colorDef.frequency * 0.7], 1.5, 50);
+
+                // Create scattered child colors
+                colorDef.hiddenColors.forEach((childColor, i) => {
+                    const angle = (i / colorDef.hiddenColors.length) * Math.PI * 2 + Math.random() * 0.5;
+                    const distance = 80 + Math.random() * 50;
+
+                    const child = document.createElement('div');
+                    child.className = 'child-color';
+                    child.style.width = '15px';
+                    child.style.height = '15px';
+                    child.style.background = `radial-gradient(circle at 35% 35%,
+                        hsl(${childColor.hue}, ${childColor.sat}%, ${childColor.light + 15}%) 0%,
+                        hsl(${childColor.hue}, ${childColor.sat}%, ${childColor.light}%) 50%,
+                        hsl(${childColor.hue}, ${childColor.sat}%, ${childColor.light - 10}%) 100%)`;
+                    child.style.boxShadow = `0 0 15px hsla(${childColor.hue}, ${childColor.sat}%, ${childColor.light}%, 0.4)`;
+                    child.style.left = centerX + 'px';
+                    child.style.top = centerY + 'px';
+                    child.style.setProperty('--emerge-x', Math.cos(angle) * distance + 'px');
+                    child.style.setProperty('--emerge-y', Math.sin(angle) * distance + 'px');
+
+                    colorField.appendChild(child);
+                    setTimeout(() => child.remove(), 3000);
+                });
+
+                showWhisper('startled into components', centerX, centerY - 40);
+
+                setTimeout(() => {
+                    orb.remove();
+                    activeOrbs = activeOrbs.filter(o => o !== orb);
+                    setTimeout(() => {
+                        const x = Math.random() * (window.innerWidth - 100) + 50;
+                        const y = Math.random() * (window.innerHeight - 100) + 50;
+                        createColorOrb(colorDef, x, y);
+                    }, 4000);
+                }, 600);
+
+            } else {
+                // Normal release - various outcomes
+                const fate = Math.random();
+
+                if (fate < 0.35) {
+                    // Become sound
+                    orb.classList.remove('caught');
+                    orb.classList.add('releasing');
+
+                    playTone(colorDef.frequency, 2.5, 'sine');
+                    setTimeout(() => playTone(colorDef.frequency * 1.5, 2, 'triangle', 0.05), 200);
+
+                    createSoundRings(centerX, centerY, colorDef.hue);
+                    showWhisper(colorDef.whispers[Math.floor(Math.random() * colorDef.whispers.length)], centerX, centerY);
+
+                    setTimeout(() => {
+                        orb.remove();
+                        activeOrbs = activeOrbs.filter(o => o !== orb);
+                        setTimeout(() => {
+                            const x = Math.random() * (window.innerWidth - 100) + 50;
+                            const y = Math.random() * (window.innerHeight - 100) + 50;
+                            createColorOrb(colorDef, x, y);
+                        }, 3000);
+                    }, 800);
+
+                } else if (fate < 0.6) {
+                    // Reveal hidden complexity
+                    orb.classList.remove('caught');
+
+                    const originalBg = orb.style.background;
+                    orb.style.background = `conic-gradient(from ${Math.random() * 360}deg,
+                        hsl(${colorDef.hiddenColors[0].hue}, ${colorDef.hiddenColors[0].sat}%, ${colorDef.hiddenColors[0].light}%),
+                        hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light}%),
+                        hsl(${colorDef.hiddenColors[1].hue}, ${colorDef.hiddenColors[1].sat}%, ${colorDef.hiddenColors[1].light}%),
+                        hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light}%),
+                        hsl(${colorDef.hiddenColors[2].hue}, ${colorDef.hiddenColors[2].sat}%, ${colorDef.hiddenColors[2].light}%),
+                        hsl(${colorDef.hue}, ${colorDef.sat}%, ${colorDef.light}%))`;
+                    orb.style.transition = 'background 2s ease';
+
+                    playTone(colorDef.frequency * 0.75, 1.5, 'triangle', 0.04);
+                    showWhisper('the truth was always composite', centerX, centerY);
+
+                    setTimeout(() => {
+                        orb.style.background = originalBg;
+                    }, 2500);
+
+                } else {
+                    // Check relationships with nearby colors
+                    orb.classList.remove('caught');
+
+                    const nearbyOrbs = activeOrbs.filter(other => {
+                        if (other === orb) return false;
+                        const otherRect = other.getBoundingClientRect();
+                        const dx = (otherRect.left + otherRect.width / 2) - centerX;
+                        const dy = (otherRect.top + otherRect.height / 2) - centerY;
+                        return Math.sqrt(dx * dx + dy * dy) < 200;
+                    });
+
+                    if (nearbyOrbs.length > 0) {
+                        const other = nearbyOrbs[0];
+                        const otherDef = JSON.parse(other.dataset.colorDef);
+
+                        const isFriend = colorDef.friends.includes(otherDef.name);
+                        const isAvoiding = colorDef.avoids.includes(otherDef.name);
+
+                        if (isFriend) {
+                            playHarmony(colorDef.frequency, otherDef.frequency, true);
+                            showWhisper(`${colorDef.name} and ${otherDef.name} harmonize`, centerX, centerY);
+
+                            // Create chord aura
+                            chordAura.style.setProperty('--chord-color-1', `hsla(${colorDef.hue}, 50%, 60%, 0.1)`);
+                            chordAura.style.setProperty('--chord-color-2', `hsla(${otherDef.hue}, 50%, 60%, 0.1)`);
+                            chordAura.classList.add('sounding');
+                            setTimeout(() => chordAura.classList.remove('sounding'), 3000);
+
+                        } else if (isAvoiding) {
+                            playHarmony(colorDef.frequency, otherDef.frequency, false);
+                            showWhisper(`${colorDef.name} recoils from ${otherDef.name}`, centerX, centerY);
+                        } else {
+                            playTone(colorDef.frequency, 1.5, 'sine', 0.05);
+                            showWhisper(`${colorDef.name} notices ${otherDef.name}`, centerX, centerY);
+                        }
+                    } else {
+                        showWhisper(colorDef.whispers[0], centerX, centerY);
+                    }
+                }
+            }
+
+            caughtOrb = null;
+        }
+
+        // Create sound visualization rings
+        function createSoundRings(x, y, hue) {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const ring = document.createElement('div');
+                    ring.className = 'sound-ring';
+                    ring.style.left = x + 'px';
+                    ring.style.top = y + 'px';
+                    ring.style.transform = 'translate(-50%, -50%)';
+                    ring.style.borderColor = `hsla(${hue}, 50%, 60%, 0.4)`;
+                    colorField.appendChild(ring);
+                    setTimeout(() => ring.remove(), 3000);
+                }, i * 200);
+            }
+        }
+
+        // Show whisper text
+        function showWhisper(text, x, y) {
+            const whisper = document.createElement('div');
+            whisper.className = 'color-whisper';
+            whisper.textContent = text;
+            whisper.style.left = x + 'px';
+            whisper.style.top = (y + 50) + 'px';
+            whisper.style.transform = 'translateX(-50%)';
+            document.body.appendChild(whisper);
+            setTimeout(() => whisper.remove(), 4000);
+        }
+
+        // Create nameless color
+        function createNamelessColor() {
+            if (namelessColor) namelessColor.remove();
+
+            namelessColor = document.createElement('div');
+            namelessColor.className = 'nameless-color';
+            namelessColor.style.left = (Math.random() * (window.innerWidth - 100) + 50) + 'px';
+            namelessColor.style.top = (Math.random() * (window.innerHeight - 100) + 50) + 'px';
+            namelessColor.style.setProperty('--drift-duration', '25s');
+            namelessColor.style.setProperty('--drift-x', (Math.random() * 80 - 40) + 'px');
+            namelessColor.style.setProperty('--drift-y', (Math.random() * 80 - 40) + 'px');
+
+            namelessColor.addEventListener('click', () => {
+                const whispers = [
+                    'this color exists before language',
+                    'wavelength without name',
+                    'what is called nothing is still something',
+                    'between all colors, this one hides'
+                ];
+                showWhisper(whispers[Math.floor(Math.random() * whispers.length)],
+                    namelessColor.getBoundingClientRect().left,
+                    namelessColor.getBoundingClientRect().top);
+
+                // Play shifting, uncertain tone
+                if (soundEnabled && audioContext) {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, audioContext.currentTime);
+                    osc.frequency.linearRampToValueAtTime(500, audioContext.currentTime + 1);
+                    osc.frequency.linearRampToValueAtTime(350, audioContext.currentTime + 2);
+                    gain.gain.setValueAtTime(0.05, audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2.5);
+                    osc.start();
+                    osc.stop(audioContext.currentTime + 2.5);
+                }
+            });
+
+            colorField.appendChild(namelessColor);
+        }
+
+        // Create the forgotten color - appears when not sought
+        function createForgottenColor() {
+            if (forgottenColor) forgottenColor.remove();
+
+            forgottenColor = document.createElement('div');
+            forgottenColor.className = 'forgotten-color';
+            forgottenColor.style.left = (Math.random() * (window.innerWidth - 100) + 50) + 'px';
+            forgottenColor.style.top = (Math.random() * (window.innerHeight - 100) + 50) + 'px';
+
+            forgottenColor.addEventListener('click', () => {
+                const whispers = [
+                    'you found what you forgot you were seeking',
+                    'the color of things almost said',
+                    'between yellow and grief, you remembered',
+                    'some colors only exist in peripheral vision',
+                    'this is what goodbye looks like before it happens'
+                ];
+                showWhisper(whispers[Math.floor(Math.random() * whispers.length)],
+                    forgottenColor.getBoundingClientRect().left,
+                    forgottenColor.getBoundingClientRect().top);
+
+                // Play melancholic, fading tone
+                if (soundEnabled && audioContext) {
+                    playFade(392, 4); // G4
+                    setTimeout(() => playFade(349.23, 3), 400); // F4
+                    setTimeout(() => playFade(329.63, 2.5), 800); // E4
+                }
+
+                // Briefly solidify then fade
+                forgottenColor.style.opacity = '0.8';
+                forgottenColor.classList.remove('manifesting');
+
+                setTimeout(() => {
+                    forgottenColor.style.opacity = '0';
+                    forgottenColor.style.transition = 'opacity 3s ease';
+
+                    setTimeout(() => {
+                        if (forgottenColor) {
+                            forgottenColor.style.left = (Math.random() * (window.innerWidth - 100) + 50) + 'px';
+                            forgottenColor.style.top = (Math.random() * (window.innerHeight - 100) + 50) + 'px';
+                            forgottenColor.style.opacity = '';
+                            forgottenColor.style.transition = '';
+                        }
+                    }, 5000);
+                }, 2000);
+            });
+
+            colorField.appendChild(forgottenColor);
+        }
+
+        // Check if user is "not looking" - for forgotten color to appear
+        function checkNotLooking() {
+            // Forgotten color appears when attention wanders
+            if (Date.now() - lastMove > 12000 && forgottenColor && !forgottenColor.classList.contains('manifesting')) {
+                forgottenColor.style.left = (Math.random() * (window.innerWidth - 100) + 50) + 'px';
+                forgottenColor.style.top = (Math.random() * (window.innerHeight - 100) + 50) + 'px';
+                forgottenColor.classList.add('manifesting');
+            }
+        }
+
+        // Initialize orbs
+        function initOrbs() {
+            colorDefinitions.forEach(colorDef => {
+                const x = Math.random() * (window.innerWidth - 100) + 50;
+                const y = Math.random() * (window.innerHeight - 100) + 50;
+                createColorOrb(colorDef, x, y);
+            });
+
+            // Create special colors with delay
+            setTimeout(createNamelessColor, 3000);
+            setTimeout(createForgottenColor, 5000);
+        }
+
+        // Event listeners
+        document.addEventListener('mouseup', releaseOrb);
+        document.addEventListener('touchend', releaseOrb);
+
+        // Right-click whisper
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            const whisper = rightClickWhispers[Math.floor(Math.random() * rightClickWhispers.length)];
+            showWhisper(whisper, e.clientX, e.clientY);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            lastMove = Date.now();
+
+            if (e.key.toLowerCase() === 'r') {
+                document.body.classList.toggle('rainbow-mode');
+                if (document.body.classList.contains('rainbow-mode')) {
+                    showWhisper('rainbow revelation', window.innerWidth / 2, window.innerHeight / 2);
+                    if (soundEnabled) {
+                        colorDefinitions.forEach((c, i) => {
+                            setTimeout(() => playTone(c.frequency, 1, 'sine', 0.04), i * 150);
+                        });
+                    }
+                }
+            }
+
+            if (e.key.toLowerCase() === 'n') {
+                createNamelessColor();
+                showWhisper('the nameless approaches', window.innerWidth / 2, window.innerHeight / 2);
+            }
+
+            if (e.key.toLowerCase() === 'f') {
+                if (forgottenColor) {
+                    // Pressing F makes it harder to find - it flees from intention
+                    forgottenColor.classList.remove('manifesting');
+                    forgottenColor.style.opacity = '0';
+                    showWhisper('the forgotten cannot be summoned', window.innerWidth / 2, window.innerHeight / 2);
+
+                    // Reposition secretly
+                    setTimeout(() => {
+                        if (forgottenColor) {
+                            forgottenColor.style.left = (Math.random() * (window.innerWidth - 100) + 50) + 'px';
+                            forgottenColor.style.top = (Math.random() * (window.innerHeight - 100) + 50) + 'px';
+                            forgottenColor.style.opacity = '';
+                        }
+                    }, 3000);
+                }
+            }
+
+            if (e.key.toLowerCase() === 'h') {
+                showingHarmonies = !showingHarmonies;
+                if (showingHarmonies) {
+                    showWhisper('seeing relationships', window.innerWidth / 2, window.innerHeight / 2);
+                    updateHarmonies();
+                } else {
+                    harmonyLines.forEach(line => line.remove());
+                    harmonyLines = [];
+                }
+            }
+
+            if (e.key.toLowerCase() === 'e') {
+                // Essence meditation
+                essenceMeditation.textContent = essenceMeditations[Math.floor(Math.random() * essenceMeditations.length)];
+                essenceMeditation.classList.add('visible');
+                setTimeout(() => essenceMeditation.classList.remove('visible'), 8000);
+            }
+
+            if (e.key === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Sound toggle
+        soundIndicator.addEventListener('click', () => {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            soundIndicator.classList.toggle('enabled', soundEnabled);
+            soundIndicator.textContent = soundEnabled ? 'listening' : 'sound';
+
+            if (soundEnabled) {
+                playTone(440, 1, 'sine', 0.05);
+                setTimeout(() => playTone(554.37, 0.8, 'sine', 0.05), 150);
+                setTimeout(() => playTone(659.25, 0.6, 'sine', 0.05), 300);
+            }
+        });
+
+        // Stillness and forgotten color detection
+        setInterval(() => {
+            const timeSinceMove = Date.now() - lastMove;
+
+            if (timeSinceMove > 8000 && timeSinceMove < 20000) {
+                stillnessMessage.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                stillnessMessage.classList.add('visible');
+            } else {
+                stillnessMessage.classList.remove('visible');
+            }
+
+            checkNotLooking();
+
+            // Update harmonies periodically if showing
+            if (showingHarmonies) {
+                updateHarmonies();
+            }
+        }, 2000);
+
+        // Mouse leaving window triggers "not looking"
+        document.addEventListener('mouseleave', () => {
+            isLooking = false;
+            setTimeout(checkNotLooking, 3000);
+        });
+
+        document.addEventListener('mouseenter', () => {
+            isLooking = true;
+            lastMove = Date.now();
+        });
+
+        // Initialize
+        initOrbs();
+
+        // Console poetry - deeper
+        console.log('%c', 'font-size: 1px; padding: 40px;');
+        console.log('%cspectrum', 'font-size: 20px; color: #d4a056; font-weight: 100; letter-spacing: 0.5em;');
+        console.log('%c', 'font-size: 1px; padding: 10px;');
+        console.log('%clight\'s way of being specific', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%cwhat is color?', 'font-size: 11px; color: #a0aec0;');
+        console.log('%cwavelength choosing to be seen', 'font-size: 9px; color: #a0aec0;');
+        console.log('%cthe universe speaking in specifics', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%ccolors have histories', 'font-size: 9px; color: #718096;');
+        console.log('%csome are friends, some avoid each other', 'font-size: 9px; color: #718096;');
+        console.log('%cthey remember being other colors', 'font-size: 9px; color: #718096;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%chow you catch a color matters', 'font-size: 9px; color: #d4a056;');
+        console.log('%cgentle reveals history', 'font-size: 8px; color: #d4a056; font-style: italic;');
+        console.log('%cgrabbing startles into components', 'font-size: 8px; color: #d4a056; font-style: italic;');
+        console.log('%creleasing upward: ascension', 'font-size: 8px; color: #d4a056; font-style: italic;');
+        console.log('%creleasing downward: weight', 'font-size: 8px; color: #d4a056; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 15px;');
+        console.log('%cthe forgotten color appears when you\'re not seeking it', 'font-size: 8px; color: #a0aec0; font-style: italic;');
+        console.log('%cit is the color of things almost said', 'font-size: 8px; color: #a0aec0; font-style: italic;');
+        console.log('%c', 'font-size: 1px; padding: 20px;');
+        console.log('%c[r] rainbow  [n] nameless  [h] harmonies  [e] essence', 'font-size: 7px; color: #cbd5e0;');
+    </script>
+</body>
+</html>

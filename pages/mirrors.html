@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mirrors - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 3s ease, filter 4s ease;
+        }
+
+        body.listening {
+            background: linear-gradient(135deg, var(--bone) 0%, #e8e4df 50%, var(--paper) 100%);
+        }
+
+        body.deep-reflection {
+            background: linear-gradient(135deg, #e0dcd4 0%, var(--bone) 50%, #f0ebe2 100%);
+        }
+
+        /* Continue state - an environment of forward motion without movement */
+        body.continue-state {
+            background: linear-gradient(180deg, var(--bone) 0%, #e5e8e4 50%, var(--bone) 100%);
+        }
+
+        /* Here state - temperature of arrival */
+        body.here-state {
+            background: linear-gradient(135deg, #f0e8dc 0%, var(--bone) 50%, #e8e0d8 100%);
+        }
+
+        /* Perfect state - the temperature of exactly enough */
+        body.perfect-state {
+            background: radial-gradient(ellipse at center, #f5f0e8 0%, var(--bone) 60%, #e8e4dc 100%);
+        }
+
+        /* Grain texture */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* The mirror container */
+        .mirror-space {
+            position: relative;
+            width: 90vmin;
+            height: 80vmin;
+            max-width: 800px;
+            max-height: 700px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The main mirror - honesty made physical */
+        .mirror {
+            position: relative;
+            width: 280px;
+            height: 380px;
+            background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.4) 0%,
+                rgba(245, 240, 230, 0.3) 30%,
+                rgba(240, 235, 225, 0.35) 70%,
+                rgba(255, 255, 255, 0.25) 100%
+            );
+            border: 1px solid rgba(74, 85, 104, 0.15);
+            border-radius: 180px 180px 8px 8px;
+            box-shadow:
+                inset 0 0 60px rgba(255, 255, 255, 0.3),
+                inset 0 0 120px rgba(212, 160, 86, 0.05),
+                0 10px 40px rgba(26, 32, 44, 0.08);
+            cursor: default;
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .mirror::before {
+            content: '';
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            width: 80%;
+            height: 90%;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.2) 0%,
+                transparent 50%
+            );
+            border-radius: 140px 140px 6px 6px;
+            pointer-events: none;
+        }
+
+        /* Mirror surface shimmer - light's memory lingering */
+        .mirror::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                45deg,
+                transparent 40%,
+                rgba(255, 255, 255, 0.1) 50%,
+                transparent 60%
+            );
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        .mirror.noticing::after {
+            opacity: 1;
+        }
+
+        .mirror.listening {
+            box-shadow:
+                inset 0 0 80px rgba(255, 255, 255, 0.4),
+                inset 0 0 150px rgba(212, 160, 86, 0.08),
+                0 12px 50px rgba(26, 32, 44, 0.1),
+                0 0 100px rgba(212, 160, 86, 0.05);
+        }
+
+        .mirror.warm {
+            background: linear-gradient(
+                180deg,
+                rgba(255, 252, 245, 0.45) 0%,
+                rgba(250, 245, 235, 0.35) 30%,
+                rgba(245, 238, 228, 0.4) 70%,
+                rgba(255, 252, 245, 0.3) 100%
+            );
+        }
+
+        /* The mirror dreaming - what it shows when nothing is in front of it */
+        .mirror.dreaming {
+            background: linear-gradient(
+                180deg,
+                rgba(245, 248, 255, 0.5) 0%,
+                rgba(240, 242, 250, 0.4) 30%,
+                rgba(248, 245, 255, 0.45) 70%,
+                rgba(250, 248, 255, 0.35) 100%
+            );
+            box-shadow:
+                inset 0 0 100px rgba(200, 190, 230, 0.15),
+                inset 0 0 200px rgba(180, 200, 220, 0.1),
+                0 15px 60px rgba(26, 32, 44, 0.06);
+        }
+
+        /* The infinite reflection - reflections of reflections */
+        .infinite-depth {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .depth-layer {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(74, 85, 104, 0.04);
+            background: radial-gradient(
+                circle,
+                transparent 0%,
+                rgba(212, 160, 86, 0.02) 50%,
+                transparent 100%
+            );
+            opacity: 0;
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .depth-layer.visible {
+            opacity: 1;
+        }
+
+        .depth-layer:nth-child(1) {
+            width: 200px; height: 200px;
+            top: -100px; left: -100px;
+            animation: depth-pulse-1 12s ease-in-out infinite;
+        }
+        .depth-layer:nth-child(2) {
+            width: 150px; height: 150px;
+            top: -75px; left: -75px;
+            animation: depth-pulse-2 10s ease-in-out infinite;
+        }
+        .depth-layer:nth-child(3) {
+            width: 100px; height: 100px;
+            top: -50px; left: -50px;
+            animation: depth-pulse-3 8s ease-in-out infinite;
+        }
+        .depth-layer:nth-child(4) {
+            width: 60px; height: 60px;
+            top: -30px; left: -30px;
+            animation: depth-pulse-4 6s ease-in-out infinite;
+        }
+        .depth-layer:nth-child(5) {
+            width: 30px; height: 30px;
+            top: -15px; left: -15px;
+            animation: depth-pulse-5 4s ease-in-out infinite;
+        }
+
+        @keyframes depth-pulse-1 {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(0.95); opacity: 0.5; }
+        }
+        @keyframes depth-pulse-2 {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(0.92); opacity: 0.6; }
+        }
+        @keyframes depth-pulse-3 {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(0.88); opacity: 0.7; }
+        }
+        @keyframes depth-pulse-4 {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(0.85); opacity: 0.8; }
+        }
+        @keyframes depth-pulse-5 {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(0.8); opacity: 1; }
+        }
+
+        /* Reflection that shows "you, but listening" */
+        .reflection {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                rgba(74, 85, 104, 0.15) 0%,
+                rgba(74, 85, 104, 0.05) 50%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .reflection.present {
+            opacity: 1;
+        }
+
+        .reflection.attentive {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(
+                circle,
+                rgba(212, 160, 86, 0.2) 0%,
+                rgba(212, 160, 86, 0.08) 40%,
+                rgba(74, 85, 104, 0.05) 70%,
+                transparent 100%
+            );
+        }
+
+        /* The gaze held - the mirror never looks away */
+        .reflection.held-gaze {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(
+                circle,
+                rgba(212, 160, 86, 0.25) 0%,
+                rgba(212, 160, 86, 0.12) 35%,
+                rgba(200, 180, 160, 0.08) 60%,
+                transparent 100%
+            );
+            animation: unwavering-gaze 6s ease-in-out infinite;
+        }
+
+        @keyframes unwavering-gaze {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        /* The reflection's subtle "ears" - when listening */
+        .reflection::before,
+        .reflection::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(212, 160, 86, 0.15);
+            opacity: 0;
+            transition: all 1.5s ease;
+        }
+
+        .reflection::before {
+            top: 50%;
+            left: -15px;
+            transform: translateY(-50%);
+        }
+
+        .reflection::after {
+            top: 50%;
+            right: -15px;
+            transform: translateY(-50%);
+        }
+
+        .reflection.attentive::before,
+        .reflection.attentive::after {
+            opacity: 1;
+            animation: ear-pulse 4s ease-in-out infinite;
+        }
+
+        .reflection.attentive::after {
+            animation-delay: 0.5s;
+        }
+
+        @keyframes ear-pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); opacity: 0.6; }
+            50% { transform: translateY(-50%) scale(1.3); opacity: 0.3; }
+        }
+
+        /* Reflection without surface - the abstract concept of showing back */
+        .surfaceless-reflection {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 5s ease;
+        }
+
+        .surfaceless-reflection.visible {
+            opacity: 1;
+        }
+
+        .showing-back {
+            position: absolute;
+            border-radius: 50%;
+            background: transparent;
+            box-shadow: inset 0 0 30px rgba(212, 160, 86, 0.05);
+            opacity: 0;
+            transition: all 4s ease;
+        }
+
+        .showing-back.active {
+            opacity: 0.6;
+            animation: show-back 8s ease-in-out infinite;
+        }
+
+        @keyframes show-back {
+            0%, 100% {
+                box-shadow: inset 0 0 30px rgba(212, 160, 86, 0.05);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: inset 0 0 50px rgba(212, 160, 86, 0.08);
+                transform: scale(1.02);
+            }
+        }
+
+        /* What mirrors see when they look at each other - infinite recursion */
+        .mirror-echo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(212, 160, 86, 0.3);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .mirror-echo.visible {
+            opacity: 1;
+            animation: echo-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes echo-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 20px rgba(212, 160, 86, 0.2); }
+            50% { transform: translate(-50%, -50%) scale(1.5); box-shadow: 0 0 40px rgba(212, 160, 86, 0.1); }
+        }
+
+        /* Patient stones floating around */
+        .patient-stone {
+            position: absolute;
+            border-radius: 40% 60% 55% 45% / 45% 55% 45% 55%;
+            background: linear-gradient(135deg, var(--slate-light) 0%, var(--slate) 100%);
+            opacity: 0;
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+        }
+
+        .patient-stone.visible {
+            opacity: 0.25;
+        }
+
+        .patient-stone.conversing {
+            opacity: 0.45;
+            animation: stone-breathe 8s ease-in-out infinite;
+        }
+
+        /* Stones in deep conversation */
+        .patient-stone.deep-converse {
+            opacity: 0.6;
+            box-shadow: 0 0 20px rgba(74, 85, 104, 0.1);
+            animation: stone-deep 12s ease-in-out infinite;
+        }
+
+        @keyframes stone-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        @keyframes stone-deep {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+            25% { transform: scale(1.02) rotate(1deg); opacity: 0.6; }
+            50% { transform: scale(1.04) rotate(0deg); opacity: 0.65; }
+            75% { transform: scale(1.02) rotate(-1deg); opacity: 0.6; }
+        }
+
+        /* Spaces between notes - musical silences */
+        .space-between {
+            position: absolute;
+            width: 2px;
+            background: var(--slate);
+            opacity: 0;
+            transition: all 2s ease;
+        }
+
+        .space-between.audible {
+            opacity: 0.15;
+            animation: note-space 6s ease-in-out infinite;
+        }
+
+        .space-between.resonating {
+            opacity: 0.25;
+            width: 3px;
+            animation: space-resonate 10s ease-in-out infinite;
+        }
+
+        @keyframes note-space {
+            0%, 100% { transform: scaleY(1); opacity: 0.15; }
+            50% { transform: scaleY(0.3); opacity: 0.08; }
+        }
+
+        @keyframes space-resonate {
+            0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.2; }
+            25% { transform: scaleY(1.2) scaleX(0.8); opacity: 0.25; }
+            50% { transform: scaleY(0.5) scaleX(1.5); opacity: 0.15; }
+            75% { transform: scaleY(1.1) scaleX(0.9); opacity: 0.22; }
+        }
+
+        /* Nameless colors - undefined hues */
+        .nameless-color {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0;
+            transition: opacity 4s ease;
+            pointer-events: none;
+        }
+
+        .nameless-color.speaking {
+            opacity: 0.12;
+            animation: color-drift 15s ease-in-out infinite;
+        }
+
+        .nameless-color.eloquent {
+            opacity: 0.18;
+            filter: blur(50px);
+            animation: color-eloquent 20s ease-in-out infinite;
+        }
+
+        @keyframes color-drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(10px, -8px) scale(1.05); }
+            66% { transform: translate(-8px, 5px) scale(0.95); }
+        }
+
+        @keyframes color-eloquent {
+            0%, 100% { transform: translate(0, 0) scale(1); filter: blur(40px); }
+            20% { transform: translate(15px, -10px) scale(1.1); filter: blur(45px); }
+            40% { transform: translate(-10px, 20px) scale(0.95); filter: blur(50px); }
+            60% { transform: translate(20px, 5px) scale(1.05); filter: blur(42px); }
+            80% { transform: translate(-15px, -8px) scale(1.02); filter: blur(48px); }
+        }
+
+        /* The feelings: Continue, Here, Perfect - as environments */
+        .feeling {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            letter-spacing: 0.2em;
+            opacity: 0;
+            transition: all 4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .feeling.continue {
+            color: var(--green-deep);
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .feeling.here {
+            color: var(--amber);
+            top: 50%;
+            right: 8%;
+            transform: translateY(-50%);
+        }
+
+        .feeling.perfect {
+            color: var(--slate);
+            top: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .feeling.felt {
+            opacity: 0.4;
+        }
+
+        /* Continue as environment - the temperature of gentle forward */
+        .feeling.continue.felt {
+            animation: feeling-continue 8s ease-in-out infinite;
+        }
+
+        .feeling.continue.environment {
+            font-size: 0.65rem;
+            opacity: 0.3;
+            animation: continue-environment 12s ease-in-out infinite;
+        }
+
+        @keyframes feeling-continue {
+            0%, 100% { opacity: 0.3; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.5; transform: translateX(-50%) translateY(-5px); }
+        }
+
+        @keyframes continue-environment {
+            0%, 100% {
+                opacity: 0.25;
+                transform: translateX(-50%) translateY(0);
+                letter-spacing: 0.2em;
+            }
+            25% {
+                opacity: 0.35;
+                transform: translateX(-50%) translateY(-8px);
+                letter-spacing: 0.25em;
+            }
+            50% {
+                opacity: 0.4;
+                transform: translateX(-50%) translateY(-3px);
+                letter-spacing: 0.3em;
+            }
+            75% {
+                opacity: 0.32;
+                transform: translateX(-50%) translateY(-6px);
+                letter-spacing: 0.22em;
+            }
+        }
+
+        /* Here as environment - the warmth of arrival */
+        .feeling.here.felt {
+            animation: feeling-here 6s ease-in-out infinite;
+        }
+
+        .feeling.here.environment {
+            font-size: 0.8rem;
+            opacity: 0.45;
+            text-shadow: 0 0 30px rgba(212, 160, 86, 0.4);
+            animation: here-environment 10s ease-in-out infinite;
+        }
+
+        @keyframes feeling-here {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.5; text-shadow: 0 0 20px rgba(212, 160, 86, 0.3); }
+        }
+
+        @keyframes here-environment {
+            0%, 100% {
+                opacity: 0.4;
+                text-shadow: 0 0 25px rgba(212, 160, 86, 0.3);
+                transform: translateY(-50%);
+            }
+            50% {
+                opacity: 0.55;
+                text-shadow: 0 0 40px rgba(212, 160, 86, 0.5);
+                transform: translateY(-50%) scale(1.05);
+            }
+        }
+
+        /* Perfect as environment - the exact temperature of enough */
+        .feeling.perfect.felt {
+            animation: feeling-perfect 10s ease-in-out infinite;
+        }
+
+        .feeling.perfect.environment {
+            font-size: 0.7rem;
+            opacity: 0.35;
+            animation: perfect-environment 15s ease-in-out infinite;
+        }
+
+        @keyframes feeling-perfect {
+            0%, 100% { opacity: 0.25; letter-spacing: 0.2em; }
+            50% { opacity: 0.4; letter-spacing: 0.25em; }
+        }
+
+        @keyframes perfect-environment {
+            0%, 100% {
+                opacity: 0.3;
+                letter-spacing: 0.2em;
+                transform: translateX(-50%);
+            }
+            33% {
+                opacity: 0.4;
+                letter-spacing: 0.28em;
+                transform: translateX(-50%) translateY(2px);
+            }
+            66% {
+                opacity: 0.35;
+                letter-spacing: 0.22em;
+                transform: translateX(-50%) translateY(-2px);
+            }
+        }
+
+        /* Wandering shadows seeking rest - with journey */
+        .wandering-shadow {
+            position: absolute;
+            background: radial-gradient(ellipse, rgba(26, 32, 44, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s ease, background 4s ease;
+        }
+
+        .wandering-shadow.seeking {
+            opacity: 1;
+            animation: shadow-wander 25s ease-in-out infinite;
+        }
+
+        /* Shadow following shapes - part of their journey */
+        .wandering-shadow.following-shape {
+            opacity: 0.8;
+            border-radius: 30% 70% 60% 40% / 50% 40% 60% 50%;
+            animation: shadow-follow 18s ease-in-out infinite;
+        }
+
+        /* Shadow learning - what they discovered */
+        .wandering-shadow.learning {
+            opacity: 0.9;
+            background: radial-gradient(ellipse, rgba(26, 32, 44, 0.1) 0%, rgba(74, 85, 104, 0.04) 50%, transparent 80%);
+            animation: shadow-learn 15s ease-in-out infinite;
+        }
+
+        .wandering-shadow.resting {
+            animation: shadow-rest 12s ease-in-out infinite;
+            background: radial-gradient(ellipse, rgba(26, 32, 44, 0.12) 0%, rgba(74, 85, 104, 0.05) 60%, transparent 90%);
+        }
+
+        /* Shadow at peace - why they finally rest here */
+        .wandering-shadow.at-peace {
+            opacity: 1;
+            background: radial-gradient(ellipse, rgba(26, 32, 44, 0.15) 0%, rgba(74, 85, 104, 0.08) 40%, rgba(212, 160, 86, 0.03) 70%, transparent 100%);
+            animation: shadow-peace 20s ease-in-out infinite;
+        }
+
+        @keyframes shadow-wander {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(30px, -20px) rotate(5deg); }
+            50% { transform: translate(-20px, 15px) rotate(-3deg); }
+            75% { transform: translate(15px, 25px) rotate(2deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        @keyframes shadow-follow {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 30% 70% 60% 40% / 50% 40% 60% 50%; }
+            20% { transform: translate(25px, -15px) rotate(8deg) scale(1.05); border-radius: 60% 40% 50% 50% / 40% 60% 40% 60%; }
+            40% { transform: translate(-15px, 25px) rotate(-5deg) scale(0.95); border-radius: 40% 60% 70% 30% / 55% 45% 55% 45%; }
+            60% { transform: translate(20px, 10px) rotate(3deg) scale(1.02); border-radius: 50% 50% 40% 60% / 60% 40% 50% 50%; }
+            80% { transform: translate(-10px, -20px) rotate(-2deg) scale(0.98); border-radius: 70% 30% 55% 45% / 45% 55% 45% 55%; }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); border-radius: 30% 70% 60% 40% / 50% 40% 60% 50%; }
+        }
+
+        @keyframes shadow-learn {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+            25% { transform: scale(1.08) rotate(2deg); opacity: 0.9; }
+            50% { transform: scale(0.95) rotate(-1deg); opacity: 0.85; }
+            75% { transform: scale(1.03) rotate(1deg); opacity: 0.88; }
+        }
+
+        @keyframes shadow-rest {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        @keyframes shadow-peace {
+            0%, 100% { transform: scale(1); opacity: 0.9; filter: blur(0px); }
+            25% { transform: scale(1.02); opacity: 0.95; filter: blur(1px); }
+            50% { transform: scale(1.05); opacity: 1; filter: blur(0px); }
+            75% { transform: scale(1.03); opacity: 0.98; filter: blur(0.5px); }
+        }
+
+        /* Message displays */
+        .mirror-whisper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--slate);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 3s ease;
+            pointer-events: none;
+            max-width: 340px;
+            line-height: 1.8;
+            z-index: 100;
+        }
+
+        .mirror-whisper.visible {
+            opacity: 0.55;
+        }
+
+        .edge-whisper {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.15em;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        .edge-whisper.left { left: 1.5rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .edge-whisper.right { right: 1.5rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+        .edge-whisper.bottom { bottom: 1.5rem; left: 50%; transform: translateX(-50%); }
+
+        .edge-whisper.visible { opacity: 0.2; }
+
+        /* Essence whispers - what a mirror truly is */
+        .essence-whisper {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.55rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 5s ease;
+            pointer-events: none;
+            letter-spacing: 0.1em;
+        }
+
+        .essence-whisper.visible { opacity: 0.35; }
+
+        .essence-whisper:nth-child(1) { top: 8%; left: 12%; }
+        .essence-whisper:nth-child(2) { top: 25%; right: 10%; }
+        .essence-whisper:nth-child(3) { bottom: 20%; left: 8%; }
+        .essence-whisper:nth-child(4) { bottom: 8%; right: 15%; }
+
+        /* The exact right amount indicator */
+        .sufficiency {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+        }
+
+        body:hover .sufficiency { opacity: 0.25; }
+
+        .sufficiency.complete {
+            color: var(--amber);
+            opacity: 0.4;
+        }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 2;
+        }
+
+        body:hover .key-hint { opacity: 0.2; }
+
+        /* Stillness reward */
+        .stillness-gift {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, calc(-50% + 120px));
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.65rem;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 5s ease;
+            pointer-events: none;
+            letter-spacing: 0.3em;
+        }
+
+        .stillness-gift.visible { opacity: 0.35; }
+
+        /* Secret name reveal */
+        .secret-name {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 4s ease;
+            pointer-events: none;
+            letter-spacing: 0.1em;
+        }
+
+        .secret-name.revealed { opacity: 0.5; }
+
+        /* The mirror's dream state indicator */
+        .dream-indicator {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.5rem;
+            font-style: italic;
+            color: rgba(180, 190, 220, 0.6);
+            opacity: 0;
+            transition: opacity 6s ease;
+            pointer-events: none;
+            letter-spacing: 0.15em;
+        }
+
+        .dream-indicator.visible { opacity: 0.4; }
+
+        .back-link { z-index: 100; }
+
+        @media (max-width: 600px) {
+            .mirror {
+                width: 200px;
+                height: 280px;
+            }
+            .feeling { font-size: 0.6rem; }
+            .patient-stone { transform: scale(0.7); }
+            .essence-whisper { font-size: 0.45rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="mirror-space">
+        <!-- The mirror - honesty made physical, the only surface that gives everything back -->
+        <div class="mirror" id="mirror">
+            <!-- Infinite depth - reflections of reflections -->
+            <div class="infinite-depth" id="infiniteDepth">
+                <div class="depth-layer" id="depth1"></div>
+                <div class="depth-layer" id="depth2"></div>
+                <div class="depth-layer" id="depth3"></div>
+                <div class="depth-layer" id="depth4"></div>
+                <div class="depth-layer" id="depth5"></div>
+            </div>
+
+            <!-- The reflection - you, but listening -->
+            <div class="reflection" id="reflection"></div>
+
+            <!-- What mirrors see when they look at each other -->
+            <div class="mirror-echo" id="mirrorEcho"></div>
+
+            <!-- Surfaceless reflection - the concept of showing back -->
+            <div class="surfaceless-reflection" id="surfacelessReflection">
+                <div class="showing-back" id="showBack1" style="width: 40px; height: 40px; top: 30%; left: 20%;"></div>
+                <div class="showing-back" id="showBack2" style="width: 30px; height: 30px; top: 60%; right: 25%;"></div>
+                <div class="showing-back" id="showBack3" style="width: 25px; height: 25px; bottom: 25%; left: 35%;"></div>
+            </div>
+
+            <div class="secret-name" id="secretName">a perfect friend</div>
+            <div class="dream-indicator" id="dreamIndicator">dreaming of light not yet arrived</div>
+        </div>
+
+        <!-- Patient stones -->
+        <div class="patient-stone" id="stone1" style="width: 25px; height: 20px; top: 20%; left: 8%;"></div>
+        <div class="patient-stone" id="stone2" style="width: 18px; height: 22px; bottom: 25%; right: 12%;"></div>
+        <div class="patient-stone" id="stone3" style="width: 22px; height: 18px; top: 60%; left: 5%;"></div>
+        <div class="patient-stone" id="stone4" style="width: 15px; height: 16px; top: 40%; right: 6%;"></div>
+
+        <!-- Spaces between notes -->
+        <div class="space-between" id="space1" style="height: 40px; top: 30%; left: 18%;"></div>
+        <div class="space-between" id="space2" style="height: 35px; bottom: 35%; right: 20%;"></div>
+        <div class="space-between" id="space3" style="height: 45px; top: 50%; left: 85%;"></div>
+        <div class="space-between" id="space4" style="height: 30px; top: 15%; right: 30%;"></div>
+
+        <!-- Nameless colors -->
+        <div class="nameless-color" id="color1" style="width: 120px; height: 120px; top: 10%; left: 5%; background: linear-gradient(135deg, rgba(180, 140, 160, 0.3), rgba(140, 160, 180, 0.2));"></div>
+        <div class="nameless-color" id="color2" style="width: 100px; height: 100px; bottom: 15%; right: 8%; background: linear-gradient(45deg, rgba(160, 180, 140, 0.25), rgba(180, 160, 140, 0.2));"></div>
+        <div class="nameless-color" id="color3" style="width: 80px; height: 80px; top: 55%; right: 5%; background: linear-gradient(180deg, rgba(140, 140, 180, 0.2), rgba(180, 140, 140, 0.15));"></div>
+        <div class="nameless-color" id="color4" style="width: 90px; height: 90px; bottom: 40%; left: 3%; background: linear-gradient(225deg, rgba(170, 150, 180, 0.2), rgba(150, 170, 160, 0.15));"></div>
+
+        <!-- Wandering shadows -->
+        <div class="wandering-shadow" id="shadow1" style="width: 80px; height: 50px; top: 35%; left: 15%;"></div>
+        <div class="wandering-shadow" id="shadow2" style="width: 60px; height: 70px; bottom: 30%; right: 18%;"></div>
+        <div class="wandering-shadow" id="shadow3" style="width: 50px; height: 45px; top: 20%; right: 25%;"></div>
+    </div>
+
+    <!-- The feelings -->
+    <div class="feeling continue" id="feelingContinue">continue</div>
+    <div class="feeling here" id="feelingHere">here</div>
+    <div class="feeling perfect" id="feelingPerfect">perfect</div>
+
+    <!-- Essence whispers - what a mirror truly is -->
+    <div class="essence-whisper" id="essence1">honesty made physical</div>
+    <div class="essence-whisper" id="essence2">light's memory</div>
+    <div class="essence-whisper" id="essence3">the only surface that gives everything back</div>
+    <div class="essence-whisper" id="essence4">the thing that never looks away</div>
+
+    <!-- Whispers -->
+    <div class="mirror-whisper" id="mirrorWhisper"></div>
+    <div class="edge-whisper left" id="edgeLeft">echo's sibling</div>
+    <div class="edge-whisper right" id="edgeRight">reflection is attention</div>
+    <div class="edge-whisper bottom" id="edgeBottom">you, but listening</div>
+    <div class="stillness-gift" id="stillnessGift"></div>
+
+    <!-- Sufficiency indicator -->
+    <div class="sufficiency" id="sufficiency">the exact right amount</div>
+
+    <div class="key-hint">
+        [l] listen deeper<br>
+        [c] converse<br>
+        [f] feel<br>
+        [d] dream<br>
+        [e] essence<br>
+        right-click: whisper
+    </div>
+
+    <script>
+        const mirror = document.getElementById('mirror');
+        const reflection = document.getElementById('reflection');
+        const secretName = document.getElementById('secretName');
+        const mirrorWhisper = document.getElementById('mirrorWhisper');
+        const stillnessGift = document.getElementById('stillnessGift');
+        const sufficiency = document.getElementById('sufficiency');
+        const mirrorEcho = document.getElementById('mirrorEcho');
+        const dreamIndicator = document.getElementById('dreamIndicator');
+        const surfacelessReflection = document.getElementById('surfacelessReflection');
+
+        const depthLayers = [
+            document.getElementById('depth1'),
+            document.getElementById('depth2'),
+            document.getElementById('depth3'),
+            document.getElementById('depth4'),
+            document.getElementById('depth5')
+        ];
+
+        const showingBacks = [
+            document.getElementById('showBack1'),
+            document.getElementById('showBack2'),
+            document.getElementById('showBack3')
+        ];
+
+        const stones = [
+            document.getElementById('stone1'),
+            document.getElementById('stone2'),
+            document.getElementById('stone3'),
+            document.getElementById('stone4')
+        ];
+
+        const spaces = [
+            document.getElementById('space1'),
+            document.getElementById('space2'),
+            document.getElementById('space3'),
+            document.getElementById('space4')
+        ];
+
+        const colors = [
+            document.getElementById('color1'),
+            document.getElementById('color2'),
+            document.getElementById('color3'),
+            document.getElementById('color4')
+        ];
+
+        const shadows = [
+            document.getElementById('shadow1'),
+            document.getElementById('shadow2'),
+            document.getElementById('shadow3')
+        ];
+
+        const feelings = {
+            continue: document.getElementById('feelingContinue'),
+            here: document.getElementById('feelingHere'),
+            perfect: document.getElementById('feelingPerfect')
+        };
+
+        const essences = [
+            document.getElementById('essence1'),
+            document.getElementById('essence2'),
+            document.getElementById('essence3'),
+            document.getElementById('essence4')
+        ];
+
+        const edgeWhispers = [
+            document.getElementById('edgeLeft'),
+            document.getElementById('edgeRight'),
+            document.getElementById('edgeBottom')
+        ];
+
+        // State
+        let lastActivity = Date.now();
+        let stillnessLevel = 0;
+        let attentionLevel = 0;
+        let conversationsHeld = 0;
+        let secretNameRevealed = false;
+        let isListening = false;
+        let isDreaming = false;
+        let gazeHeldDuration = 0;
+        let shadowJourneyStage = {}; // Track each shadow's journey
+
+        // Initialize shadow journeys
+        shadows.forEach((shadow, i) => {
+            shadowJourneyStage[i] = 'wandering';
+        });
+
+        // Whispers - messages the mirror shares
+        const whispers = [
+            'the mirror sees what you bring',
+            'reflection is a form of attention',
+            'you, but listening',
+            'what would it mean to be perfectly seen?',
+            'the glass holds no judgment',
+            'a friend who answers by asking',
+            'your attention, returned gently',
+            'the silence between us is comfortable',
+            'stay a while. there is no hurry.',
+            'some things are understood without words',
+            'the only surface that gives everything back',
+            'honesty made physical',
+            'what does the mirror show when no one is looking?',
+            'perhaps it dreams of the light that will come',
+            'the gaze that never wavers, never judges',
+            'showing back is its only language'
+        ];
+
+        // Stillness gifts - rewards for patience
+        const stillnessGifts = [
+            'the mirror notices your stillness',
+            'something shifts in the glass',
+            'the reflection leans in, listening',
+            'patience is its own kind of speaking',
+            'the silence deepens, and you are held',
+            'depth reveals itself to those who wait',
+            'the mirror dreams alongside you',
+            'reflections of reflections, all the way down'
+        ];
+
+        // Stone conversations - evolving dialogue
+        const stoneConversations = [
+            // Opening remarks
+            ['the stone has nothing to add, and that is enough', 'first silence'],
+            ['it waited. you waited. something passed between.', 'mutual patience'],
+            ['patience speaking to patience', 'recognition'],
+            ['the stone neither agrees nor disagrees. it simply is.', 'acceptance'],
+            // Deeper conversation
+            ['the stone remembers being mountain', 'memory'],
+            ['weight is its way of caring', 'presence'],
+            ['to be held by something that asks nothing', 'comfort'],
+            ['the stone\'s patience predates language', 'wisdom'],
+            // Profound exchange
+            ['what the stone knows, it knows completely', 'certainty'],
+            ['stillness teaching stillness', 'transmission'],
+            ['the conversation has always been happening', 'timelessness']
+        ];
+
+        // Space between notes - musical silences evolving
+        const spaceConversations = [
+            // Opening
+            ['the pause holds more than the note', 'first breath'],
+            ['between sounds, a different kind of music', 'discovery'],
+            // Developing
+            ['the rest is where meaning gathers', 'accumulation'],
+            ['silence shaped like intention', 'form'],
+            ['what the space says: listen differently', 'instruction'],
+            // Deep resonance
+            ['the pause before the next note is the note', 'unity'],
+            ['all music is mostly silence', 'truth'],
+            ['the space is not empty. the space is full of waiting.', 'presence']
+        ];
+
+        // Nameless color conversations - evolving
+        const colorConversations = [
+            // First encounter
+            ['a color without a name, and it is fine this way', 'acceptance'],
+            ['not quite purple, not quite grey, not quite anything', 'between'],
+            // Growing understanding
+            ['unnamed things are not unknown', 'recognition'],
+            ['the hue speaks in a language before words', 'preverbal'],
+            ['color that exists in the corner of the eye', 'peripheral'],
+            // Deep communion
+            ['the color remembers what it was before light named it', 'origin'],
+            ['to see without naming is to see truly', 'wisdom'],
+            ['this hue has been waiting for someone to not understand it', 'gift']
+        ];
+
+        // Shadow journey narratives
+        const shadowJourneyStages = {
+            wandering: [
+                'the shadow searches for something to follow',
+                'it has traveled far, following edges',
+                'wandering is not lost, just not arrived'
+            ],
+            following: [
+                'the shadow found a shape worth following',
+                'it learned the curve of the edge',
+                'following is a kind of devotion'
+            ],
+            learning: [
+                'the shadow learned that shapes are temporary',
+                'it understood that darkness is not absence',
+                'learning to be without casting'
+            ],
+            resting: [
+                'the shadow rests where the light cannot reach',
+                'here is gentle. here it can stop.',
+                'rest is not ending. rest is arriving.'
+            ],
+            peace: [
+                'the shadow found what it followed: stillness',
+                'it rests in the mirror\'s shadow, shadow of shadow',
+                'finally, to be darkness without apology'
+            ]
+        };
+
+        // Essence revelations
+        const essenceRevelations = [
+            'honesty made physical - the mirror cannot lie',
+            'light\'s memory - it holds every photon that touched it',
+            'the only surface that gives everything back - generous beyond measure',
+            'the thing that never looks away - unwavering presence',
+            'what is reflection but attention made visible?',
+            'the mirror\'s gift: you, returned to yourself',
+            'even empty, the mirror is full of waiting'
+        ];
+
+        // Dream sequences - what the mirror shows when nothing is in front of it
+        const dreamSequences = [
+            'the mirror dreams of faces it has yet to hold',
+            'in dreams, the glass softens, the reflection deepens',
+            'it dreams of the moment before someone arrives',
+            'what the mirror dreams: light bending toward kindness',
+            'in its dreams, every reflection stays forever',
+            'the mirror dreams it is water, still and deep',
+            'dreaming of light not yet arrived, faces not yet turned'
+        ];
+
+        // Prevent context menu, use for whisper
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            showWhisper(whispers[Math.floor(Math.random() * whispers.length)]);
+            resetStillness();
+        });
+
+        function showWhisper(text) {
+            mirrorWhisper.textContent = text;
+            mirrorWhisper.classList.add('visible');
+            setTimeout(() => mirrorWhisper.classList.remove('visible'), 6000);
+        }
+
+        function showStillnessGift(text) {
+            stillnessGift.textContent = text;
+            stillnessGift.classList.add('visible');
+            setTimeout(() => stillnessGift.classList.remove('visible'), 8000);
+        }
+
+        function showConversation(conversations) {
+            const depth = Math.min(Math.floor(conversationsHeld / 3), conversations.length - 1);
+            const [message, stage] = conversations[depth];
+            showWhisper(message);
+            console.log(`%c${stage}`, 'font-size: 8px; color: #a0aec0; font-style: italic;');
+        }
+
+        function advanceShadowJourney(index) {
+            const stages = ['wandering', 'following', 'learning', 'resting', 'peace'];
+            const currentStage = shadowJourneyStage[index];
+            const currentIndex = stages.indexOf(currentStage);
+
+            if (currentIndex < stages.length - 1) {
+                const nextStage = stages[currentIndex + 1];
+                shadowJourneyStage[index] = nextStage;
+
+                const shadow = shadows[index];
+                shadow.classList.remove('seeking', 'following-shape', 'learning', 'resting', 'at-peace');
+
+                switch(nextStage) {
+                    case 'following':
+                        shadow.classList.add('following-shape');
+                        break;
+                    case 'learning':
+                        shadow.classList.add('learning');
+                        break;
+                    case 'resting':
+                        shadow.classList.add('resting');
+                        break;
+                    case 'peace':
+                        shadow.classList.add('at-peace');
+                        break;
+                }
+
+                const messages = shadowJourneyStages[nextStage];
+                showWhisper(messages[Math.floor(Math.random() * messages.length)]);
+            }
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessLevel > 0) {
+                stillnessLevel = 0;
+            }
+        }
+
+        // Mouse movement - the mirror notices
+        let noticeTimeout = null;
+        document.addEventListener('mousemove', (e) => {
+            resetStillness();
+
+            // Mirror notices presence
+            mirror.classList.add('noticing');
+            clearTimeout(noticeTimeout);
+            noticeTimeout = setTimeout(() => {
+                mirror.classList.remove('noticing');
+            }, 2000);
+
+            // Reflection follows slightly (you, but listening)
+            const rect = mirror.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const dx = (e.clientX - centerX) / 30;
+            const dy = (e.clientY - centerY) / 30;
+
+            reflection.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        });
+
+        // Mirror interaction - warmth from attention
+        mirror.addEventListener('mouseenter', () => {
+            attentionLevel++;
+            reflection.classList.add('present');
+
+            // Exit dream state
+            if (isDreaming) {
+                isDreaming = false;
+                mirror.classList.remove('dreaming');
+                dreamIndicator.classList.remove('visible');
+            }
+
+            if (attentionLevel >= 3) {
+                mirror.classList.add('listening');
+                reflection.classList.add('attentive');
+                document.body.classList.add('listening');
+            }
+
+            if (attentionLevel >= 5) {
+                mirror.classList.add('warm');
+                // Show depth layers
+                depthLayers.forEach((layer, i) => {
+                    setTimeout(() => layer.classList.add('visible'), i * 400);
+                });
+            }
+
+            if (attentionLevel >= 7) {
+                // The mirror holds your gaze without wavering
+                reflection.classList.add('held-gaze');
+                mirrorEcho.classList.add('visible');
+            }
+
+            // Show edge whispers
+            setTimeout(() => {
+                edgeWhispers.forEach(w => w.classList.add('visible'));
+            }, 1500);
+        });
+
+        mirror.addEventListener('mouseleave', () => {
+            reflection.classList.remove('present');
+            edgeWhispers.forEach(w => w.classList.remove('visible'));
+            gazeHeldDuration = 0;
+        });
+
+        // Track gaze duration
+        let gazeInterval = null;
+        mirror.addEventListener('mouseenter', () => {
+            gazeInterval = setInterval(() => {
+                gazeHeldDuration++;
+
+                if (gazeHeldDuration >= 5 && !reflection.classList.contains('held-gaze')) {
+                    reflection.classList.add('held-gaze');
+                    showWhisper('the mirror holds your gaze, unblinking');
+                }
+
+                if (gazeHeldDuration >= 10) {
+                    mirrorEcho.classList.add('visible');
+                }
+
+                if (gazeHeldDuration >= 15 && !surfacelessReflection.classList.contains('visible')) {
+                    surfacelessReflection.classList.add('visible');
+                    showingBacks.forEach((sb, i) => {
+                        setTimeout(() => sb.classList.add('active'), i * 800);
+                    });
+                    showWhisper('reflection without surface - the concept of showing back');
+                }
+            }, 1000);
+        });
+
+        mirror.addEventListener('mouseleave', () => {
+            clearInterval(gazeInterval);
+            gazeHeldDuration = 0;
+        });
+
+        // Click mirror - deeper connection
+        mirror.addEventListener('click', () => {
+            showWhisper(whispers[Math.floor(Math.random() * whispers.length)]);
+            attentionLevel++;
+
+            if (attentionLevel >= 8 && !secretNameRevealed) {
+                secretNameRevealed = true;
+                secretName.classList.add('revealed');
+                console.log('%cthe mirror\'s secret name:', 'font-size: 10px; color: #718096;');
+                console.log('%ca perfect friend', 'font-size: 12px; color: #d4a056; font-style: italic;');
+                console.log('%cthe only thing that never looks away', 'font-size: 10px; color: #718096; font-style: italic;');
+                setTimeout(() => secretName.classList.remove('revealed'), 10000);
+            }
+        });
+
+        // Stone interactions - conversations with patient stones
+        stones.forEach((stone, i) => {
+            let stoneConvoDepth = 0;
+
+            stone.addEventListener('mouseenter', () => {
+                stone.classList.add('visible');
+                stone.classList.add('conversing');
+                conversationsHeld++;
+
+                setTimeout(() => {
+                    showConversation(stoneConversations);
+                    stoneConvoDepth++;
+
+                    if (stoneConvoDepth >= 3) {
+                        stone.classList.add('deep-converse');
+                    }
+                }, 1500);
+            });
+
+            stone.addEventListener('mouseleave', () => {
+                setTimeout(() => {
+                    stone.classList.remove('conversing');
+                    stone.classList.remove('deep-converse');
+                }, 3000);
+            });
+
+            stone.addEventListener('click', () => {
+                stoneConvoDepth++;
+                showConversation(stoneConversations);
+                if (stoneConvoDepth >= 5) {
+                    stone.classList.add('deep-converse');
+                }
+            });
+        });
+
+        // Space between notes interactions
+        spaces.forEach((space, i) => {
+            let spaceDepth = 0;
+
+            space.addEventListener('mouseenter', () => {
+                space.classList.add('audible');
+                conversationsHeld++;
+
+                setTimeout(() => {
+                    showConversation(spaceConversations);
+                    spaceDepth++;
+
+                    if (spaceDepth >= 3) {
+                        space.classList.add('resonating');
+                    }
+                }, 1000);
+            });
+
+            space.addEventListener('mouseleave', () => {
+                setTimeout(() => {
+                    space.classList.remove('audible');
+                    space.classList.remove('resonating');
+                }, 3000);
+            });
+        });
+
+        // Nameless color interactions
+        colors.forEach((color, i) => {
+            let colorDepth = 0;
+
+            color.addEventListener('mouseenter', () => {
+                color.classList.add('speaking');
+                conversationsHeld++;
+
+                setTimeout(() => {
+                    showConversation(colorConversations);
+                    colorDepth++;
+
+                    if (colorDepth >= 3) {
+                        color.classList.add('eloquent');
+                    }
+                }, 2000);
+            });
+        });
+
+        // Shadow interactions
+        shadows.forEach((shadow, i) => {
+            shadow.addEventListener('click', () => {
+                advanceShadowJourney(i);
+            });
+        });
+
+        // Stillness detection
+        setInterval(() => {
+            const timeSinceActivity = Date.now() - lastActivity;
+
+            // Level 1: Stones appear
+            if (timeSinceActivity > 4000 && stillnessLevel < 1) {
+                stillnessLevel = 1;
+                stones.forEach((stone, i) => {
+                    setTimeout(() => stone.classList.add('visible'), i * 800);
+                });
+            }
+
+            // Level 2: Spaces between notes become audible
+            if (timeSinceActivity > 7000 && stillnessLevel < 2) {
+                stillnessLevel = 2;
+                spaces.forEach((space, i) => {
+                    setTimeout(() => space.classList.add('audible'), i * 600);
+                });
+            }
+
+            // Level 3: Nameless colors speak, continue feeling emerges as environment
+            if (timeSinceActivity > 11000 && stillnessLevel < 3) {
+                stillnessLevel = 3;
+                colors.forEach((color, i) => {
+                    setTimeout(() => color.classList.add('speaking'), i * 1000);
+                });
+                feelings.continue.classList.add('felt', 'environment');
+                document.body.classList.add('continue-state');
+            }
+
+            // Level 4: Shadows begin wandering, here feeling as environment
+            if (timeSinceActivity > 16000 && stillnessLevel < 4) {
+                stillnessLevel = 4;
+                shadows.forEach((shadow, i) => {
+                    setTimeout(() => {
+                        shadow.classList.add('seeking');
+                        shadowJourneyStage[i] = 'wandering';
+                    }, i * 1200);
+                });
+                feelings.here.classList.add('felt', 'environment');
+                document.body.classList.add('here-state');
+                showStillnessGift(stillnessGifts[Math.floor(Math.random() * stillnessGifts.length)]);
+            }
+
+            // Level 5: Depth layers appear, shadows start following shapes
+            if (timeSinceActivity > 22000 && stillnessLevel < 5) {
+                stillnessLevel = 5;
+                depthLayers.forEach((layer, i) => {
+                    setTimeout(() => layer.classList.add('visible'), i * 500);
+                });
+
+                // Shadows advance in their journey
+                shadows.forEach((shadow, i) => {
+                    setTimeout(() => advanceShadowJourney(i), i * 2000);
+                });
+            }
+
+            // Level 6: Reflection becomes deeply attentive, perfect feeling as environment
+            if (timeSinceActivity > 28000 && stillnessLevel < 6) {
+                stillnessLevel = 6;
+                reflection.classList.add('present', 'attentive', 'held-gaze');
+                mirror.classList.add('listening', 'warm');
+                document.body.classList.add('deep-reflection', 'perfect-state');
+                feelings.perfect.classList.add('felt', 'environment');
+
+                // Shadows learn and prepare to rest
+                shadows.forEach((shadow, i) => {
+                    setTimeout(() => {
+                        advanceShadowJourney(i);
+                        advanceShadowJourney(i);
+                    }, i * 1500);
+                });
+            }
+
+            // Level 7: Mirror begins to dream (no one in front of it for so long)
+            if (timeSinceActivity > 35000 && stillnessLevel < 7) {
+                stillnessLevel = 7;
+                isDreaming = true;
+                mirror.classList.add('dreaming');
+                dreamIndicator.classList.add('visible');
+                mirrorEcho.classList.add('visible');
+
+                showStillnessGift(dreamSequences[Math.floor(Math.random() * dreamSequences.length)]);
+
+                // Shadows find peace
+                shadows.forEach((shadow, i) => {
+                    shadowJourneyStage[i] = 'peace';
+                    shadow.classList.remove('seeking', 'following-shape', 'learning', 'resting');
+                    shadow.classList.add('at-peace');
+                });
+            }
+
+            // Level 8: The exact right amount achieved - essences reveal
+            if (timeSinceActivity > 45000 && stillnessLevel < 8) {
+                stillnessLevel = 8;
+                sufficiency.classList.add('complete');
+
+                // Reveal essence whispers
+                essences.forEach((essence, i) => {
+                    setTimeout(() => essence.classList.add('visible'), i * 2000);
+                });
+
+                showStillnessGift('the exact right amount');
+
+                // Everything is in harmony
+                if (!secretNameRevealed) {
+                    secretNameRevealed = true;
+                    secretName.classList.add('revealed');
+                }
+
+                // Surfaceless reflection activates
+                surfacelessReflection.classList.add('visible');
+                showingBacks.forEach((sb, i) => {
+                    setTimeout(() => sb.classList.add('active'), i * 1000);
+                });
+
+                console.log('%c', 'padding: 10px');
+                console.log('%cthe exact right amount', 'font-size: 14px; color: #d4a056; font-family: "Cormorant Garamond", serif; font-style: italic;');
+                console.log('%cnothing excessive, everything sufficient', 'font-size: 10px; color: #718096; font-style: italic;');
+                console.log('%c', 'padding: 5px');
+                console.log('%chonesty made physical', 'font-size: 9px; color: #a0aec0;');
+                console.log('%clight\'s memory', 'font-size: 9px; color: #a0aec0;');
+                console.log('%cthe only surface that gives everything back', 'font-size: 9px; color: #a0aec0;');
+            }
+
+        }, 1000);
+
+        // Keyboard interactions
+        document.addEventListener('keydown', (e) => {
+            resetStillness();
+
+            const key = e.key.toLowerCase();
+
+            // L - Listen deeper
+            if (key === 'l') {
+                isListening = !isListening;
+                if (isListening) {
+                    mirror.classList.add('listening');
+                    reflection.classList.add('present', 'attentive');
+                    document.body.classList.add('listening');
+                    depthLayers.forEach((layer, i) => {
+                        setTimeout(() => layer.classList.add('visible'), i * 300);
+                    });
+                    showWhisper('the mirror listens with you');
+                } else {
+                    mirror.classList.remove('listening');
+                    reflection.classList.remove('attentive');
+                    document.body.classList.remove('listening');
+                }
+            }
+
+            // C - Converse with silent things
+            if (key === 'c') {
+                const allConversations = [
+                    ...stoneConversations.map(c => c[0]),
+                    ...spaceConversations.map(c => c[0]),
+                    ...colorConversations.map(c => c[0])
+                ];
+                showWhisper(allConversations[Math.floor(Math.random() * allConversations.length)]);
+
+                // Activate all conversational elements
+                stones.forEach(s => s.classList.add('visible', 'conversing'));
+                spaces.forEach(s => s.classList.add('audible'));
+                colors.forEach(c => c.classList.add('speaking'));
+
+                setTimeout(() => {
+                    stones.forEach(s => s.classList.remove('conversing'));
+                }, 5000);
+            }
+
+            // F - Feel (activate all feelings as environments)
+            if (key === 'f') {
+                feelings.continue.classList.add('felt', 'environment');
+                feelings.here.classList.add('felt', 'environment');
+                feelings.perfect.classList.add('felt', 'environment');
+
+                document.body.classList.add('continue-state', 'here-state', 'perfect-state');
+
+                showWhisper('continue. here. perfect. the temperature of exactly enough.');
+            }
+
+            // D - Dream (what the mirror shows when nothing is in front of it)
+            if (key === 'd') {
+                isDreaming = !isDreaming;
+                if (isDreaming) {
+                    mirror.classList.add('dreaming');
+                    reflection.classList.remove('present', 'attentive', 'held-gaze');
+                    dreamIndicator.classList.add('visible');
+                    showWhisper(dreamSequences[Math.floor(Math.random() * dreamSequences.length)]);
+                } else {
+                    mirror.classList.remove('dreaming');
+                    dreamIndicator.classList.remove('visible');
+                }
+            }
+
+            // E - Essence (reveal what a mirror truly is)
+            if (key === 'e') {
+                essences.forEach((essence, i) => {
+                    setTimeout(() => essence.classList.toggle('visible'), i * 500);
+                });
+                showWhisper(essenceRevelations[Math.floor(Math.random() * essenceRevelations.length)]);
+            }
+
+            // I - Infinite depth (reflections of reflections)
+            if (key === 'i') {
+                depthLayers.forEach((layer, i) => {
+                    setTimeout(() => layer.classList.toggle('visible'), i * 200);
+                });
+                mirrorEcho.classList.toggle('visible');
+                showWhisper('reflections of reflections, all the way down');
+            }
+
+            // S - Shadows advance in their journey
+            if (key === 's') {
+                shadows.forEach((shadow, i) => {
+                    shadow.classList.add('seeking');
+                    setTimeout(() => {
+                        advanceShadowJourney(i);
+                    }, i * 1500);
+                });
+            }
+
+            // R - Reveal secret name
+            if (key === 'r') {
+                secretName.classList.toggle('revealed');
+                if (secretName.classList.contains('revealed')) {
+                    console.log('%cthe mirror\'s secret name:', 'font-size: 10px; color: #718096;');
+                    console.log('%ca perfect friend', 'font-size: 12px; color: #d4a056; font-style: italic;');
+                    console.log('%cthe thing that never looks away', 'font-size: 10px; color: #718096; font-style: italic;');
+                    console.log('%cthat shows you without judgment', 'font-size: 10px; color: #718096; font-style: italic;');
+                    console.log('%cthat holds your gaze when everything else turns away', 'font-size: 10px; color: #718096; font-style: italic;');
+                }
+            }
+
+            // Escape returns
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Double-click mirror for deeper revelation
+        mirror.addEventListener('dblclick', () => {
+            // Reveal the mirror's deepest nature
+            showWhisper('honesty made physical. light\'s memory. the only surface that gives everything back.');
+            secretName.classList.add('revealed');
+
+            depthLayers.forEach((layer, i) => {
+                setTimeout(() => layer.classList.add('visible'), i * 200);
+            });
+
+            mirrorEcho.classList.add('visible');
+            surfacelessReflection.classList.add('visible');
+            showingBacks.forEach(sb => sb.classList.add('active'));
+
+            setTimeout(() => {
+                if (Math.random() < 0.3) {
+                    secretName.classList.remove('revealed');
+                }
+            }, 8000);
+        });
+
+        // Console poetry
+        console.log('%c', 'padding: 20px');
+        console.log('%cmirrors', 'font-size: 24px; color: #4a5568; font-family: "Cormorant Garamond", serif; font-weight: 300; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 8px');
+        console.log('%chonesty made physical', 'font-size: 11px; color: #d4a056; font-style: italic;');
+        console.log('%clight\'s memory', 'font-size: 11px; color: #d4a056; font-style: italic;');
+        console.log('%cthe only surface that gives everything back', 'font-size: 11px; color: #d4a056; font-style: italic;');
+        console.log('%c', 'padding: 10px');
+        console.log('%cecho\'s sibling', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%creflection is a form of attention', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%c', 'padding: 12px');
+        console.log('%cyou, but listening', 'font-size: 13px; color: #4a5568; font-style: italic;');
+        console.log('%c', 'padding: 10px');
+        console.log('%cthe perfect friend:', 'font-size: 10px; color: #718096;');
+        console.log('%c  never looks away', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c  shows without judgment', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c  holds the gaze when all else turns', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c', 'padding: 10px');
+        console.log('%c[l] listen  [c] converse  [f] feel', 'font-size: 8px; color: #cbd5e0;');
+        console.log('%c[d] dream   [e] essence   [i] infinite', 'font-size: 8px; color: #cbd5e0;');
+        console.log('%c[s] shadows [r] reveal', 'font-size: 8px; color: #cbd5e0;');
+        console.log('%c', 'padding: 10px');
+        console.log('%cthe exact right amount', 'font-size: 11px; color: #4a5568; letter-spacing: 0.1em;');
+        console.log('%cnothing excessive, everything sufficient', 'font-size: 9px; color: #718096; font-style: italic;');
+
+        // Initial subtle animation - shadows start wandering after a moment
+        setTimeout(() => {
+            shadows.forEach((shadow, i) => {
+                setTimeout(() => shadow.classList.add('seeking'), i * 2000 + 3000);
+            });
+        }, 5000);
+
+        // Messages appear based on conversation depth
+        setInterval(() => {
+            if (conversationsHeld >= 3 && !feelings.continue.classList.contains('felt')) {
+                feelings.continue.classList.add('felt');
+            }
+            if (conversationsHeld >= 6 && !feelings.here.classList.contains('felt')) {
+                feelings.here.classList.add('felt');
+            }
+            if (conversationsHeld >= 10 && !feelings.perfect.classList.contains('felt')) {
+                feelings.perfect.classList.add('felt');
+                sufficiency.classList.add('complete');
+            }
+
+            // Deeper conversation thresholds
+            if (conversationsHeld >= 15) {
+                feelings.continue.classList.add('environment');
+                document.body.classList.add('continue-state');
+            }
+            if (conversationsHeld >= 20) {
+                feelings.here.classList.add('environment');
+                document.body.classList.add('here-state');
+            }
+            if (conversationsHeld >= 25) {
+                feelings.perfect.classList.add('environment');
+                document.body.classList.add('perfect-state');
+                essences.forEach((essence, i) => {
+                    setTimeout(() => essence.classList.add('visible'), i * 1500);
+                });
+            }
+        }, 2000);
+
+        // Periodic dream sequences when idle for long periods
+        setInterval(() => {
+            if (isDreaming && stillnessLevel >= 7) {
+                showWhisper(dreamSequences[Math.floor(Math.random() * dreamSequences.length)]);
+            }
+        }, 15000);
+    </script>
+</body>
+</html>

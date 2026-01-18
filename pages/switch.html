@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>switch - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--paper);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 2s ease, filter 1s ease;
+        }
+
+        body.dim { filter: brightness(0.7); }
+        body.flicker { animation: flicker-bg 0.1s ease; }
+        body.deep-contemplation { background: #f0ebe0; }
+        body.transcendent {
+            background: linear-gradient(180deg, var(--paper) 0%, #faf6ee 50%, var(--paper) 100%);
+            animation: transcendent-bg 20s ease-in-out infinite;
+        }
+
+        @keyframes flicker-bg {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(0.9); }
+        }
+
+        @keyframes transcendent-bg {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 0% 100%; }
+        }
+
+        :root {
+            --screw-rotation: 0deg;
+            --plate-warmth: 0;
+            --breath-scale: 1;
+        }
+
+        /* The wall plate */
+        .plate {
+            width: 80px;
+            height: 130px;
+            background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 50%, #d8d8d8 100%);
+            border-radius: 8px;
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-image:
+                linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 50%, #d8d8d8 100%),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 1px,
+                    rgba(0,0,0,0.01) 1px,
+                    rgba(0,0,0,0.01) 2px
+                );
+            animation: plate-breathe 8s ease-in-out infinite;
+            transition: box-shadow 3s ease, transform 2s ease;
+        }
+
+        @keyframes plate-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.003); }
+        }
+
+        .plate.watched {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                0 0 30px rgba(212, 160, 86, 0.05),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        /* Top screw */
+        .plate::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(var(--screw-rotation));
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle at 30% 30%, #c0c0c0 0%, #909090 50%, #707070 100%);
+            border-radius: 50%;
+            box-shadow:
+                inset 0 1px 2px rgba(255,255,255,0.4),
+                inset 0 -1px 2px rgba(0,0,0,0.2),
+                0 1px 2px rgba(0,0,0,0.15);
+            transition: transform 0.5s ease;
+        }
+
+        .plate .screw-top,
+        .plate .screw-bottom {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            pointer-events: none;
+        }
+
+        .plate .screw-top {
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .plate .screw-top::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 1px;
+            width: 6px;
+            height: 2px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%);
+            border-radius: 1px;
+            transform: rotate(var(--screw-rotation));
+            transition: transform 0.5s ease;
+        }
+
+        /* Bottom screw */
+        .plate::after {
+            content: '';
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(var(--screw-rotation));
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle at 30% 30%, #c0c0c0 0%, #909090 50%, #707070 100%);
+            border-radius: 50%;
+            box-shadow:
+                inset 0 1px 2px rgba(255,255,255,0.4),
+                inset 0 -1px 2px rgba(0,0,0,0.2),
+                0 1px 2px rgba(0,0,0,0.15);
+            transition: transform 0.5s ease;
+        }
+
+        .plate .screw-bottom {
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .plate .screw-bottom::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 1px;
+            width: 6px;
+            height: 2px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%);
+            border-radius: 1px;
+            transform: rotate(var(--screw-rotation));
+            transition: transform 0.5s ease;
+        }
+
+        /* The switch */
+        .switch {
+            width: 30px;
+            height: 50px;
+            background: linear-gradient(180deg, #ececec 0%, #e0e0e0 20%, #d0d0d0 80%, #c5c5c5 100%);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            box-shadow:
+                0 2px 5px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.6),
+                inset 0 -1px 0 rgba(0,0,0,0.1);
+            transition: transform 0.15s ease, background 0.1s ease, filter 2s ease, box-shadow 2s ease;
+            transform-origin: center center;
+            animation: switch-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes switch-breathe {
+            0%, 100% { transform: perspective(100px) rotateX(-2deg) scale(1); }
+            50% { transform: perspective(100px) rotateX(-2deg) scale(1.005); }
+        }
+
+        .switch.down {
+            animation: switch-breathe-down 6s ease-in-out infinite;
+        }
+
+        @keyframes switch-breathe-down {
+            0%, 100% { transform: perspective(100px) rotateX(2deg) scale(1); }
+            50% { transform: perspective(100px) rotateX(2deg) scale(1.005); }
+        }
+
+        /* Subtle texture on switch */
+        .switch::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 4px;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255,255,255,0.03) 2px,
+                rgba(255,255,255,0.03) 4px
+            );
+            pointer-events: none;
+        }
+
+        .switch:hover {
+            background: linear-gradient(180deg, #f2f2f2 0%, #e8e8e8 20%, #d8d8d8 80%, #d0d0d0 100%);
+        }
+
+        .switch:active {
+            transform: scale(0.98);
+            animation: none;
+        }
+
+        .switch.up {
+            box-shadow:
+                0 -2px 5px rgba(0,0,0,0.08),
+                0 4px 6px rgba(0,0,0,0.2),
+                0 1px 3px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.6),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        .switch.down {
+            box-shadow:
+                0 2px 5px rgba(0,0,0,0.08),
+                0 -4px 6px rgba(0,0,0,0.2),
+                0 -1px 3px rgba(0,0,0,0.1),
+                inset 0 -1px 0 rgba(255,255,255,0.6),
+                inset 0 1px 0 rgba(0,0,0,0.05);
+        }
+
+        /* The toggle indicator */
+        .toggle-mark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 3px;
+            background: linear-gradient(180deg, #a0a0a0 0%, #888 50%, #a0a0a0 100%);
+            border-radius: 1px;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                0 1px 1px rgba(0,0,0,0.1);
+        }
+
+        .toggle-mark::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 0;
+            width: 12px;
+            height: 3px;
+            background: linear-gradient(180deg, #a0a0a0 0%, #888 50%, #a0a0a0 100%);
+            border-radius: 1px;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                0 1px 1px rgba(0,0,0,0.1);
+        }
+
+        .toggle-mark::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 0;
+            width: 12px;
+            height: 3px;
+            background: linear-gradient(180deg, #a0a0a0 0%, #888 50%, #a0a0a0 100%);
+            border-radius: 1px;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                0 1px 1px rgba(0,0,0,0.1);
+        }
+
+        /* Click counter */
+        .counter {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate);
+            opacity: 0.3;
+            transition: opacity 1.5s ease, transform 0.5s ease;
+        }
+
+        .counter.pulse {
+            animation: counter-pulse 0.5s ease;
+        }
+
+        @keyframes counter-pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* Messages that appear */
+        .message {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: center;
+            pointer-events: none;
+            max-width: 80%;
+        }
+
+        .message.visible {
+            opacity: 0.5;
+        }
+
+        /* Label that changes */
+        .label {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .label.visible {
+            opacity: 0.4;
+        }
+
+        /* Stillness poetry */
+        .stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            text-align: center;
+            pointer-events: none;
+            z-index: -1;
+            letter-spacing: 0.05em;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.25;
+        }
+
+        /* Sound toggle */
+        .sound-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            cursor: pointer;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        body:hover .sound-toggle { opacity: 0.25; }
+        .sound-toggle:hover { opacity: 0.5 !important; }
+
+        .sound-toggle.active { color: var(--amber); }
+
+        .switch.stuck {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .switch.jiggle {
+            animation: jiggle 0.3s ease;
+        }
+
+        @keyframes jiggle {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-5deg); }
+            40% { transform: rotate(5deg); }
+            60% { transform: rotate(-3deg); }
+            80% { transform: rotate(3deg); }
+        }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        body:hover .key-hint { opacity: 0.2; }
+
+        .ghost-switch {
+            position: fixed;
+            width: 30px;
+            height: 50px;
+            background: linear-gradient(180deg, rgba(200,200,200,0.2) 0%, rgba(180,180,180,0.2) 100%);
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            animation: ghost-fade 3s ease forwards;
+        }
+
+        @keyframes ghost-fade {
+            0% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        /* Milestone glow states */
+        .plate.milestone-100 {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                0 0 15px rgba(212, 160, 86, 0.03),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        .plate.milestone-500 {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                0 0 25px rgba(212, 160, 86, 0.05),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        .plate.milestone-1000 {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                0 0 35px rgba(212, 160, 86, 0.08),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        .plate.milestone-5000 {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                0 0 45px rgba(212, 160, 86, 0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        .plate.milestone-10000 {
+            box-shadow:
+                0 2px 10px rgba(0,0,0,0.2),
+                0 4px 20px rgba(0,0,0,0.1),
+                0 0 60px rgba(255, 215, 0, 0.12),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+            animation: plate-breathe 8s ease-in-out infinite, transcendent-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes transcendent-pulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.02); }
+        }
+
+        /* Contemplation state - when just watching */
+        .contemplation-hint {
+            position: fixed;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .contemplation-hint.visible {
+            opacity: 0.2;
+        }
+
+        /* Edge whisper */
+        .edge-whisper {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .edge-whisper.top { top: 1rem; left: 50%; transform: translateX(-50%); }
+        .edge-whisper.bottom { bottom: 1rem; left: 50%; transform: translateX(-50%); }
+        .edge-whisper.left { left: 1rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .edge-whisper.right { right: 1rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+        .edge-whisper.visible { opacity: 0.15; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="plate" id="plate">
+        <div class="screw-top"></div>
+        <div class="switch up" id="switch">
+            <div class="toggle-mark"></div>
+        </div>
+        <div class="screw-bottom"></div>
+    </div>
+
+    <p class="counter" id="counter">0</p>
+    <p class="label" id="label"></p>
+    <p class="message" id="message"></p>
+    <p class="stillness-message" id="stillness"></p>
+    <p class="contemplation-hint" id="contemplation"></p>
+
+    <div class="edge-whisper top" id="whisper-top"></div>
+    <div class="edge-whisper bottom" id="whisper-bottom"></div>
+    <div class="edge-whisper left" id="whisper-left"></div>
+    <div class="edge-whisper right" id="whisper-right"></div>
+
+    <div class="key-hint">
+        [r] rapid<br>
+        [f] flicker<br>
+        [s] stuck<br>
+        [d] dim<br>
+        [space] dramatic<br>
+        [m] mute the click<br>
+        <span style="opacity: 0.6">right-click: jiggle</span>
+    </div>
+
+    <div class="sound-toggle" id="soundToggle">sound: off</div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const switchEl = document.getElementById('switch');
+        const plateEl = document.getElementById('plate');
+        const counter = document.getElementById('counter');
+        const label = document.getElementById('label');
+        const message = document.getElementById('message');
+        const stillnessEl = document.getElementById('stillness');
+        const contemplationEl = document.getElementById('contemplation');
+        const soundToggle = document.getElementById('soundToggle');
+
+        let clicks = 0;
+        let isUp = true;
+        let lastNothingIndex = -1;
+        let soundEnabled = false;
+        let audioContext = null;
+
+        // Sound: a click that doesn't quite click
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playNonClick() {
+            if (!soundEnabled || !audioContext) return;
+
+            // A sound that almost clicks but doesn't
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Very brief, almost inaudible
+            oscillator.frequency.setValueAtTime(80, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(40, audioContext.currentTime + 0.02);
+
+            gainNode.gain.setValueAtTime(0.03, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.03);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.03);
+        }
+
+        soundToggle.addEventListener('click', () => {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? 'sound: on' : 'sound: off';
+            soundToggle.classList.toggle('active', soundEnabled);
+
+            if (soundEnabled) {
+                showMessage('the switch now makes a sound');
+                setTimeout(() => showMessage('(it is not much of a sound)'), 2000);
+            } else {
+                showMessage('silence restored');
+            }
+        });
+
+        // Rotating "nothing happened" messages
+        const nothingMessages = [
+            '',
+            '',
+            '',
+            'nothing',
+            'still nothing',
+            'nothing again',
+            'persistently nothing',
+            'aggressively nothing',
+            'nothing, as expected',
+            'nothing, as promised',
+            'reliably nothing',
+            'consistently nothing',
+            'nothing, but elegantly so',
+            'the void acknowledges',
+            'a satisfying click, an unsatisfying result',
+            'the switch toggles, the world remains',
+            'click received, nothing dispatched',
+            'filed under "nothing"',
+            'another nothing for the collection',
+            'the nothing continues',
+            'artisanal nothing',
+            'locally sourced nothing',
+            'organic, free-range nothing',
+            'the sound of one switch clicking',
+            'nothing, with conviction',
+            'a noble nothing',
+            'nothing, but something was felt',
+            'the switch respects commitment',
+            'nothing happened (as designed)',
+            'feature complete',
+            'working as intended',
+            'the absence of light persists',
+            'darkness status: unchanged',
+            'light status: still absent',
+            'photon count: zero',
+            'lumens delivered: none',
+            'the electrons remain unmoved',
+            'the circuit dreams of connection',
+            'this is the point',
+            'purposeful pointlessness',
+            'the useless as essential',
+        ];
+
+        function getRandomNothingMessage() {
+            if (Math.random() > 0.3) return '';
+            let index;
+            do {
+                index = Math.floor(Math.random() * nothingMessages.length);
+            } while (index === lastNothingIndex && nothingMessages.length > 1);
+            lastNothingIndex = index;
+            return nothingMessages[index];
+        }
+
+        const milestones = {
+            1: { message: '', label: 'it does nothing' },
+            2: { message: '', label: 'twice nothing is still nothing' },
+            3: { message: '', label: 'a pattern emerges' },
+            5: { message: 'nothing, but reliably so', label: 'consistency' },
+            7: { message: 'seven is a meaningful number', label: 'seven nothings' },
+            10: { message: 'the switch offers a tiny something', label: 'a tenth of a hundred', special: true },
+            15: { message: 'and yet', label: 'and yet' },
+            20: { message: 'some would have stopped by now', label: 'not you' },
+            25: { message: 'the switch notices', label: 'continuity' },
+            33: { message: 'a third of the way to a hundred nothings', label: 'progress?' },
+            42: { message: 'the answer to everything is still nothing', label: 'forty-two' },
+            50: { message: 'what were you expecting?', label: 'the halfway point of what?' },
+            69: { message: 'nice', label: 'nice' },
+            75: { message: 'the switch appreciates dedication', label: 'dedication' },
+            88: { message: 'a visually pleasing number', label: 'symmetry' },
+            99: { message: 'one away from something significant', label: 'almost' },
+            100: { message: 'one hundred nothings', label: 'centurion of void', special: true },
+            111: { message: 'make a wish', label: '(it wont come true)' },
+            123: { message: 'as easy as one two three', label: 'sequential nothing' },
+            150: { message: 'perhaps the nothing is the something', label: 'perhaps' },
+            175: { message: 'the realm of the absurd welcomes', label: 'absurdist' },
+            200: { message: 'two hundred deliberate acts of nothing', label: 'two hundred' },
+            250: { message: 'a quarter thousand', label: 'impressive, in its way' },
+            300: { message: 'the switch has noticed', label: 'witnessed' },
+            333: { message: 'a third of a thousand nothings', label: 'thirds' },
+            400: { message: 'four hundred', label: 'the switch is running out of things to say' },
+            404: { message: 'meaning not found', label: '404' },
+            444: { message: 'in some cultures this is unlucky', label: 'four four four' },
+            500: { message: 'this is a lot', label: 'halfway to a thousand nothings', special: true },
+            555: { message: 'if this were a phone number it would be fake', label: 'fictional' },
+            600: { message: 'six hundred acts of faith', label: 'faithful' },
+            666: { message: 'the switch remains morally neutral', label: 'neutral' },
+            700: { message: 'seven hundred', label: 'the switch is genuinely impressed' },
+            750: { message: 'are you okay?', label: 'genuine concern' },
+            777: { message: 'jackpot (of nothing)', label: 'lucky nothing' },
+            800: { message: 'eight hundred', label: 'this is your life now' },
+            888: { message: 'prosperity (allegedly)', label: 'prosperity in void' },
+            900: { message: 'ninety percent of a thousand', label: 'so close' },
+            950: { message: 'fifty away', label: 'the anticipation' },
+            999: { message: 'one more', label: 'one. more.' },
+            1000: { message: 'one thousand nothings', label: 'you did it', special: true },
+            1001: { message: 'and one more, just to be sure', label: 'arabian nothing' },
+            1111: { message: 'make another wish', label: '(still wont work)' },
+            1234: { message: 'a sequence', label: '1234' },
+            1500: { message: 'the switch has grown fond', label: 'fondness' },
+            2000: { message: 'two thousand', label: 'uncharted territory' },
+            2500: { message: 'what drives this?', label: 'introspection' },
+            3000: { message: 'at this point it means something', label: 'but what?' },
+            4000: { message: 'four thousand acts of nothing', label: 'devotion' },
+            5000: { message: 'the switch bows', label: 'master of nothing', special: true },
+            7500: { message: 'seventy-five hundred', label: 'the patience of stone' },
+            10000: { message: 'ten thousand nothings', label: 'legendary', special: true }
+        };
+
+        function showMessage(text) {
+            message.textContent = text;
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), 4000);
+        }
+
+        function showLabel(text) {
+            label.textContent = text;
+            label.classList.add('visible');
+        }
+
+        // Stillness detection
+        let stillnessTimer = null;
+        let deepStillnessTimer = null;
+        let contemplationTimer = null;
+        let hasEverClicked = false;
+        let stillnessLevel = 0;
+
+        const stillnessPoetry = [
+            'the switch breathes',
+            'stillness is also a choice',
+            'the switch waits',
+            'nothing requires nothing',
+            'in stillness, presence',
+            'the switch does not judge hesitation',
+            'observation changes nothing',
+            'or does it?',
+            'the switch exists whether clicked or not',
+            'being here is enough',
+            'the nothing is patient',
+            'watch the switch. the switch watches back.',
+        ];
+
+        const deepStillnessPoetry = [
+            'to observe is to participate',
+            'the unclicked click still echoes',
+            'what if you never click?',
+            'the switch holds its breath',
+            'stillness reveals what motion conceals',
+            'the longest nothing is still nothing',
+            'the switch wonders about you',
+            'presence without action',
+            'the space between clicks is infinite',
+        ];
+
+        const contemplationMessages = [
+            'contemplating',
+            'observing',
+            'present',
+            'here',
+            'witnessing',
+        ];
+
+        function startStillnessTracking() {
+            // First level: show the plate is being watched
+            stillnessTimer = setTimeout(() => {
+                plateEl.classList.add('watched');
+                stillnessLevel = 1;
+
+                if (hasEverClicked && clicks > 3) {
+                    stillnessEl.textContent = stillnessPoetry[Math.floor(Math.random() * stillnessPoetry.length)];
+                    stillnessEl.classList.add('visible');
+                }
+            }, 7000);
+
+            // Second level: deep contemplation
+            deepStillnessTimer = setTimeout(() => {
+                stillnessLevel = 2;
+                stillnessEl.textContent = deepStillnessPoetry[Math.floor(Math.random() * deepStillnessPoetry.length)];
+                stillnessEl.classList.add('visible');
+
+                contemplationEl.textContent = contemplationMessages[Math.floor(Math.random() * contemplationMessages.length)];
+                contemplationEl.classList.add('visible');
+            }, 20000);
+
+            // Third level: the switch notices
+            contemplationTimer = setTimeout(() => {
+                stillnessLevel = 3;
+                document.body.classList.add('deep-contemplation');
+                stillnessEl.textContent = 'the switch appreciates being seen';
+
+                // Console poetry for deep stillness
+                console.log('%c', 'padding: 5px');
+                console.log('%cstillness detected', 'font-size: 10px; font-style: italic; color: #718096;');
+                console.log('%cthe switch sees you seeing it', 'font-size: 9px; color: #a0aec0;');
+            }, 45000);
+        }
+
+        function resetStillnessTracking() {
+            clearTimeout(stillnessTimer);
+            clearTimeout(deepStillnessTimer);
+            clearTimeout(contemplationTimer);
+
+            plateEl.classList.remove('watched');
+            stillnessEl.classList.remove('visible');
+            contemplationEl.classList.remove('visible');
+            document.body.classList.remove('deep-contemplation');
+            stillnessLevel = 0;
+
+            startStillnessTracking();
+        }
+
+        // Start tracking on load
+        startStillnessTracking();
+
+        // Reset on any interaction
+        document.addEventListener('mousemove', resetStillnessTracking);
+        document.addEventListener('click', () => {
+            hasEverClicked = true;
+            resetStillnessTracking();
+        });
+
+        switchEl.addEventListener('click', () => {
+            // Toggle position
+            isUp = !isUp;
+            switchEl.classList.toggle('up', isUp);
+            switchEl.classList.toggle('down', !isUp);
+
+            // Sound
+            playNonClick();
+
+            // Increment counter with subtle pulse
+            clicks++;
+            counter.textContent = clicks;
+            counter.style.opacity = Math.min(0.3 + clicks / 100, 0.8);
+            counter.classList.add('pulse');
+            setTimeout(() => counter.classList.remove('pulse'), 500);
+
+            // Check milestones
+            if (milestones[clicks]) {
+                const milestone = milestones[clicks];
+                if (milestone.message) {
+                    showMessage(milestone.message);
+                }
+                if (milestone.label) {
+                    showLabel(milestone.label);
+                }
+                if (milestone.special) {
+                    // Console poetry for milestones
+                    console.log('%c', 'padding: 3px');
+                    console.log(`%c${clicks}`, 'font-size: 14px; font-weight: bold; color: #d4a056;');
+                    console.log('%c' + milestone.label, 'font-size: 10px; font-style: italic; color: #718096;');
+                }
+            } else {
+                const randomMsg = getRandomNothingMessage();
+                if (randomMsg) {
+                    showMessage(randomMsg);
+                }
+            }
+
+            // Visual milestones
+            if (clicks === 100) {
+                document.documentElement.style.setProperty('--screw-rotation', '45deg');
+                plateEl.classList.add('milestone-100');
+                showEdgeWhisper('the screws turned');
+            }
+            if (clicks === 500) {
+                switchEl.style.filter = 'sepia(0.03)';
+                plateEl.classList.remove('milestone-100');
+                plateEl.classList.add('milestone-500');
+                showEdgeWhisper('warmth accumulates');
+            }
+            if (clicks === 1000) {
+                document.body.style.background = '#faf6ee';
+                counter.style.fontWeight = '500';
+                plateEl.classList.remove('milestone-500');
+                plateEl.classList.add('milestone-1000');
+                showEdgeWhisper('a thousand nothings');
+
+                // Update page title
+                document.title = 'switch (devoted) - townhaus';
+            }
+            if (clicks === 2000) {
+                switchEl.style.boxShadow = switchEl.style.boxShadow + ', 0 0 20px rgba(255,220,180,0.08)';
+            }
+            if (clicks === 5000) {
+                document.title = 'switch (legendary) - townhaus';
+                plateEl.classList.remove('milestone-1000');
+                plateEl.classList.add('milestone-5000');
+                showEdgeWhisper('master of nothing');
+            }
+            if (clicks === 10) {
+                // Tiny reward: the screws turn just a little
+                document.documentElement.style.setProperty('--screw-rotation', '5deg');
+                const tenMessages = [
+                    'the screws twitch',
+                    'something almost moved',
+                    'a microscopic shudder',
+                    'the switch felt that',
+                ];
+                showEdgeWhisper(tenMessages[Math.floor(Math.random() * tenMessages.length)]);
+            }
+            if (clicks === 10000) {
+                switchEl.style.boxShadow = switchEl.style.boxShadow + ', 0 0 40px rgba(255,215,0,0.12)';
+                document.title = 'switch (transcendent) - townhaus';
+                document.body.classList.add('transcendent');
+                plateEl.classList.remove('milestone-5000');
+                plateEl.classList.add('milestone-10000');
+                showEdgeWhisper('transcendence');
+
+                // Ultimate console poetry
+                console.log('%c', 'padding: 5px');
+                console.log('%cTEN THOUSAND', 'font-size: 18px; font-weight: 100; color: #d4a056; letter-spacing: 0.3em;');
+                console.log('%cthe switch has nothing left to teach', 'font-size: 11px; font-style: italic; color: #718096;');
+                console.log('%cyou have become the nothing', 'font-size: 10px; color: #a0aec0;');
+            }
+        });
+
+        // Edge whispers
+        function showEdgeWhisper(text) {
+            const whispers = ['whisper-top', 'whisper-bottom', 'whisper-left', 'whisper-right'];
+            const whisper = document.getElementById(whispers[Math.floor(Math.random() * whispers.length)]);
+            whisper.textContent = text;
+            whisper.classList.add('visible');
+            setTimeout(() => whisper.classList.remove('visible'), 8000);
+        }
+
+        // Initial label appears after a gentle delay
+        setTimeout(() => {
+            if (clicks === 0) {
+                label.textContent = 'try it';
+                label.classList.add('visible');
+            }
+        }, 3000);
+
+        setTimeout(() => {
+            if (clicks === 0) {
+                showMessage('the switch awaits');
+            }
+        }, 10000);
+
+        setTimeout(() => {
+            if (clicks === 0) {
+                showMessage('to click or not to click');
+                showLabel('contemplation');
+            }
+        }, 25000);
+
+        // If they still haven't clicked after a very long time
+        setTimeout(() => {
+            if (clicks === 0) {
+                showMessage('not clicking is also a valid choice');
+                showLabel('the unclicked path');
+                console.log('%cthe path of not-clicking', 'font-size: 10px; font-style: italic; color: #718096;');
+                console.log('%cis this enlightenment?', 'font-size: 9px; color: #a0aec0;');
+            }
+        }, 60000);
+
+        let isStuck = false;
+        let doubleClickCount = 0;
+
+        switchEl.addEventListener('dblclick', () => {
+            doubleClickCount++;
+            const doubleClickMessages = [
+                'double nothing is still nothing',
+                'twice as fast, equally pointless',
+                'the switch notices impatience',
+                'efficiency in futility',
+                'two clicks, zero illumination'
+            ];
+            showMessage(doubleClickMessages[Math.floor(Math.random() * doubleClickMessages.length)]);
+
+            if (doubleClickCount === 5) {
+                showLabel('chronic double-clicker');
+            }
+            if (doubleClickCount === 10) {
+                showMessage('the double-clicking persists');
+                showLabel('dedicated double-clicker');
+            }
+        });
+
+        switchEl.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                switchEl.classList.add('jiggle');
+                setTimeout(() => switchEl.classList.remove('jiggle'), 300);
+
+                const jiggleMessages = [
+                    'still nothing',
+                    'the switch remains unmoved (emotionally)',
+                    'wiggling changes nothing',
+                    'percussive maintenance: ineffective',
+                    'the switch absorbs frustration',
+                    'nothing, but with more effort',
+                    'that wont help',
+                    'have you tried turning it off and on again?',
+                    'the switch appreciates the massage'
+                ];
+
+                if (clicks > 10) {
+                    showMessage(jiggleMessages[Math.floor(Math.random() * jiggleMessages.length)]);
+                    showLabel('frustration');
+                } else if (clicks > 0) {
+                    showMessage('the switch jiggles but remains purposeless');
+                    showLabel('jiggled');
+                }
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2 && e.target !== switchEl) {
+                const ghost = document.createElement('div');
+                ghost.className = 'ghost-switch';
+                ghost.style.left = (e.clientX - 15) + 'px';
+                ghost.style.top = (e.clientY - 25) + 'px';
+                document.body.appendChild(ghost);
+                setTimeout(() => ghost.remove(), 3000);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyR' && !isStuck) {
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        isUp = !isUp;
+                        switchEl.classList.toggle('up', isUp);
+                        switchEl.classList.toggle('down', !isUp);
+                        clicks++;
+                        counter.textContent = clicks;
+                        playNonClick();
+                    }, i * 50);
+                }
+                const rapidMessages = [
+                    'rapid nothing',
+                    'ten nothings, delivered efficiently',
+                    'nothing at scale',
+                    'batch processing complete: 0 lights affected',
+                    'speedrunning the void'
+                ];
+                showMessage(rapidMessages[Math.floor(Math.random() * rapidMessages.length)]);
+                showLabel('rapid');
+            }
+            if (e.code === 'KeyF') {
+                document.body.classList.add('flicker');
+                setTimeout(() => document.body.classList.remove('flicker'), 100);
+                const flickerMessages = [
+                    'the light flickered',
+                    'did you see that?',
+                    'a brief moment of almost-something',
+                    'the photons stirred, then thought better of it',
+                    'imagine: a flicker'
+                ];
+                showMessage(flickerMessages[Math.floor(Math.random() * flickerMessages.length)]);
+                showLabel('(it didnt)');
+            }
+            if (e.code === 'KeyS') {
+                isStuck = !isStuck;
+                switchEl.classList.toggle('stuck', isStuck);
+                const stuckMessages = [
+                    'the switch is stuck',
+                    'mechanical failure (simulated)',
+                    'the switch has decided to take a break',
+                    'entropy wins this round'
+                ];
+                const unstuckMessages = [
+                    'unstuck',
+                    'freedom restored',
+                    'the switch has reconsidered',
+                    'back to doing nothing, voluntarily'
+                ];
+                showMessage(isStuck
+                    ? stuckMessages[Math.floor(Math.random() * stuckMessages.length)]
+                    : unstuckMessages[Math.floor(Math.random() * unstuckMessages.length)]);
+                showLabel(isStuck ? 'immobile' : 'liberated');
+            }
+            if (e.code === 'KeyD') {
+                const isDim = document.body.classList.toggle('dim');
+                const dimMessages = [
+                    'the room dims',
+                    'mood lighting engaged',
+                    'the room grows contemplative',
+                    'darkness approaches (manually)'
+                ];
+                const brightMessages = [
+                    'brightness restored',
+                    'the room returns to normal',
+                    'back to default nothing',
+                    'let there be the absence of dimness'
+                ];
+                showMessage(isDim
+                    ? dimMessages[Math.floor(Math.random() * dimMessages.length)]
+                    : brightMessages[Math.floor(Math.random() * brightMessages.length)]);
+                showLabel('(the switch still does nothing)');
+            }
+            if (e.code === 'KeyM') {
+                initAudio();
+                soundEnabled = !soundEnabled;
+                soundToggle.textContent = soundEnabled ? 'sound: on' : 'sound: off';
+                soundToggle.classList.toggle('active', soundEnabled);
+                showMessage(soundEnabled ? 'sound enabled' : 'sound disabled');
+                showLabel(soundEnabled ? '(barely audible)' : '(silence)');
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const dramaticBuildups = ['...', 'wait for it...', 'and now...', 'behold...', 'the moment arrives...'];
+                showMessage(dramaticBuildups[Math.floor(Math.random() * dramaticBuildups.length)]);
+                setTimeout(() => {
+                    if (!isStuck) {
+                        isUp = !isUp;
+                        switchEl.classList.toggle('up', isUp);
+                        switchEl.classList.toggle('down', !isUp);
+                        clicks++;
+                        counter.textContent = clicks;
+                        playNonClick();
+                        const dramaticConclusions = [
+                            'nothing',
+                            'anticlimactic',
+                            'the suspense was for nothing',
+                            'dramatically nothing',
+                            'nothing, but with gravitas'
+                        ];
+                        showMessage(dramaticConclusions[Math.floor(Math.random() * dramaticConclusions.length)]);
+                        showLabel('dramatic nothing');
+                    } else {
+                        showMessage('the stuck switch ignores drama');
+                    }
+                }, 1500);
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Console poetry
+        console.log('%c', 'padding: 5px');
+        console.log('%cswitch', 'font-size: 24px; font-weight: 100; color: #4a5568; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 2px');
+        console.log('%ca switch that does nothing', 'font-size: 11px; font-style: italic; color: #718096;');
+        console.log('%cthat is the point', 'font-size: 10px; color: #a0aec0;');
+        console.log('%c', 'padding: 5px');
+        console.log('%c[r] rapid      nothing, but faster', 'font-size: 9px; color: #a0aec0; font-family: monospace;');
+        console.log('%c[f] flicker    the illusion of activity', 'font-size: 9px; color: #a0aec0; font-family: monospace;');
+        console.log('%c[s] stuck      prevent even nothing', 'font-size: 9px; color: #a0aec0; font-family: monospace;');
+        console.log('%c[d] dim        ambiance without function', 'font-size: 9px; color: #a0aec0; font-family: monospace;');
+        console.log('%c[m] mute       toggle the non-sound', 'font-size: 9px; color: #a0aec0; font-family: monospace;');
+        console.log('%c[space]        nothing, with ceremony', 'font-size: 9px; color: #a0aec0; font-family: monospace;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cthe useless as essential', 'font-size: 10px; font-style: italic; color: #cbd5e0;');
+        console.log('%cif you are reading this, you are looking for meaning', 'font-size: 9px; color: #cbd5e0;');
+        console.log('%cthe meaning is in the looking', 'font-size: 9px; color: #cbd5e0;');
+
+        // Idle observations
+        let idleTimer;
+        const idleObservations = [
+            'the switch waits patiently',
+            'in stillness, the switch contemplates its purpose',
+            'the absence of clicks is also a choice',
+            'the switch does not judge hesitation',
+            'between clicks, there is only potential',
+            'the switch exists whether clicked or not',
+            'rest. the nothing will still be here.',
+            'the switch meditates on impermanence',
+            'in this moment, nothing requires nothing',
+            'the switch has no expectations',
+            'the switch breathes',
+            'waiting is also doing',
+        ];
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            if (clicks > 5) {
+                idleTimer = setTimeout(() => {
+                    if (Math.random() > 0.4) {
+                        showMessage(idleObservations[Math.floor(Math.random() * idleObservations.length)]);
+                        showLabel('idle');
+                    }
+                }, 35000);
+            }
+        }
+
+        document.addEventListener('click', resetIdleTimer);
+        document.addEventListener('keydown', resetIdleTimer);
+
+        // Very rare easter egg
+        const rareMessages = [
+            'for a moment, there was almost something',
+            'was that... something?',
+            'the switch winks (metaphorically)',
+            'somewhere, a light came on. not here.',
+            'a distant click. unrelated.',
+            'the switch whispers: thank you',
+            'the nothing smiled',
+            'you felt that, didnt you?'
+        ];
+
+        switchEl.addEventListener('click', () => {
+            if (clicks > 50 && Math.random() < 0.008) {
+                setTimeout(() => {
+                    showMessage(rareMessages[Math.floor(Math.random() * rareMessages.length)]);
+                }, 800);
+            }
+        });
+
+        // Secret: hold the switch for exactly 5 seconds
+        let holdTimer = null;
+        let holdStart = 0;
+
+        switchEl.addEventListener('mousedown', () => {
+            holdStart = Date.now();
+            holdTimer = setTimeout(() => {
+                showMessage('you held the switch');
+                showLabel('patience');
+                console.log('%cholding the switch changes nothing', 'font-size: 9px; font-style: italic; color: #a0aec0;');
+                console.log('%cbut the holding itself was something', 'font-size: 9px; color: #cbd5e0;');
+            }, 5000);
+        });
+
+        switchEl.addEventListener('mouseup', () => {
+            const holdDuration = Date.now() - holdStart;
+            clearTimeout(holdTimer);
+
+            if (holdDuration > 2000 && holdDuration < 5000) {
+                showMessage('almost');
+                showLabel('not quite');
+            }
+        });
+
+        switchEl.addEventListener('mouseleave', () => {
+            clearTimeout(holdTimer);
+        });
+    </script>
+</body>
+</html>

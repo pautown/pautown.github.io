@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>clocks - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            background: var(--bone);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 3s ease;
+        }
+
+        /* Velvet gradient - the texture of waiting */
+        .velvet-layer {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 30% 70%,
+                rgba(106, 90, 120, 0.08) 0%,
+                transparent 50%),
+                radial-gradient(ellipse at 70% 30%,
+                rgba(90, 75, 100, 0.06) 0%,
+                transparent 40%);
+            pointer-events: none;
+            z-index: 1;
+            animation: velvet-breathe 15s ease-in-out infinite;
+        }
+
+        @keyframes velvet-breathe {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        /* Duration texture - the shape time leaves behind */
+        .duration-texture {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 4s ease;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent 0px,
+                    transparent 60px,
+                    rgba(212, 160, 86, 0.02) 60px,
+                    rgba(212, 160, 86, 0.02) 61px
+                );
+        }
+
+        .duration-texture.visible { opacity: 1; }
+
+        /* Hour silhouette - what an hour looks like when empty */
+        .hour-silhouette {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 5s ease, border-color 3s ease;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .hour-silhouette.visible {
+            opacity: 0.15;
+            border-color: var(--slate-light);
+        }
+
+        .hour-silhouette::before {
+            content: '';
+            position: absolute;
+            inset: 30px;
+            border-radius: 50%;
+            border: 1px dashed var(--slate-light);
+            opacity: 0.4;
+            animation: hour-rotate 3600s linear infinite;
+        }
+
+        @keyframes hour-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Bubble shapes - the texture of waiting */
+        .bubble {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                rgba(255, 255, 255, 0.15) 0%,
+                rgba(212, 160, 86, 0.05) 50%,
+                transparent 70%);
+            pointer-events: none;
+            animation: bubble-float var(--duration, 20s) ease-in-out infinite;
+            animation-delay: var(--delay, 0s);
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .bubble.visible { opacity: 0.6; }
+
+        @keyframes bubble-float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(10px, -15px) scale(1.05); }
+            50% { transform: translate(-5px, -25px) scale(0.95); }
+            75% { transform: translate(-15px, -10px) scale(1.02); }
+        }
+
+        /* Clock container */
+        .clocks-container {
+            position: relative;
+            display: flex;
+            gap: 4rem;
+            z-index: 10;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.5s forwards;
+        }
+
+        /* Connection lines between clocks - their arguments and agreements */
+        .clock-connection {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                var(--slate-light),
+                transparent);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease, background 1s ease;
+            z-index: 5;
+        }
+
+        .clock-connection.visible { opacity: 0.3; }
+        .clock-connection.agreeing {
+            background: linear-gradient(90deg,
+                transparent,
+                var(--amber),
+                transparent);
+            opacity: 0.5;
+        }
+        .clock-connection.arguing {
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(180, 100, 100, 0.6),
+                transparent);
+            animation: argue-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes argue-pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Relationship whispers between clocks */
+        .relationship-whisper {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 6;
+        }
+
+        .relationship-whisper.visible { opacity: 0.4; }
+
+        /* Individual clock */
+        .clock {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            box-shadow:
+                0 4px 20px var(--shadow),
+                inset 0 2px 10px rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
+            cursor: pointer;
+        }
+
+        .clock:hover {
+            transform: scale(1.05);
+            box-shadow:
+                0 8px 40px var(--shadow),
+                inset 0 2px 10px rgba(255, 255, 255, 0.4);
+        }
+
+        .clock.confessing {
+            animation: clock-tremble 0.5s ease-in-out;
+        }
+
+        .clock.remembering {
+            box-shadow:
+                0 4px 20px var(--shadow),
+                inset 0 2px 10px rgba(255, 255, 255, 0.3),
+                0 0 30px rgba(212, 160, 86, 0.2);
+        }
+
+        .clock.listening {
+            border-color: var(--amber);
+            transition: border-color 0.5s ease;
+        }
+
+        @keyframes clock-tremble {
+            0%, 100% { transform: rotate(0deg) scale(1.05); }
+            25% { transform: rotate(-1deg) scale(1.05); }
+            75% { transform: rotate(1deg) scale(1.05); }
+        }
+
+        /* Clock role indicator */
+        .clock-role {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1s ease;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .clock:hover .clock-role { opacity: 0.5; }
+
+        /* Clock face numbers */
+        .clock-number {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--slate);
+            opacity: 0.6;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+
+        .clock-number.drifting {
+            opacity: 0.3;
+            animation: number-drift 4s ease-in-out infinite;
+        }
+
+        .clock-number.forgotten {
+            opacity: 0.1;
+            filter: blur(1px);
+        }
+
+        @keyframes number-drift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(var(--drift-x, 5px), var(--drift-y, 3px)) rotate(var(--drift-r, 5deg)); }
+        }
+
+        /* Clock hands */
+        .clock-hands {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            background: var(--slate-deep);
+            border-radius: 2px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hand-hour {
+            width: 3px;
+            height: 45px;
+            margin-left: -1.5px;
+        }
+
+        .hand-minute {
+            width: 2px;
+            height: 65px;
+            margin-left: -1px;
+            background: var(--slate);
+        }
+
+        .hand-second {
+            width: 1px;
+            height: 70px;
+            margin-left: -0.5px;
+            background: var(--amber);
+            opacity: 0.7;
+        }
+
+        .hand.uncertain {
+            animation: hand-wobble 2s ease-in-out infinite;
+        }
+
+        .hand.hesitant {
+            animation: hand-hesitate 4s ease-in-out infinite;
+        }
+
+        @keyframes hand-wobble {
+            0%, 100% { transform: rotate(var(--rotation)) translateX(0); }
+            25% { transform: rotate(calc(var(--rotation) + 2deg)) translateX(1px); }
+            75% { transform: rotate(calc(var(--rotation) - 2deg)) translateX(-1px); }
+        }
+
+        @keyframes hand-hesitate {
+            0%, 100% { transform: rotate(var(--rotation)); }
+            30% { transform: rotate(calc(var(--rotation) + 1deg)); }
+            35% { transform: rotate(calc(var(--rotation) - 0.5deg)); }
+            40% { transform: rotate(var(--rotation)); }
+        }
+
+        .clock-center {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--slate-deep);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        /* Confession bubble */
+        .confession {
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease, transform 1s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 2px 10px var(--shadow);
+            max-width: 250px;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .confession::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid var(--paper);
+        }
+
+        .confession.visible {
+            opacity: 0.9;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        /* Memory seeds with forgetting quality */
+        .memory-seed {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%,
+                var(--amber-glow) 0%,
+                var(--amber) 50%,
+                var(--amber-deep) 100%);
+            opacity: 0;
+            transition: all 2s ease;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        .memory-seed.dormant {
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+
+        .memory-seed.gentle-forgetting {
+            background: radial-gradient(circle at 40% 40%,
+                rgba(180, 200, 180, 0.8) 0%,
+                rgba(140, 170, 140, 0.6) 50%,
+                rgba(100, 140, 100, 0.4) 100%);
+        }
+
+        .memory-seed.abandoned {
+            background: radial-gradient(circle at 40% 40%,
+                rgba(150, 140, 160, 0.6) 0%,
+                rgba(120, 110, 130, 0.4) 50%,
+                rgba(90, 80, 100, 0.3) 100%);
+        }
+
+        .memory-seed.treasured {
+            background: radial-gradient(circle at 40% 40%,
+                rgba(212, 180, 130, 0.9) 0%,
+                rgba(212, 160, 86, 0.7) 50%,
+                rgba(180, 130, 60, 0.5) 100%);
+        }
+
+        .memory-seed.blooming {
+            opacity: 1;
+            transform: scale(1);
+            animation: seed-bloom 3s ease forwards;
+        }
+
+        @keyframes seed-bloom {
+            0% {
+                box-shadow: 0 0 0 0 rgba(212, 160, 86, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 20px 15px rgba(212, 160, 86, 0.2),
+                            0 0 40px 30px rgba(212, 160, 86, 0.1);
+                transform: scale(1.5);
+            }
+            100% {
+                box-shadow: 0 0 30px 20px rgba(212, 160, 86, 0.15),
+                            0 0 60px 40px rgba(212, 160, 86, 0.05);
+                transform: scale(2);
+            }
+        }
+
+        .memory-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--ink);
+            opacity: 0;
+            white-space: nowrap;
+            pointer-events: none;
+            transition: opacity 1.5s ease;
+        }
+
+        .memory-seed.blooming .memory-text {
+            opacity: 0.7;
+        }
+
+        .forgetting-quality {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1s ease;
+            white-space: nowrap;
+        }
+
+        .memory-seed:hover .forgetting-quality { opacity: 0.5; }
+
+        /* Thought weighing scale - nuanced */
+        .thought-scale {
+            position: fixed;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 15;
+            opacity: 0;
+            animation: fadeIn 2s ease 1.5s forwards;
+        }
+
+        .scale-beam {
+            width: 200px;
+            height: 3px;
+            background: var(--slate);
+            border-radius: 2px;
+            position: relative;
+            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+
+        .scale-pivot {
+            width: 10px;
+            height: 10px;
+            background: var(--slate-deep);
+            border-radius: 50%;
+            margin-bottom: -5px;
+        }
+
+        .scale-pan {
+            position: absolute;
+            bottom: -50px;
+            width: 60px;
+            height: 30px;
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            border-radius: 0 0 30px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.55rem;
+            font-style: italic;
+            color: var(--slate);
+            cursor: pointer;
+            transition: transform 0.5s ease, background 0.3s ease;
+        }
+
+        .scale-pan:hover {
+            background: var(--cream);
+        }
+
+        .scale-pan.left { left: -10px; }
+        .scale-pan.right { right: -10px; }
+
+        .scale-pan.heavy {
+            transform: translateY(15px);
+        }
+
+        .scale-pan.hollow {
+            border-style: dashed;
+            opacity: 0.6;
+        }
+
+        .weight-nature {
+            position: absolute;
+            bottom: -20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.35rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            white-space: nowrap;
+        }
+
+        .scale-pan:hover .weight-nature { opacity: 0.5; }
+
+        .thought-input {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            color: var(--slate);
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--slate-light);
+            padding: 0.5rem 1rem;
+            width: 280px;
+            text-align: center;
+            outline: none;
+            opacity: 0;
+            animation: fadeIn 2s ease 2s forwards;
+        }
+
+        .thought-input::placeholder {
+            color: var(--slate-light);
+            font-style: italic;
+            opacity: 0.6;
+        }
+
+        .thought-weight-display {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* Time essence whispers */
+        .time-essence {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            pointer-events: none;
+            z-index: 25;
+        }
+
+        .time-essence.visible { opacity: 0.35; }
+
+        /* Wrong time overlay - when not looking */
+        .wrong-time-overlay {
+            position: fixed;
+            inset: 0;
+            background: transparent;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Significant time display */
+        .significant-time {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: center;
+            max-width: 60%;
+            line-height: 1.8;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .significant-time.visible { opacity: 0.5; }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            top: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: center;
+            max-width: 60%;
+            line-height: 1.8;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .stillness-message.visible { opacity: 0.5; }
+
+        /* Edge hints */
+        .edge-hint {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            z-index: 50;
+        }
+
+        .edge-hint.visible { opacity: 0.25; }
+        .edge-hint.left { left: 1rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .edge-hint.right { right: 1rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+        .edge-hint.bottom { bottom: 1rem; left: 50%; transform: translateX(-50%); }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 1.8;
+            z-index: 40;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        .back-link {
+            z-index: 100;
+        }
+
+        /* Confidence meter */
+        .confidence-meter {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: var(--bone-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            opacity: 0.5;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: var(--amber);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+            width: 50%;
+        }
+
+        .confidence-label {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            white-space: nowrap;
+        }
+
+        .clock:hover .confidence-label { opacity: 0.6; }
+
+        /* Circular confidence text */
+        .circular-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            animation: rotate-slow 60s linear infinite;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .clock:hover .circular-text { opacity: 0.15; }
+
+        @keyframes rotate-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .circular-char {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            transform-origin: 0 90px;
+        }
+
+        /* Right-click whisper */
+        .whisper {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--amber);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.8s ease, transform 2s ease;
+        }
+
+        /* Uncounted minute - what time looks like when nobody watches */
+        .uncounted-minute {
+            position: fixed;
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom,
+                transparent,
+                var(--slate-light),
+                transparent);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .uncounted-minute.visible {
+            opacity: 0.2;
+            animation: minute-drift 20s ease-in-out infinite;
+        }
+
+        @keyframes minute-drift {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+        }
+
+        @media (max-width: 768px) {
+            .clocks-container {
+                flex-direction: column;
+                gap: 3rem;
+            }
+            .clock {
+                width: 140px;
+                height: 140px;
+            }
+            .hand-hour { height: 35px; }
+            .hand-minute { height: 50px; }
+            .hand-second { height: 55px; }
+            .clock-connection { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="velvet-layer"></div>
+    <div class="duration-texture" id="durationTexture"></div>
+    <div class="hour-silhouette" id="hourSilhouette"></div>
+    <div class="wrong-time-overlay" id="wrongTimeOverlay"></div>
+
+    <!-- Uncounted minutes - what time looks like when nobody counts -->
+    <div class="uncounted-minute" id="uncounted1" style="left: 8%; top: 30%;"></div>
+    <div class="uncounted-minute" id="uncounted2" style="right: 12%; top: 45%;"></div>
+    <div class="uncounted-minute" id="uncounted3" style="left: 15%; bottom: 35%;"></div>
+
+    <!-- Bubbles - texture of waiting -->
+    <div class="bubble" id="bubble1" style="width: 80px; height: 80px; left: 10%; top: 20%; --duration: 18s; --delay: 0s;"></div>
+    <div class="bubble" id="bubble2" style="width: 50px; height: 50px; right: 15%; top: 30%; --duration: 22s; --delay: 3s;"></div>
+    <div class="bubble" id="bubble3" style="width: 100px; height: 100px; left: 20%; bottom: 25%; --duration: 25s; --delay: 5s;"></div>
+    <div class="bubble" id="bubble4" style="width: 40px; height: 40px; right: 25%; bottom: 40%; --duration: 15s; --delay: 8s;"></div>
+    <div class="bubble" id="bubble5" style="width: 70px; height: 70px; left: 50%; top: 15%; --duration: 20s; --delay: 2s;"></div>
+
+    <!-- Memory seeds with different forgetting qualities -->
+    <div class="memory-seed dormant gentle-forgetting" id="seed1" style="left: 15%; top: 35%;" data-forgetting="gentle">
+        <span class="memory-text">a song you hummed once</span>
+        <span class="forgetting-quality">gently released</span>
+    </div>
+    <div class="memory-seed dormant abandoned" id="seed2" style="right: 18%; top: 45%;" data-forgetting="abandoned">
+        <span class="memory-text">the name of someone kind</span>
+        <span class="forgetting-quality">left behind</span>
+    </div>
+    <div class="memory-seed dormant treasured" id="seed3" style="left: 25%; bottom: 35%;" data-forgetting="treasured">
+        <span class="memory-text">how the light fell that morning</span>
+        <span class="forgetting-quality">held loosely</span>
+    </div>
+    <div class="memory-seed dormant gentle-forgetting" id="seed4" style="right: 22%; bottom: 30%;" data-forgetting="gentle">
+        <span class="memory-text">the weight of your hand</span>
+        <span class="forgetting-quality">softly fading</span>
+    </div>
+    <div class="memory-seed dormant abandoned" id="seed5" style="left: 10%; bottom: 20%;" data-forgetting="abandoned">
+        <span class="memory-text">what you meant to say</span>
+        <span class="forgetting-quality">dropped</span>
+    </div>
+    <div class="memory-seed dormant treasured" id="seed6" style="right: 10%; top: 25%;" data-forgetting="treasured">
+        <span class="memory-text">the shape of their smile</span>
+        <span class="forgetting-quality">still warm</span>
+    </div>
+
+    <!-- Time essence whispers -->
+    <div class="time-essence" id="essence1" style="left: 5%; top: 60%;">attention's favorite trick</div>
+    <div class="time-essence" id="essence2" style="right: 5%; top: 35%;">change's accounting system</div>
+    <div class="time-essence" id="essence3" style="left: 8%; bottom: 15%;">preventing everything at once</div>
+
+    <div class="clocks-container" id="clocksContainer">
+        <!-- Connection lines between clocks -->
+        <div class="clock-connection" id="conn12"></div>
+        <div class="clock-connection" id="conn23"></div>
+        <div class="clock-connection" id="conn13"></div>
+
+        <!-- Relationship whispers -->
+        <div class="relationship-whisper" id="rel12"></div>
+        <div class="relationship-whisper" id="rel23"></div>
+
+        <!-- Clock 1 - The Rememberer (holds the others' memories) -->
+        <div class="clock" id="clock1" data-personality="rememberer" data-role="memory">
+            <div class="circular-text" id="circularText1"></div>
+            <div class="clock-hands" id="hands1">
+                <div class="hand hand-hour" id="hour1"></div>
+                <div class="hand hand-minute" id="minute1"></div>
+                <div class="hand hand-second" id="second1"></div>
+                <div class="clock-center"></div>
+            </div>
+            <div class="confession" id="confession1"></div>
+            <div class="confidence-meter">
+                <div class="confidence-fill" id="confidence1"></div>
+            </div>
+            <div class="confidence-label" id="confLabel1">confidence: borrowed</div>
+            <div class="clock-role">the rememberer</div>
+        </div>
+
+        <!-- Clock 2 - The Doubter (questions everything, even doubt) -->
+        <div class="clock" id="clock2" data-personality="doubter" data-role="question">
+            <div class="circular-text" id="circularText2"></div>
+            <div class="clock-hands" id="hands2">
+                <div class="hand hand-hour" id="hour2"></div>
+                <div class="hand hand-minute" id="minute2"></div>
+                <div class="hand hand-second" id="second2"></div>
+                <div class="clock-center"></div>
+            </div>
+            <div class="confession" id="confession2"></div>
+            <div class="confidence-meter">
+                <div class="confidence-fill" id="confidence2"></div>
+            </div>
+            <div class="confidence-label" id="confLabel2">confidence: questioning</div>
+            <div class="clock-role">the doubter</div>
+        </div>
+
+        <!-- Clock 3 - The Philosopher (understands nothing, reports beautifully) -->
+        <div class="clock" id="clock3" data-personality="philosopher" data-role="report">
+            <div class="circular-text" id="circularText3"></div>
+            <div class="clock-hands" id="hands3">
+                <div class="hand hand-hour" id="hour3"></div>
+                <div class="hand hand-minute" id="minute3"></div>
+                <div class="hand hand-second" id="second3"></div>
+                <div class="clock-center"></div>
+            </div>
+            <div class="confession" id="confession3"></div>
+            <div class="confidence-meter">
+                <div class="confidence-fill" id="confidence3"></div>
+            </div>
+            <div class="confidence-label" id="confLabel3">confidence: circular</div>
+            <div class="clock-role">the philosopher</div>
+        </div>
+    </div>
+
+    <!-- Thought weighing scale -->
+    <div class="thought-scale" id="thoughtScale">
+        <div class="scale-pivot"></div>
+        <div class="scale-beam" id="scaleBeam">
+            <div class="scale-pan left" id="panLight">
+                light
+                <span class="weight-nature">or disguised?</span>
+            </div>
+            <div class="scale-pan right" id="panHeavy">
+                heavy
+                <span class="weight-nature">or hollow?</span>
+            </div>
+        </div>
+    </div>
+
+    <input type="text" class="thought-input" id="thoughtInput" placeholder="weigh a thought...">
+    <div class="thought-weight-display" id="weightDisplay"></div>
+
+    <div class="significant-time" id="significantTime"></div>
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <div class="edge-hint left" id="edgeLeft">duration has texture</div>
+    <div class="edge-hint right" id="edgeRight">time waits back</div>
+    <div class="edge-hint bottom" id="edgeBottom">look away to see truly</div>
+
+    <div class="key-hint">
+        [c] confess<br>
+        [r] relationships<br>
+        [d] drift numbers<br>
+        [w] significant wrongness<br>
+        [t] time's essence<br>
+        [space] pause<br>
+        click to listen
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // State
+        let lastActivity = Date.now();
+        let isLooking = true;
+        let stillnessLevel = 0;
+        let isPaused = false;
+        let wrongTimeMode = false;
+        let showingRelationships = false;
+        const observedSeeds = new Set();
+
+        // Clock number positions
+        const numberPositions = [
+            { n: 12, x: 50, y: 8 },
+            { n: 1, x: 75, y: 13 },
+            { n: 2, x: 88, y: 30 },
+            { n: 3, x: 92, y: 50 },
+            { n: 4, x: 88, y: 70 },
+            { n: 5, x: 75, y: 87 },
+            { n: 6, x: 50, y: 92 },
+            { n: 7, x: 25, y: 87 },
+            { n: 8, x: 12, y: 70 },
+            { n: 9, x: 8, y: 50 },
+            { n: 10, x: 12, y: 30 },
+            { n: 11, x: 25, y: 13 }
+        ];
+
+        // Create clock numbers
+        function createClockNumbers(clockId) {
+            const clock = document.getElementById(clockId);
+            numberPositions.forEach(pos => {
+                const num = document.createElement('div');
+                num.className = 'clock-number';
+                num.textContent = pos.n;
+                num.style.left = pos.x + '%';
+                num.style.top = pos.y + '%';
+                num.style.transform = 'translate(-50%, -50%)';
+                num.dataset.originalX = pos.x;
+                num.dataset.originalY = pos.y;
+                num.style.setProperty('--drift-x', (Math.random() * 10 - 5) + 'px');
+                num.style.setProperty('--drift-y', (Math.random() * 10 - 5) + 'px');
+                num.style.setProperty('--drift-r', (Math.random() * 20 - 10) + 'deg');
+                clock.appendChild(num);
+            });
+        }
+
+        // Create circular confidence text
+        function createCircularText(containerId, text) {
+            const container = document.getElementById(containerId);
+            const chars = text.split('');
+            const radius = 90;
+            chars.forEach((char, i) => {
+                const span = document.createElement('span');
+                span.className = 'circular-char';
+                span.textContent = char;
+                span.style.transform = `rotate(${(i / chars.length) * 360}deg)`;
+                container.appendChild(span);
+            });
+        }
+
+        createClockNumbers('clock1');
+        createClockNumbers('clock2');
+        createClockNumbers('clock3');
+        createCircularText('circularText1', 'i remember what they forget');
+        createCircularText('circularText2', 'even my doubt is uncertain');
+        createCircularText('circularText3', 'understanding is not required');
+
+        // Deep confessions - philosophical admissions
+        const confessions = {
+            rememberer: [
+                'i hold the time the others have forgotten',
+                'my certainty is borrowed from their doubt',
+                'i do not understand time. i only report on it.',
+                'the seconds i show are memories of seconds',
+                'i am the archive of moments nobody counted',
+                'they think i know. i only remember.',
+                'time taught me nothing. i watch and repeat.',
+                'when i am wrong, i show the hour you were born'
+            ],
+            doubter: [
+                'what if now is actually then?',
+                'i question even my questioning',
+                'the others trust me. this is their first mistake.',
+                'i do not understand time either. none of us do.',
+                'my hands move but do they arrive anywhere?',
+                'certainty is a clock that has stopped working',
+                'i show you guesses, formatted as facts',
+                'between seconds, i have no idea what happens'
+            ],
+            philosopher: [
+                'time is attention wearing a face',
+                'i measure nothing. this is my purpose.',
+                'understanding is not required for beauty',
+                'the hour is a shape. the minute is a texture.',
+                'i report on change. i do not cause it.',
+                'wrong and right are positions, not truths',
+                'i am the universe preventing everything at once',
+                'each second contains every second. this is obvious.'
+            ]
+        };
+
+        // Significant wrong times - moments that matter
+        const significantTimes = [
+            { h: 3, m: 14, meaning: 'the hour something changed' },
+            { h: 7, m: 23, meaning: 'when you last felt certain' },
+            { h: 11, m: 11, meaning: 'a wish not yet spent' },
+            { h: 4, m: 44, meaning: 'the time you forgot' },
+            { h: 2, m: 30, meaning: 'halfway through a dream' },
+            { h: 6, m: 0, meaning: 'the first light, every morning' },
+            { h: 9, m: 15, meaning: 'when you decided differently' },
+            { h: 12, m: 0, meaning: 'the hinge of the day' }
+        ];
+
+        // Relationship states between clocks
+        const relationships = {
+            '12': { state: 'remembering', message: 'clock 1 holds clock 2\'s forgotten hours' },
+            '23': { state: 'questioning', message: 'clock 2 doubts what clock 3 reports' },
+            '13': { state: 'reflecting', message: 'clock 3 philosophizes clock 1\'s memories' }
+        };
+
+        // Stillness messages - deeper
+        const stillnessMessages = [
+            'in stillness, clocks reveal what they truly measure: nothing',
+            'duration becomes visible only to those who stop counting',
+            'the hour has a silhouette. only patience can see it.',
+            'time is more polite than it seems. it waits for you.',
+            'between your attention and the clock is everything',
+            'stillness is time without its costume'
+        ];
+
+        // Time essence statements
+        const timeEssences = [
+            'time is attention\'s favorite trick',
+            'change\'s accounting system',
+            'the universe\'s way of preventing everything from happening at once',
+            'duration pretending to be measurable',
+            'the gap between almost and already',
+            'patience wearing a numbered face'
+        ];
+
+        // Clock offsets (normal wrongness)
+        const clockOffsets = {
+            clock1: { h: 0, m: 2, s: 5 },
+            clock2: { h: 0, m: -3, s: 8 },
+            clock3: { h: 0, m: 5, s: -10 }
+        };
+
+        // Significant wrong time offsets
+        let currentSignificantTime = significantTimes[Math.floor(Math.random() * significantTimes.length)];
+
+        // Confidence levels
+        const confidenceLevels = {
+            clock1: 55,
+            clock2: 40,
+            clock3: 30
+        };
+
+        // Update clock hands
+        function updateClocks() {
+            if (isPaused) return;
+
+            const now = new Date();
+            const clocks = ['clock1', 'clock2', 'clock3'];
+
+            clocks.forEach(clockId => {
+                let hours, minutes, seconds;
+
+                if (wrongTimeMode) {
+                    // Show significant time
+                    hours = currentSignificantTime.h;
+                    minutes = currentSignificantTime.m;
+                    seconds = (now.getSeconds() + parseInt(clockId.slice(-1)) * 7) % 60;
+                } else {
+                    const offset = clockOffsets[clockId];
+                    hours = now.getHours() + offset.h;
+                    minutes = now.getMinutes() + offset.m;
+                    seconds = now.getSeconds() + offset.s;
+
+                    // Normalize
+                    while (seconds < 0) { seconds += 60; minutes--; }
+                    while (seconds >= 60) { seconds -= 60; minutes++; }
+                    while (minutes < 0) { minutes += 60; hours--; }
+                    while (minutes >= 60) { minutes -= 60; hours++; }
+                }
+
+                while (hours < 0) hours += 12;
+                while (hours >= 12) hours -= 12;
+
+                const hourDeg = (hours * 30) + (minutes * 0.5);
+                const minuteDeg = minutes * 6;
+                const secondDeg = seconds * 6;
+
+                const hourHand = document.getElementById('hour' + clockId.slice(-1));
+                const minuteHand = document.getElementById('minute' + clockId.slice(-1));
+                const secondHand = document.getElementById('second' + clockId.slice(-1));
+
+                hourHand.style.setProperty('--rotation', hourDeg + 'deg');
+                hourHand.style.transform = `rotate(${hourDeg}deg)`;
+
+                minuteHand.style.setProperty('--rotation', minuteDeg + 'deg');
+                minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
+
+                secondHand.style.setProperty('--rotation', secondDeg + 'deg');
+                secondHand.style.transform = `rotate(${secondDeg}deg)`;
+
+                // Add uncertainty/hesitation based on personality
+                const clock = document.getElementById(clockId);
+                if (clock.dataset.personality === 'doubter' || confidenceLevels[clockId] < 40) {
+                    secondHand.classList.add('uncertain');
+                    minuteHand.classList.add('hesitant');
+                } else {
+                    secondHand.classList.remove('uncertain');
+                    minuteHand.classList.remove('hesitant');
+                }
+            });
+
+            // Update relationships if showing
+            if (showingRelationships) {
+                updateRelationships();
+            }
+        }
+
+        // Update clock relationships
+        function updateRelationships() {
+            const clocks = document.querySelectorAll('.clock');
+            const container = document.getElementById('clocksContainer');
+            const rect1 = clocks[0].getBoundingClientRect();
+            const rect2 = clocks[1].getBoundingClientRect();
+            const rect3 = clocks[2].getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // Connection 1-2
+            const conn12 = document.getElementById('conn12');
+            const midX12 = (rect1.right + rect2.left) / 2 - containerRect.left;
+            const midY = rect1.top + rect1.height / 2 - containerRect.top;
+            conn12.style.left = (rect1.right - containerRect.left) + 'px';
+            conn12.style.top = midY + 'px';
+            conn12.style.width = (rect2.left - rect1.right) + 'px';
+            conn12.classList.add('visible');
+
+            // Determine relationship state
+            const diff12 = Math.abs(confidenceLevels.clock1 - confidenceLevels.clock2);
+            if (diff12 < 15) {
+                conn12.classList.add('agreeing');
+                conn12.classList.remove('arguing');
+            } else if (diff12 > 30) {
+                conn12.classList.add('arguing');
+                conn12.classList.remove('agreeing');
+            } else {
+                conn12.classList.remove('agreeing', 'arguing');
+            }
+
+            // Connection 2-3
+            const conn23 = document.getElementById('conn23');
+            conn23.style.left = (rect2.right - containerRect.left) + 'px';
+            conn23.style.top = midY + 'px';
+            conn23.style.width = (rect3.left - rect2.right) + 'px';
+            conn23.classList.add('visible');
+
+            const diff23 = Math.abs(confidenceLevels.clock2 - confidenceLevels.clock3);
+            if (diff23 < 15) {
+                conn23.classList.add('agreeing');
+                conn23.classList.remove('arguing');
+            } else {
+                conn23.classList.remove('agreeing');
+                if (diff23 > 25) conn23.classList.add('arguing');
+            }
+
+            // Update relationship whispers
+            const rel12 = document.getElementById('rel12');
+            rel12.textContent = relationships['12'].message;
+            rel12.style.left = midX12 + 'px';
+            rel12.style.top = (midY - 20) + 'px';
+            rel12.classList.add('visible');
+
+            const midX23 = (rect2.right + rect3.left) / 2 - containerRect.left;
+            const rel23 = document.getElementById('rel23');
+            rel23.textContent = relationships['23'].message;
+            rel23.style.left = midX23 + 'px';
+            rel23.style.top = (midY + 30) + 'px';
+            rel23.classList.add('visible');
+        }
+
+        function hideRelationships() {
+            document.querySelectorAll('.clock-connection').forEach(c => {
+                c.classList.remove('visible', 'agreeing', 'arguing');
+            });
+            document.querySelectorAll('.relationship-whisper').forEach(r => {
+                r.classList.remove('visible');
+            });
+        }
+
+        // Confess
+        function triggerConfession(clockId) {
+            const clock = document.getElementById(clockId);
+            const confession = document.getElementById('confession' + clockId.slice(-1));
+            const personality = clock.dataset.personality;
+
+            const messages = confessions[personality];
+            confession.textContent = messages[Math.floor(Math.random() * messages.length)];
+            confession.classList.add('visible');
+            clock.classList.add('confessing');
+
+            // The rememberer glows when confessing
+            if (personality === 'rememberer') {
+                clock.classList.add('remembering');
+            }
+
+            // Decrease confidence
+            confidenceLevels[clockId] = Math.max(10, confidenceLevels[clockId] - 8);
+            document.getElementById('confidence' + clockId.slice(-1)).style.width = confidenceLevels[clockId] + '%';
+
+            // Other clocks may react
+            if (personality === 'doubter') {
+                setTimeout(() => {
+                    document.getElementById('clock1').classList.add('listening');
+                    setTimeout(() => {
+                        document.getElementById('clock1').classList.remove('listening');
+                    }, 2000);
+                }, 500);
+            }
+
+            setTimeout(() => {
+                confession.classList.remove('visible');
+                clock.classList.remove('confessing', 'remembering');
+            }, 5000);
+        }
+
+        // Drift numbers
+        function driftNumbers(enable) {
+            document.querySelectorAll('.clock-number').forEach(num => {
+                if (enable) {
+                    num.classList.add('drifting');
+                    // Some numbers become forgotten
+                    if (Math.random() < 0.2) {
+                        num.classList.add('forgotten');
+                    }
+                    if (Math.random() < 0.3) {
+                        const newX = parseFloat(num.dataset.originalX) + (Math.random() * 15 - 7.5);
+                        const newY = parseFloat(num.dataset.originalY) + (Math.random() * 15 - 7.5);
+                        num.style.left = newX + '%';
+                        num.style.top = newY + '%';
+                    }
+                } else {
+                    num.classList.remove('drifting', 'forgotten');
+                    num.style.left = num.dataset.originalX + '%';
+                    num.style.top = num.dataset.originalY + '%';
+                }
+            });
+        }
+
+        // Memory seeds - bloom based on forgetting quality
+        function checkMemorySeeds() {
+            const seeds = document.querySelectorAll('.memory-seed');
+            const mouseX = window.mouseX || window.innerWidth / 2;
+            const mouseY = window.mouseY || window.innerHeight / 2;
+
+            seeds.forEach(seed => {
+                const rect = seed.getBoundingClientRect();
+                const seedX = rect.left + rect.width / 2;
+                const seedY = rect.top + rect.height / 2;
+                const distance = Math.sqrt(Math.pow(mouseX - seedX, 2) + Math.pow(mouseY - seedY, 2));
+
+                const isObserved = distance < 180;
+                const forgettingType = seed.dataset.forgetting;
+
+                if (!isObserved && stillnessLevel > 1) {
+                    seed.classList.remove('dormant');
+                    seed.classList.add('blooming');
+
+                    // Different forgetting types bloom differently
+                    if (forgettingType === 'abandoned') {
+                        seed.style.animationDuration = '4s';
+                    } else if (forgettingType === 'treasured') {
+                        seed.style.animationDuration = '2s';
+                    }
+                } else if (isObserved) {
+                    seed.classList.remove('blooming');
+                    seed.classList.add('dormant');
+                }
+            });
+        }
+
+        // Thought weighing - nuanced
+        const thoughtInput = document.getElementById('thoughtInput');
+        const weightDisplay = document.getElementById('weightDisplay');
+        const scaleBeam = document.getElementById('scaleBeam');
+        const panLight = document.getElementById('panLight');
+        const panHeavy = document.getElementById('panHeavy');
+
+        // Patterns that seem light but are heavy
+        const disguisedHeavy = [
+            'fine', 'okay', 'nothing', 'whatever', 'anyway',
+            'just', 'only', 'simple', 'easy', 'obviously'
+        ];
+
+        // Patterns that seem heavy but are hollow
+        const hollowHeavy = [
+            'always', 'never', 'everyone', 'nobody', 'everything',
+            'impossible', 'forever', 'absolutely', 'completely', 'totally'
+        ];
+
+        // Genuinely light
+        const genuinelyLight = [
+            'maybe', 'perhaps', 'sometimes', 'could', 'might',
+            'wonder', 'curious', 'gentle', 'soft', 'quiet'
+        ];
+
+        thoughtInput.addEventListener('input', (e) => {
+            const thought = e.target.value.toLowerCase();
+            let apparentWeight = 0;
+            let trueWeight = 0;
+            let isDisguised = false;
+            let isHollow = false;
+
+            // Check disguised heavy (appears light, actually heavy)
+            disguisedHeavy.forEach(pattern => {
+                if (thought.includes(pattern)) {
+                    apparentWeight -= 10;
+                    trueWeight += 25;
+                    isDisguised = true;
+                }
+            });
+
+            // Check hollow heavy (appears heavy, actually empty)
+            hollowHeavy.forEach(pattern => {
+                if (thought.includes(pattern)) {
+                    apparentWeight += 20;
+                    trueWeight += 5;
+                    isHollow = true;
+                }
+            });
+
+            // Check genuinely light
+            genuinelyLight.forEach(pattern => {
+                if (thought.includes(pattern)) {
+                    apparentWeight -= 5;
+                    trueWeight -= 5;
+                }
+            });
+
+            // Length adds apparent weight
+            apparentWeight += thought.length * 0.3;
+            trueWeight += thought.length * 0.2;
+
+            const isHeavy = trueWeight > 30;
+            const rotation = isHeavy ? 5 : -5;
+
+            scaleBeam.style.transform = `rotate(${rotation}deg)`;
+            panLight.classList.toggle('heavy', !isHeavy);
+            panHeavy.classList.toggle('heavy', isHeavy);
+            panLight.classList.toggle('hollow', isHollow && isHeavy);
+            panHeavy.classList.toggle('hollow', isHollow);
+
+            if (thought.length > 0) {
+                weightDisplay.style.opacity = '0.6';
+                let display = '';
+
+                if (isDisguised) {
+                    display = `"${thought.split(' ')[0]}" carries more than it shows<br>`;
+                    display += `apparent: ${Math.round(apparentWeight)} / true: ${Math.round(trueWeight)}`;
+                } else if (isHollow) {
+                    display = `the weight is mostly air<br>`;
+                    display += `sounds like: ${Math.round(apparentWeight)} / weighs: ${Math.round(trueWeight)}`;
+                } else {
+                    display = `weight: ${Math.round(trueWeight)}`;
+                }
+
+                weightDisplay.innerHTML = display;
+            } else {
+                weightDisplay.style.opacity = '0';
+            }
+        });
+
+        // Show time essence
+        function showTimeEssence() {
+            const essences = document.querySelectorAll('.time-essence');
+            essences.forEach((e, i) => {
+                setTimeout(() => {
+                    e.classList.add('visible');
+                    setTimeout(() => e.classList.remove('visible'), 8000);
+                }, i * 2000);
+            });
+        }
+
+        // Stillness detection
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 3000 && stillnessLevel < 1) {
+                stillnessLevel = 1;
+                document.getElementById('edgeLeft').classList.add('visible');
+                document.getElementById('edgeRight').classList.add('visible');
+            }
+
+            if (elapsed > 6000 && stillnessLevel < 2) {
+                stillnessLevel = 2;
+                document.querySelectorAll('.bubble').forEach(b => b.classList.add('visible'));
+                document.getElementById('durationTexture').classList.add('visible');
+                driftNumbers(true);
+            }
+
+            if (elapsed > 10000 && stillnessLevel < 3) {
+                stillnessLevel = 3;
+                document.getElementById('edgeBottom').classList.add('visible');
+                document.getElementById('hourSilhouette').classList.add('visible');
+                const msg = document.getElementById('stillnessMessage');
+                msg.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                msg.classList.add('visible');
+            }
+
+            if (elapsed > 15000 && stillnessLevel < 4) {
+                stillnessLevel = 4;
+                // Show uncounted minutes
+                document.querySelectorAll('.uncounted-minute').forEach(m => m.classList.add('visible'));
+                // Clocks may confess on their own
+                const clocks = ['clock1', 'clock2', 'clock3'];
+                const randomClock = clocks[Math.floor(Math.random() * clocks.length)];
+                triggerConfession(randomClock);
+            }
+
+            if (elapsed > 20000 && stillnessLevel < 5) {
+                stillnessLevel = 5;
+                showTimeEssence();
+            }
+
+            // Not looking detection
+            if (elapsed > 5000) {
+                isLooking = false;
+            }
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            isLooking = true;
+
+            if (stillnessLevel > 0) {
+                document.getElementById('stillnessMessage').classList.remove('visible');
+                document.getElementById('edgeLeft').classList.remove('visible');
+                document.getElementById('edgeRight').classList.remove('visible');
+                document.getElementById('edgeBottom').classList.remove('visible');
+                document.getElementById('durationTexture').classList.remove('visible');
+                document.getElementById('hourSilhouette').classList.remove('visible');
+                document.querySelectorAll('.uncounted-minute').forEach(m => m.classList.remove('visible'));
+                document.querySelectorAll('.time-essence').forEach(e => e.classList.remove('visible'));
+                stillnessLevel = 0;
+
+                Object.keys(confidenceLevels).forEach(key => {
+                    confidenceLevels[key] = Math.min(75, confidenceLevels[key] + 5);
+                });
+
+                if (!wrongTimeMode) {
+                    driftNumbers(false);
+                }
+            }
+        }
+
+        // Track mouse
+        document.addEventListener('mousemove', (e) => {
+            window.mouseX = e.clientX;
+            window.mouseY = e.clientY;
+            resetStillness();
+        });
+
+        // Clock clicks
+        document.querySelectorAll('.clock').forEach(clock => {
+            clock.addEventListener('click', () => {
+                triggerConfession(clock.id);
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            resetStillness();
+
+            if (e.target === thoughtInput) return;
+
+            if (e.code === 'KeyC') {
+                ['clock1', 'clock2', 'clock3'].forEach((id, i) => {
+                    setTimeout(() => triggerConfession(id), i * 700);
+                });
+            }
+
+            if (e.code === 'KeyR') {
+                showingRelationships = !showingRelationships;
+                if (showingRelationships) {
+                    updateRelationships();
+                } else {
+                    hideRelationships();
+                }
+            }
+
+            if (e.code === 'KeyD') {
+                const numbers = document.querySelectorAll('.clock-number');
+                const isDrifting = numbers[0].classList.contains('drifting');
+                driftNumbers(!isDrifting);
+            }
+
+            if (e.code === 'KeyW') {
+                wrongTimeMode = !wrongTimeMode;
+                const sigTime = document.getElementById('significantTime');
+
+                if (wrongTimeMode) {
+                    currentSignificantTime = significantTimes[Math.floor(Math.random() * significantTimes.length)];
+                    document.body.style.background = 'var(--bone-dark)';
+                    sigTime.textContent = `${currentSignificantTime.h}:${String(currentSignificantTime.m).padStart(2, '0')} — ${currentSignificantTime.meaning}`;
+                    sigTime.classList.add('visible');
+                } else {
+                    document.body.style.background = 'var(--bone)';
+                    sigTime.classList.remove('visible');
+                }
+            }
+
+            if (e.code === 'KeyT') {
+                showTimeEssence();
+            }
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                isPaused = !isPaused;
+                document.querySelectorAll('.hand').forEach(h => {
+                    h.style.transition = isPaused ? 'none' : '';
+                });
+            }
+
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Right-click whispers - deeper
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                const whispers = [
+                    'time is attention wearing a numbered face',
+                    'the clocks do not understand either',
+                    'they report. they do not know.',
+                    'change\'s accounting system',
+                    'preventing everything from happening at once',
+                    'the gap between almost and already',
+                    'duration has a texture',
+                    'this second contains all seconds',
+                    'the hour has a silhouette'
+                ];
+                const whisper = document.createElement('div');
+                whisper.className = 'whisper';
+                whisper.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+                whisper.style.left = e.clientX + 'px';
+                whisper.style.top = e.clientY + 'px';
+                whisper.style.transform = 'translate(-50%, -50%)';
+                document.body.appendChild(whisper);
+
+                requestAnimationFrame(() => {
+                    whisper.style.opacity = '0.6';
+                    whisper.style.transform = 'translate(-50%, -50%) translateY(-20px)';
+                });
+
+                setTimeout(() => {
+                    whisper.style.opacity = '0';
+                    setTimeout(() => whisper.remove(), 800);
+                }, 3000);
+            }
+        });
+
+        // Main loops
+        setInterval(updateClocks, 1000);
+        setInterval(checkStillness, 1000);
+        setInterval(checkMemorySeeds, 500);
+
+        // Fluctuate confidence with relationships
+        setInterval(() => {
+            const clocks = ['clock1', 'clock2', 'clock3'];
+            clocks.forEach((key, i) => {
+                // Confidence influenced by neighbors
+                const neighbors = clocks.filter((_, j) => Math.abs(i - j) === 1);
+                let influence = 0;
+                neighbors.forEach(n => {
+                    influence += (confidenceLevels[n] - confidenceLevels[key]) * 0.1;
+                });
+
+                const change = (Math.random() - 0.5) * 8 + influence;
+                confidenceLevels[key] = Math.max(10, Math.min(85, confidenceLevels[key] + change));
+                document.getElementById('confidence' + key.slice(-1)).style.width = confidenceLevels[key] + '%';
+            });
+
+            // Update relationship dynamics
+            if (confidenceLevels.clock1 > 70 && confidenceLevels.clock2 < 30) {
+                relationships['12'].message = 'clock 1 remembers what clock 2 refuses to know';
+            } else if (confidenceLevels.clock2 > confidenceLevels.clock3) {
+                relationships['23'].message = 'clock 2\'s doubt exceeds clock 3\'s philosophy';
+            }
+        }, 3000);
+
+        // Initial update
+        updateClocks();
+
+        // Console poetry - deeper
+        console.log('%c', 'padding: 20px');
+        console.log('%cclocks', 'font-size: 24px; color: #d4a056; font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 300;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cthey do not understand time either', 'font-size: 12px; color: #718096; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%cthey only report on it', 'font-size: 11px; color: #718096; font-style: italic; letter-spacing: 0.1em;');
+        console.log('%c', 'padding: 3px');
+        console.log('%ctime is attention\'s favorite trick', 'font-size: 10px; color: #4a5568; letter-spacing: 0.15em;');
+        console.log('%cchange\'s accounting system', 'font-size: 10px; color: #4a5568; letter-spacing: 0.15em;');
+        console.log('%c', 'padding: 5px');
+        console.log('%c"when i am wrong, i show the hour you were born"', 'font-size: 9px; color: #2d3748; font-style: italic;');
+        console.log('%c"the second i show is a memory of a second"', 'font-size: 9px; color: #2d3748; font-style: italic;');
+        console.log('%c"between seconds, i have no idea what happens"', 'font-size: 9px; color: #2d3748; font-style: italic;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cone remembers. one doubts. one philosophizes.', 'font-size: 8px; color: #1a202c; font-style: italic;');
+        console.log('%cthey do not agree. they do not need to.', 'font-size: 8px; color: #1a202c; font-style: italic;');
+        console.log('%c', 'padding: 3px');
+        console.log('%cpress [r] to see their relationships', 'font-size: 7px; color: #1a202c; font-style: italic; opacity: 0.7;');
+        console.log('%cpress [w] to see times that matter', 'font-size: 7px; color: #1a202c; font-style: italic; opacity: 0.7;');
+        console.log('%cpress [t] for time\'s essence', 'font-size: 7px; color: #1a202c; font-style: italic; opacity: 0.7;');
+        console.log('%c', 'padding: 3px');
+        console.log('%csome light thoughts are heavy in disguise', 'font-size: 7px; color: #1a202c; font-style: italic; opacity: 0.6;');
+        console.log('%csome heavy thoughts are hollow inside', 'font-size: 7px; color: #1a202c; font-style: italic; opacity: 0.6;');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>orb - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.inverted {
+            background: linear-gradient(180deg, #e0e0d0 0%, #d0d0c0 50%, #e0e0d0 100%);
+        }
+
+        body.stillness-deep {
+            background: linear-gradient(180deg, #12121f 0%, #0f1729 50%, #12121f 100%);
+        }
+
+        .back-link { color: var(--green-orb); }
+        body.inverted .back-link { color: var(--slate-deep); }
+
+        /* Ambient particles floating in background */
+        .ambient-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0.3;
+            transition: opacity 4s ease;
+        }
+
+        body.stillness-deep .ambient-particles {
+            opacity: 0.5;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(134, 179, 152, 0.4);
+            border-radius: 50%;
+            animation: drift 25s infinite linear;
+            transition: background 3s ease;
+        }
+
+        .particle.warm {
+            background: rgba(212, 160, 86, 0.3);
+        }
+
+        .particle.aware {
+            animation: drift-aware 20s infinite ease-in-out;
+        }
+
+        @keyframes drift {
+            0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+            10% { opacity: 1; transform: translateY(90vh) translateX(10px) scale(1); }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) translateX(-10px) scale(0.5); opacity: 0; }
+        }
+
+        @keyframes drift-aware {
+            0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+            10% { opacity: 1; transform: translateY(90vh) translateX(15px) scale(1.2); }
+            50% { transform: translateY(45vh) translateX(-20px) scale(1); }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) translateX(10px) scale(0.3); opacity: 0; }
+        }
+
+        /* Presence indicator - subtle sense of being watched */
+        .presence {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(134, 179, 152, 0.15);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 4s ease, transform 8s ease;
+            filter: blur(1px);
+        }
+
+        .presence.visible {
+            opacity: 1;
+        }
+
+        .presence.watching {
+            animation: presence-pulse 6s ease-in-out infinite;
+        }
+
+        @keyframes presence-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.15; }
+            50% { transform: scale(1.5); opacity: 0.25; }
+        }
+
+        .orb-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Subtle ambient light that follows mouse */
+        .ambient-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(134, 179, 152, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 2s ease, width 3s ease, height 3s ease;
+            z-index: 0;
+        }
+
+        .ambient-glow.expanded {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(134, 179, 152, 0.05) 0%, transparent 70%);
+        }
+
+        .orb {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                rgba(200, 230, 210, 0.4) 0%,
+                rgba(134, 179, 152, 0.3) 30%,
+                rgba(74, 124, 89, 0.2) 60%,
+                rgba(40, 80, 55, 0.1) 100%
+            );
+            box-shadow:
+                inset 0 0 60px rgba(134, 179, 152, 0.2),
+                0 0 40px rgba(134, 179, 152, 0.1);
+            cursor: pointer;
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* The orb breathes always, subtly - it is alive */
+        .orb {
+            animation: orb-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes orb-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.008); }
+        }
+
+        /* Inner depth layers for glass effect */
+        .orb-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%,
+                rgba(180, 220, 190, 0.15) 0%,
+                rgba(134, 179, 152, 0.08) 50%,
+                transparent 70%
+            );
+            pointer-events: none;
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .orb-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%,
+                rgba(200, 240, 210, 0.1) 0%,
+                transparent 60%
+            );
+            pointer-events: none;
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Memory layer - shows accumulated warmth */
+        .orb-memory {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: transparent;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 4s ease;
+            box-shadow: inset 0 0 40px rgba(212, 160, 86, 0.1);
+        }
+
+        .orb-memory.remembering {
+            opacity: 0.6;
+        }
+
+        /* Primary highlight - top left */
+        .orb::before {
+            content: '';
+            position: absolute;
+            top: 12%;
+            left: 18%;
+            width: 35%;
+            height: 22%;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            transform: rotate(-15deg);
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Secondary highlight - bottom right */
+        .orb::after {
+            content: '';
+            position: absolute;
+            bottom: 18%;
+            right: 22%;
+            width: 18%;
+            height: 12%;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.18) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: rotate(25deg);
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Caustic light patterns inside orb */
+        .caustics {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background:
+                radial-gradient(ellipse 30% 20% at 60% 65%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 20% 15% at 35% 70%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            opacity: 0.6;
+            animation: caustic-shift 12s ease-in-out infinite;
+            transition: opacity 2.5s ease;
+        }
+
+        @keyframes caustic-shift {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); opacity: 0.6; }
+            33% { transform: translate(-50%, -50%) rotate(3deg); opacity: 0.7; }
+            66% { transform: translate(-50%, -50%) rotate(-2deg); opacity: 0.65; }
+        }
+
+        /* Edge refraction ring */
+        .refraction-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 196px;
+            height: 196px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 0 20px rgba(134, 179, 152, 0.05);
+            pointer-events: none;
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Cold state - the orb before you arrived */
+        .orb.cold {
+            background: radial-gradient(circle at 30% 30%,
+                rgba(180, 200, 220, 0.4) 0%,
+                rgba(134, 160, 179, 0.3) 30%,
+                rgba(89, 110, 124, 0.2) 60%,
+                rgba(55, 70, 80, 0.1) 100%
+            );
+            box-shadow: inset 0 0 60px rgba(134, 160, 179, 0.2), 0 0 40px rgba(134, 160, 179, 0.1);
+        }
+
+        .orb.cold .orb-inner {
+            background: radial-gradient(circle at 35% 35%,
+                rgba(180, 200, 220, 0.12) 0%,
+                rgba(134, 160, 179, 0.06) 50%,
+                transparent 70%
+            );
+        }
+
+        .orb.cold .caustics { opacity: 0.4; }
+        .orb.cold .refraction-ring { border-color: rgba(180, 200, 220, 0.1); }
+
+        /* Aware state - the orb notices you watching */
+        .orb.aware {
+            animation: orb-breathe-aware 6s ease-in-out infinite;
+        }
+
+        @keyframes orb-breathe-aware {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.015); }
+        }
+
+        .orb.aware::before {
+            background: radial-gradient(ellipse, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.12) 40%, transparent 70%);
+        }
+
+        /* Warming state - stone remembering the sun */
+        .orb.warming {
+            background: radial-gradient(circle at 30% 30%,
+                rgba(200, 220, 200, 0.5) 0%,
+                rgba(150, 179, 152, 0.4) 30%,
+                rgba(100, 140, 100, 0.25) 60%,
+                rgba(60, 100, 70, 0.15) 100%
+            );
+            box-shadow: inset 0 0 80px rgba(134, 179, 152, 0.3), 0 0 60px rgba(134, 179, 152, 0.2);
+        }
+
+        .orb.warming .orb-inner {
+            background: radial-gradient(circle at 35% 35%,
+                rgba(180, 220, 190, 0.2) 0%,
+                rgba(134, 179, 152, 0.12) 50%,
+                transparent 70%
+            );
+        }
+
+        .orb.warming .orb-core {
+            background: radial-gradient(circle at 40% 40%,
+                rgba(200, 240, 210, 0.15) 0%,
+                transparent 60%
+            );
+        }
+
+        .orb.warming .caustics { opacity: 0.7; }
+        .orb.warming .refraction-ring {
+            border-color: rgba(134, 179, 152, 0.15);
+            box-shadow: inset 0 0 25px rgba(134, 179, 152, 0.08);
+        }
+
+        .orb.warming::before {
+            background: radial-gradient(ellipse, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.15) 40%, transparent 70%);
+        }
+
+        /* Warm state - held, known, remembered */
+        .orb.warm {
+            background: radial-gradient(circle at 30% 30%,
+                rgba(220, 240, 220, 0.6) 0%,
+                rgba(170, 210, 170, 0.5) 30%,
+                rgba(134, 179, 152, 0.35) 60%,
+                rgba(90, 140, 100, 0.2) 100%
+            );
+            box-shadow:
+                inset 0 0 100px rgba(134, 179, 152, 0.4),
+                0 0 80px rgba(134, 179, 152, 0.3),
+                0 0 120px rgba(134, 179, 152, 0.1);
+            transform: scale(1.02);
+            animation: orb-breathe-warm 5s ease-in-out infinite;
+        }
+
+        @keyframes orb-breathe-warm {
+            0%, 100% { transform: scale(1.02); }
+            50% { transform: scale(1.035); }
+        }
+
+        .orb.warm .orb-inner {
+            background: radial-gradient(circle at 35% 35%,
+                rgba(200, 240, 210, 0.25) 0%,
+                rgba(170, 210, 180, 0.15) 50%,
+                transparent 70%
+            );
+            animation: inner-pulse 5s ease-in-out infinite;
+        }
+
+        .orb.warm .orb-core {
+            background: radial-gradient(circle at 40% 40%,
+                rgba(220, 255, 230, 0.2) 0%,
+                rgba(200, 240, 210, 0.1) 40%,
+                transparent 60%
+            );
+            animation: core-glow 4s ease-in-out infinite;
+        }
+
+        .orb.warm .caustics {
+            opacity: 1;
+            animation: caustic-shift 8s ease-in-out infinite;
+        }
+
+        .orb.warm .refraction-ring {
+            border-color: rgba(170, 210, 170, 0.2);
+            box-shadow: inset 0 0 30px rgba(134, 179, 152, 0.12);
+        }
+
+        .orb.warm::before {
+            background: radial-gradient(ellipse, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.2) 40%, transparent 70%);
+        }
+
+        .orb.warm::after {
+            background: radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 70%);
+        }
+
+        @keyframes inner-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        @keyframes core-glow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.8; }
+        }
+
+        /* Amber orb on right-click hold - a different kind of warmth */
+        .orb.amber {
+            background: radial-gradient(circle at 30% 30%,
+                rgba(240, 220, 180, 0.6) 0%,
+                rgba(212, 160, 86, 0.5) 30%,
+                rgba(180, 130, 60, 0.35) 60%,
+                rgba(140, 100, 40, 0.2) 100%
+            );
+            box-shadow:
+                inset 0 0 100px rgba(212, 160, 86, 0.4),
+                0 0 80px rgba(212, 160, 86, 0.3),
+                0 0 120px rgba(212, 160, 86, 0.1);
+            animation: orb-breathe-amber 4s ease-in-out infinite;
+        }
+
+        @keyframes orb-breathe-amber {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.025); }
+        }
+
+        .orb.amber .orb-inner {
+            background: radial-gradient(circle at 35% 35%,
+                rgba(240, 200, 140, 0.2) 0%,
+                rgba(212, 160, 86, 0.12) 50%,
+                transparent 70%
+            );
+        }
+
+        .orb.amber .orb-core {
+            background: radial-gradient(circle at 40% 40%,
+                rgba(255, 220, 160, 0.2) 0%,
+                transparent 60%
+            );
+        }
+
+        .orb.amber .caustics { opacity: 0.9; }
+        .orb.amber .refraction-ring {
+            border-color: rgba(212, 160, 86, 0.2);
+        }
+
+        /* Floating state */
+        .orb.floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .orb.floating .orb-inner,
+        .orb.floating .orb-core,
+        .orb.floating .caustics,
+        .orb.floating .refraction-ring,
+        .orb.floating .orb-memory {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .orb.floating .orb-inner {
+            animation: float-inner 4s ease-in-out infinite;
+        }
+
+        @keyframes float-inner {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-15px); }
+        }
+
+        /* Enhanced breathing animation (activated with 'b') */
+        .orb.breathing {
+            animation: breathe-deep 6s ease-in-out infinite !important;
+        }
+
+        @keyframes breathe-deep {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.06); filter: brightness(1.05); }
+        }
+
+        /* Secret rainbow mode (activated by holding orb for exactly 10 seconds) */
+        .orb.prismatic {
+            animation: prismatic-shift 4s linear infinite !important;
+        }
+
+        @keyframes prismatic-shift {
+            0% { filter: hue-rotate(0deg) brightness(1.1); }
+            100% { filter: hue-rotate(360deg) brightness(1.1); }
+        }
+
+        /* Stillness mode - the orb notices you watching */
+        .orb.stillness {
+            animation: orb-breathe-stillness 10s ease-in-out infinite;
+        }
+
+        @keyframes orb-breathe-stillness {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.01); }
+            50% { transform: scale(1.02); }
+            75% { transform: scale(1.01); }
+        }
+
+        .temperature {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--slate-light);
+            opacity: 0.4;
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.1em;
+        }
+
+        .temperature.warming { color: var(--green-orb); opacity: 0.6; }
+        .temperature.warm { color: var(--amber-glow); opacity: 0.7; }
+        .temperature.aware { color: var(--green-orb); opacity: 0.5; }
+        body.inverted .temperature { color: var(--ink); }
+
+        /* Temperature shimmer effect */
+        .temperature.warm::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 4s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .touch-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: 220px;
+            border: 1px solid var(--green-orb);
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .touch-ring-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 240px;
+            height: 240px;
+            border: 1px solid var(--green-orb);
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+            pointer-events: none;
+        }
+
+        .orb-container.touching .touch-ring {
+            opacity: 0.3;
+            animation: ring-pulse 2.5s ease-in-out infinite;
+        }
+
+        .orb-container.touching .touch-ring-inner {
+            opacity: 0.15;
+            animation: ring-pulse 2.5s ease-in-out infinite 0.6s;
+        }
+
+        @keyframes ring-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.1; }
+        }
+
+        .message {
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            letter-spacing: 0.05em;
+            max-width: 80%;
+        }
+
+        body.inverted .message { color: var(--ink); }
+        .message.visible { opacity: 0.5; }
+
+        .instruction {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            opacity: 0;
+            animation: fadeIn 3s cubic-bezier(0.4, 0, 0.2, 1) 4s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 0.35; }
+        }
+
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        /* Hidden counter for easter egg tracking */
+        .secret-counter {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .secret-counter.visible { opacity: 0.2; }
+
+        /* Double-click ripple effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(134, 179, 152, 0.25);
+            transform: scale(0);
+            animation: ripple-expand 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-expand {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Whisper text that appears rarely */
+        .whisper {
+            position: fixed;
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--slate-light);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .whisper.visible {
+            opacity: 0.15;
+        }
+
+        /* Stillness message - appears when watching quietly */
+        .stillness-message {
+            position: fixed;
+            bottom: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--green-orb);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 5s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            letter-spacing: 0.08em;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.35;
+        }
+
+        /* Shadow beneath orb */
+        .orb-shadow {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 20px;
+            background: radial-gradient(ellipse, rgba(0,0,0,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            transition: all 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .orb.warm ~ .orb-shadow,
+        .orb-container .orb.warm + .orb-shadow {
+            width: 160px;
+            background: radial-gradient(ellipse, rgba(134, 179, 152, 0.15) 0%, transparent 70%);
+        }
+
+        .orb.floating ~ .orb-shadow,
+        .orb-container .orb.floating + .touch-ring + .touch-ring-inner + .orb-shadow {
+            animation: shadow-float 4s ease-in-out infinite;
+        }
+
+        @keyframes shadow-float {
+            0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+            50% { transform: translateX(-50%) scale(0.7); opacity: 0.5; }
+        }
+
+        /* Sound hint - very subtle, appears after long stillness */
+        .sound-hint {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 4s ease;
+            letter-spacing: 0.15em;
+        }
+
+        .sound-hint.visible {
+            opacity: 0.15;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="ambient-particles" id="particles"></div>
+    <div class="ambient-glow" id="ambientGlow"></div>
+
+    <!-- Subtle presences that watch -->
+    <div class="presence" id="presence1"></div>
+    <div class="presence" id="presence2"></div>
+    <div class="presence" id="presence3"></div>
+
+    <div class="orb-container" id="container">
+        <div class="orb cold" id="orb">
+            <div class="orb-inner"></div>
+            <div class="orb-core"></div>
+            <div class="orb-memory" id="orbMemory"></div>
+            <div class="caustics"></div>
+            <div class="refraction-ring"></div>
+        </div>
+        <div class="touch-ring"></div>
+        <div class="touch-ring-inner"></div>
+        <div class="orb-shadow"></div>
+    </div>
+
+    <div class="message" id="message"></div>
+    <div class="stillness-message" id="stillnessMessage"></div>
+    <p class="temperature" id="temperature">cold</p>
+    <p class="instruction">hold to warm</p>
+    <div class="key-hint">
+        [f] float<br>
+        [i] invert<br>
+        [r] reset
+    </div>
+    <div class="secret-counter" id="secretCounter"></div>
+    <div class="whisper" id="whisper"></div>
+    <div class="sound-hint" id="soundHint">[s] listen</div>
+
+    <script>
+        const orb = document.getElementById('orb');
+        const container = document.getElementById('container');
+        const temperature = document.getElementById('temperature');
+        const message = document.getElementById('message');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const ambientGlow = document.getElementById('ambientGlow');
+        const secretCounter = document.getElementById('secretCounter');
+        const whisperEl = document.getElementById('whisper');
+        const particles = document.getElementById('particles');
+        const orbMemory = document.getElementById('orbMemory');
+        const soundHint = document.getElementById('soundHint');
+        const presences = [
+            document.getElementById('presence1'),
+            document.getElementById('presence2'),
+            document.getElementById('presence3')
+        ];
+
+        let warmth = 0;
+        let isTouching = false;
+        let isRightTouching = false;
+        let warmthDecayInterval = null;
+        let hasBeenWarm = false;
+        let touchStartTime = 0;
+        let totalTouchTime = 0;
+        let secretsFound = 0;
+        let prismaticUnlocked = false;
+        let breathingUnlocked = false;
+        let stillnessUnlocked = false;
+
+        // Stillness detection
+        let lastMouseMove = Date.now();
+        let stillnessLevel = 0;
+        let isStill = false;
+        let stillnessMessageShown = false;
+        let deepStillnessReached = false;
+
+        // Memory of warmth - the orb remembers
+        let warmthMemory = 0;
+
+        const messages = {
+            cold: '',
+            warming: 'it remembers your touch',
+            warm: 'it was waiting for someone',
+            amber: 'a different kind of warmth',
+            prismatic: 'you found what it hides',
+            stillness: 'it notices you watching',
+            deepStillness: 'something watches back'
+        };
+
+        const stillnessMessages = [
+            'the orb notices',
+            'stillness is a kind of touch',
+            'it has been waiting',
+            'patience is warmth too',
+            'cold becomes warm with attention',
+            'what watches watches back',
+            'presence is enough'
+        ];
+
+        const whispers = [
+            'glass holds memory',
+            'warmth is borrowed light',
+            'some things are meant to be held',
+            'patience reveals secrets',
+            'the orb remembers',
+            'touch leaves traces',
+            'cold is just the absence of you',
+            'stone warming to touch',
+            'attention is a form of care',
+            'what you give comes back',
+            'the container and the contained',
+            'light finds its way'
+        ];
+
+        // Console poetry
+        console.log('%c' + `
+
+    ·  ·  ·  ·  orb  ·  ·  ·  ·
+
+`, 'font-size: 14px; color: #86b398; font-family: serif;');
+
+        console.log('%ccold, then warm', 'font-size: 11px; color: #4a7c59; font-style: italic;');
+        console.log('%cthe difference is attention', 'font-size: 10px; color: #4a5568; font-style: italic; margin-top: 4px;');
+        console.log(' ');
+        console.log('%cwhat happens if you just watch?', 'font-size: 9px; color: #333; font-style: italic;');
+
+        // Create ambient particles
+        function createParticles() {
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 25 + 's';
+                particle.style.animationDuration = (20 + Math.random() * 15) + 's';
+                particles.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // Position presences randomly at the edges
+        function positionPresences() {
+            presences.forEach((p, i) => {
+                const edge = Math.floor(Math.random() * 4);
+                switch(edge) {
+                    case 0: // top
+                        p.style.top = (5 + Math.random() * 10) + '%';
+                        p.style.left = (20 + Math.random() * 60) + '%';
+                        break;
+                    case 1: // right
+                        p.style.right = (5 + Math.random() * 10) + '%';
+                        p.style.top = (20 + Math.random() * 60) + '%';
+                        break;
+                    case 2: // bottom
+                        p.style.bottom = (5 + Math.random() * 10) + '%';
+                        p.style.left = (20 + Math.random() * 60) + '%';
+                        break;
+                    case 3: // left
+                        p.style.left = (5 + Math.random() * 10) + '%';
+                        p.style.top = (20 + Math.random() * 60) + '%';
+                        break;
+                }
+            });
+        }
+        positionPresences();
+
+        // Ambient glow follows mouse slowly
+        let glowX = window.innerWidth / 2;
+        let glowY = window.innerHeight / 2;
+        let targetGlowX = glowX;
+        let targetGlowY = glowY;
+
+        function updateGlow() {
+            glowX += (targetGlowX - glowX) * 0.05;
+            glowY += (targetGlowY - glowY) * 0.05;
+            ambientGlow.style.left = glowX + 'px';
+            ambientGlow.style.top = glowY + 'px';
+            requestAnimationFrame(updateGlow);
+        }
+        updateGlow();
+
+        document.addEventListener('mousemove', (e) => {
+            targetGlowX = e.clientX;
+            targetGlowY = e.clientY;
+            lastMouseMove = Date.now();
+
+            // Reset stillness when moving
+            if (isStill) {
+                isStill = false;
+                orb.classList.remove('stillness', 'aware');
+                stillnessMessage.classList.remove('visible');
+                document.body.classList.remove('stillness-deep');
+                ambientGlow.classList.remove('expanded');
+                presences.forEach(p => {
+                    p.classList.remove('visible', 'watching');
+                });
+            }
+            stillnessLevel = 0;
+        });
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Stillness detection - the orb notices when you watch
+        setInterval(() => {
+            const timeSinceMove = Date.now() - lastMouseMove;
+
+            if (timeSinceMove > 3000 && !isTouching) {
+                stillnessLevel = Math.min(5, stillnessLevel + 1);
+
+                if (stillnessLevel >= 2 && !isStill) {
+                    isStill = true;
+                    orb.classList.add('aware');
+                    temperature.classList.add('aware');
+
+                    // The orb notices
+                    if (!stillnessMessageShown) {
+                        setTimeout(() => {
+                            const msg = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                            stillnessMessage.textContent = msg;
+                            stillnessMessage.classList.add('visible');
+                        }, 2000);
+                    }
+                }
+
+                if (stillnessLevel >= 3) {
+                    orb.classList.add('stillness');
+                    ambientGlow.classList.add('expanded');
+
+                    // Presences begin to appear
+                    presences.forEach((p, i) => {
+                        setTimeout(() => {
+                            p.classList.add('visible');
+                        }, i * 1500);
+                    });
+                }
+
+                if (stillnessLevel >= 4 && !deepStillnessReached) {
+                    deepStillnessReached = true;
+                    document.body.classList.add('stillness-deep');
+
+                    // Presences begin watching
+                    presences.forEach(p => p.classList.add('watching'));
+
+                    // Particles become aware
+                    document.querySelectorAll('.particle').forEach(p => {
+                        p.classList.add('aware');
+                    });
+
+                    // Secret unlocked
+                    if (!stillnessUnlocked) {
+                        stillnessUnlocked = true;
+                        secretsFound++;
+                        updateSecretCounter();
+
+                        setTimeout(() => {
+                            message.textContent = messages.deepStillness;
+                            message.classList.add('visible');
+                            setTimeout(() => message.classList.remove('visible'), 6000);
+                        }, 3000);
+                    }
+                }
+
+                if (stillnessLevel >= 5) {
+                    // Show sound hint after long stillness
+                    soundHint.classList.add('visible');
+                }
+            }
+        }, 1500);
+
+        function updateState() {
+            orb.classList.remove('cold', 'warming', 'warm', 'amber');
+            temperature.classList.remove('warming', 'warm', 'aware');
+
+            if (isRightTouching) {
+                orb.classList.add('amber');
+                temperature.textContent = 'amber';
+                temperature.classList.add('warm');
+                message.textContent = messages.amber;
+                message.classList.add('visible');
+
+                // Particles warm too
+                document.querySelectorAll('.particle').forEach(p => {
+                    p.classList.add('warm');
+                });
+                return;
+            }
+
+            // Remove particle warmth when not amber
+            document.querySelectorAll('.particle').forEach(p => {
+                p.classList.remove('warm');
+            });
+
+            if (warmth < 30) {
+                orb.classList.add('cold');
+                temperature.textContent = 'cold';
+            } else if (warmth < 70) {
+                orb.classList.add('warming');
+                temperature.classList.add('warming');
+                temperature.textContent = 'warming';
+                if (!hasBeenWarm) {
+                    message.textContent = messages.warming;
+                    message.classList.add('visible');
+                }
+            } else {
+                orb.classList.add('warm');
+                temperature.classList.add('warm');
+                temperature.textContent = 'warm';
+
+                // Update warmth memory
+                warmthMemory = Math.max(warmthMemory, warmth);
+                if (warmthMemory > 50) {
+                    orbMemory.classList.add('remembering');
+                }
+
+                if (!hasBeenWarm) {
+                    hasBeenWarm = true;
+                    message.textContent = messages.warm;
+                    message.classList.add('visible');
+                    setTimeout(() => message.classList.remove('visible'), 6000);
+                }
+            }
+        }
+
+        function updateSecretCounter() {
+            if (secretsFound > 0) {
+                secretCounter.textContent = `${secretsFound}/4`;
+                secretCounter.classList.add('visible');
+            }
+        }
+
+        function showWhisper() {
+            const whisper = whispers[Math.floor(Math.random() * whispers.length)];
+            whisperEl.textContent = whisper;
+            whisperEl.style.left = (15 + Math.random() * 70) + '%';
+            whisperEl.style.top = (15 + Math.random() * 70) + '%';
+            whisperEl.classList.add('visible');
+            setTimeout(() => whisperEl.classList.remove('visible'), 7000);
+        }
+
+        // Occasional whisper (1% chance every 40 seconds, or more likely if warm)
+        setInterval(() => {
+            const chance = warmth > 50 ? 0.03 : 0.01;
+            if (Math.random() < chance) {
+                showWhisper();
+            }
+        }, 40000);
+
+        function startTouch(isRight = false) {
+            if (isRight) {
+                isRightTouching = true;
+                updateState();
+                return;
+            }
+
+            isTouching = true;
+            touchStartTime = Date.now();
+            container.classList.add('touching');
+            stillnessMessage.classList.remove('visible');
+
+            if (warmthDecayInterval) {
+                clearInterval(warmthDecayInterval);
+                warmthDecayInterval = null;
+            }
+
+            const warmInterval = setInterval(() => {
+                if (!isTouching) {
+                    clearInterval(warmInterval);
+                    return;
+                }
+                warmth = Math.min(100, warmth + 1.5);
+
+                // Check for 10-second prismatic easter egg
+                const touchDuration = (Date.now() - touchStartTime) / 1000;
+                if (touchDuration >= 10 && touchDuration < 10.8 && !prismaticUnlocked) {
+                    prismaticUnlocked = true;
+                    secretsFound++;
+                    updateSecretCounter();
+                    orb.classList.add('prismatic');
+                    message.textContent = messages.prismatic;
+                    message.classList.add('visible');
+
+                    console.log('%ca secret found', 'font-size: 10px; color: #86b398; font-style: italic;');
+                    console.log('%c[p] to toggle prismatic', 'font-size: 9px; color: #4a5568;');
+
+                    setTimeout(() => {
+                        message.classList.remove('visible');
+                        orb.classList.remove('prismatic');
+                    }, 6000);
+                }
+
+                updateState();
+            }, 100);
+        }
+
+        function endTouch(isRight = false) {
+            if (isRight) {
+                isRightTouching = false;
+                message.classList.remove('visible');
+                updateState();
+                return;
+            }
+
+            const touchDuration = (Date.now() - touchStartTime) / 1000;
+            totalTouchTime += touchDuration;
+
+            isTouching = false;
+            container.classList.remove('touching');
+
+            // Slower decay - the orb holds warmth longer
+            warmthDecayInterval = setInterval(() => {
+                if (isTouching) return;
+                warmth = Math.max(0, warmth - 0.3);
+                updateState();
+                if (warmth <= 0) {
+                    clearInterval(warmthDecayInterval);
+                    warmthDecayInterval = null;
+
+                    // Memory fades slowly
+                    setTimeout(() => {
+                        orbMemory.classList.remove('remembering');
+                    }, 10000);
+                }
+            }, 200);
+        }
+
+        // Double-click creates ripple and shows whisper
+        let lastClickTime = 0;
+        orb.addEventListener('click', (e) => {
+            const currentTime = Date.now();
+            if (currentTime - lastClickTime < 350) {
+                // Double click detected
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                ripple.style.width = '50px';
+                ripple.style.height = '50px';
+                ripple.style.left = '50%';
+                ripple.style.top = '50%';
+                ripple.style.marginLeft = '-25px';
+                ripple.style.marginTop = '-25px';
+                orb.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 1200);
+                showWhisper();
+            }
+            lastClickTime = currentTime;
+        });
+
+        orb.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                startTouch(true);
+            } else {
+                startTouch(false);
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 2) {
+                endTouch(true);
+            } else {
+                endTouch(false);
+            }
+        });
+
+        orb.addEventListener('touchstart', (e) => { e.preventDefault(); startTouch(); });
+        document.addEventListener('touchend', () => endTouch());
+
+        // Keyboard shortcuts
+        let audioContext = null;
+        let isPlaying = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyF') {
+                orb.classList.toggle('floating');
+            }
+            if (e.code === 'KeyI') {
+                document.body.classList.toggle('inverted');
+            }
+            if (e.code === 'KeyR') {
+                warmth = 0;
+                warmthMemory = 0;
+                hasBeenWarm = false;
+                message.classList.remove('visible');
+                stillnessMessage.classList.remove('visible');
+                orb.classList.remove('prismatic', 'breathing', 'stillness', 'aware');
+                orbMemory.classList.remove('remembering');
+                document.body.classList.remove('stillness-deep');
+                updateState();
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                warmth = 100;
+                updateState();
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Secret: 'b' for breathing animation
+            if (e.code === 'KeyB') {
+                if (!breathingUnlocked) {
+                    breathingUnlocked = true;
+                    secretsFound++;
+                    updateSecretCounter();
+                    console.log('%cbreath found', 'font-size: 10px; color: #86b398; font-style: italic;');
+                }
+                orb.classList.toggle('breathing');
+            }
+            // Secret: 'p' for manual prismatic toggle (only if unlocked)
+            if (e.code === 'KeyP' && prismaticUnlocked) {
+                orb.classList.toggle('prismatic');
+            }
+            // Hidden: 's' for ambient sound (Web Audio API drone)
+            if (e.code === 'KeyS') {
+                toggleAmbientSound();
+            }
+            // Secret: 'w' for instant whisper
+            if (e.code === 'KeyW') {
+                showWhisper();
+            }
+            // Secret: '8' when warm - portal to the eight ball
+            if (e.code === 'Digit8' && warmth >= 70) {
+                console.log('%ceight calls to eight', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                document.body.style.transition = 'opacity 1.5s ease';
+                document.body.style.opacity = '0';
+                setTimeout(() => {
+                    window.location.href = 'eightball.html';
+                }, 1500);
+            }
+            // Secret sequence detection
+            handleSecretSequence(e.code);
+        });
+
+        // Ambient sound - hidden option
+        function toggleAmbientSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (isPlaying) {
+                // Stop sound
+                isPlaying = false;
+                soundHint.textContent = '[s] listen';
+                return;
+            }
+
+            isPlaying = true;
+            soundHint.textContent = '[s] silence';
+            soundHint.classList.add('visible');
+
+            // Create a gentle, evolving drone
+            function createDrone() {
+                if (!isPlaying) return;
+
+                const now = audioContext.currentTime;
+                const duration = 8;
+
+                // Base frequency with subtle variation
+                const baseFreq = 120 + Math.random() * 20;
+
+                // Oscillator 1 - fundamental
+                const osc1 = audioContext.createOscillator();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(baseFreq, now);
+                osc1.frequency.linearRampToValueAtTime(baseFreq + (Math.random() * 10 - 5), now + duration);
+
+                // Oscillator 2 - fifth
+                const osc2 = audioContext.createOscillator();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(baseFreq * 1.5, now);
+                osc2.frequency.linearRampToValueAtTime(baseFreq * 1.5 + (Math.random() * 5), now + duration);
+
+                // Gain envelope
+                const gainNode = audioContext.createGain();
+                gainNode.gain.setValueAtTime(0, now);
+                gainNode.gain.linearRampToValueAtTime(0.03, now + 2);
+                gainNode.gain.linearRampToValueAtTime(0.02, now + duration - 2);
+                gainNode.gain.linearRampToValueAtTime(0, now + duration);
+
+                // Filter for warmth
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(400, now);
+                filter.Q.setValueAtTime(1, now);
+
+                // Connect
+                osc1.connect(filter);
+                osc2.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + duration);
+                osc2.stop(now + duration);
+
+                // Schedule next drone
+                setTimeout(createDrone, (duration - 2) * 1000);
+            }
+
+            createDrone();
+            console.log('%csound awakens', 'font-size: 10px; color: #86b398; font-style: italic;');
+        }
+
+        // Secret sequence: up up down down (reveals all secrets)
+        let secretSequence = [];
+        const targetSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown'];
+
+        function handleSecretSequence(code) {
+            if (code.startsWith('Arrow')) {
+                secretSequence.push(code);
+                if (secretSequence.length > 4) {
+                    secretSequence.shift();
+                }
+                if (secretSequence.join(',') === targetSequence.join(',')) {
+                    // Easter egg: reveal all secrets
+                    secretsFound = 4;
+                    prismaticUnlocked = true;
+                    breathingUnlocked = true;
+                    stillnessUnlocked = true;
+                    updateSecretCounter();
+
+                    // Gentle flash effect
+                    document.body.style.transition = 'background 0.5s ease';
+                    document.body.style.background = 'linear-gradient(180deg, #2a2a3e 0%, #26314e 50%, #2a2a3e 100%)';
+                    setTimeout(() => {
+                        document.body.style.transition = 'background 3s cubic-bezier(0.4, 0, 0.2, 1)';
+                        document.body.style.background = '';
+                    }, 500);
+
+                    message.textContent = 'all secrets were always yours';
+                    message.classList.add('visible');
+                    setTimeout(() => message.classList.remove('visible'), 5000);
+
+                    console.log('%c' + `
+    all secrets revealed:
+    [b] breathe
+    [p] prismatic
+    [s] sound
+    stillness rewards patience
+`, 'font-size: 9px; color: #86b398;');
+
+                    secretSequence = [];
+                }
+            }
+        }
+
+        updateState();
+
+        // Initial presence positioning after a delay
+        setTimeout(() => {
+            positionPresences();
+        }, 5000);
+    </script>
+</body>
+</html>

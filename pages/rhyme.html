@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rhyme - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--paper);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+            transition: filter 1.5s ease, background 2s ease;
+        }
+
+        body.focus-mode { background: var(--cream); }
+        body.night-mode { background: var(--slate-deep); filter: invert(0.9) hue-rotate(180deg); }
+        body.serenity-mode { background: linear-gradient(135deg, var(--paper) 0%, var(--bone) 50%, var(--cream) 100%); }
+
+        /* Stillness message - appears after no movement */
+        .stillness-message {
+            position: fixed;
+            bottom: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+            text-align: center;
+            line-height: 2;
+            letter-spacing: 0.1em;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Ambient floating particles */
+        .particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--amber);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: float-particle 18s ease-in-out infinite;
+        }
+
+        @keyframes float-particle {
+            0%, 100% { opacity: 0; transform: translateY(100vh) rotate(0deg); }
+            15% { opacity: 0.25; }
+            85% { opacity: 0.25; }
+            100% { opacity: 0; transform: translateY(-100vh) rotate(720deg); }
+        }
+
+        .rhyme-container {
+            max-width: 540px;
+            text-align: center;
+            position: relative;
+            animation: container-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes container-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.008); }
+        }
+
+        /* Decorative flourish - now breathes */
+        .flourish {
+            position: absolute;
+            top: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            color: var(--amber);
+            opacity: 0.12;
+            letter-spacing: 1em;
+            user-select: none;
+            animation: flourish-breathe 6s ease-in-out infinite;
+        }
+
+        @keyframes flourish-breathe {
+            0%, 100% { opacity: 0.12; letter-spacing: 1em; }
+            50% { opacity: 0.18; letter-spacing: 1.2em; }
+        }
+
+        .rhyme {
+            font-size: 1.5rem;
+            line-height: 2.4;
+            color: var(--ink);
+            margin-bottom: 3rem;
+            letter-spacing: 0.02em;
+            position: relative;
+        }
+
+        .rhyme-line {
+            display: block;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: default;
+            position: relative;
+            animation: line-breathe 7s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .rhyme-line.visible {
+            opacity: 0.7;
+            transform: translateY(0);
+            animation-play-state: running;
+        }
+
+        @keyframes line-breathe {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.85; }
+        }
+
+        .rhyme-line:nth-child(1) { animation-delay: 0s; }
+        .rhyme-line:nth-child(2) { animation-delay: 1.75s; }
+        .rhyme-line:nth-child(3) { animation-delay: 3.5s; }
+        .rhyme-line:nth-child(4) { animation-delay: 5.25s; }
+
+        .rhyme-line:hover {
+            opacity: 1;
+            letter-spacing: 0.04em;
+            transition: all 0.5s ease;
+        }
+
+        /* Verse number */
+        .verse-num {
+            position: absolute;
+            left: -3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .rhyme-container:hover .verse-num {
+            opacity: 0.2;
+        }
+
+        /* Word that can be clicked to change */
+        .mutable {
+            cursor: pointer;
+            border-bottom: 1px dotted transparent;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            display: inline-block;
+        }
+
+        .mutable::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--slate-light);
+            opacity: 0.3;
+            transform: scaleX(0);
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .mutable:hover::after {
+            transform: scaleX(1);
+            opacity: 0.6;
+        }
+
+        .mutable:hover {
+            color: var(--amber-deep);
+            text-shadow: 0 0 25px var(--amber-glow);
+        }
+
+        .mutable.changing {
+            animation: word-morph 0.5s ease;
+        }
+
+        @keyframes word-morph {
+            0% { transform: scale(1); opacity: 1; }
+            30% { transform: scale(1.08) translateY(-3px); opacity: 0.4; filter: blur(2px); }
+            60% { transform: scale(0.96); opacity: 0.7; filter: blur(0); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .mutable.reverse-highlight {
+            background: linear-gradient(90deg, transparent, var(--amber-glow), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 0.6s ease;
+            border-radius: 2px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+
+        /* Ripple effect on click */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--amber-glow);
+            pointer-events: none;
+            animation: ripple-expand 1s ease-out forwards;
+        }
+
+        @keyframes ripple-expand {
+            0% { width: 0; height: 0; opacity: 0.5; }
+            100% { width: 120px; height: 120px; opacity: 0; margin: -60px; }
+        }
+
+        /* Navigation between rhymes */
+        .nav {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2rem;
+            align-items: center;
+        }
+
+        .nav-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--slate);
+            background: none;
+            border: none;
+            cursor: pointer;
+            opacity: 0.35;
+            transition: all 0.5s ease;
+            letter-spacing: 0.12em;
+            position: relative;
+        }
+
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--amber);
+            transition: width 0.4s ease;
+        }
+
+        .nav-btn:hover::after {
+            width: 100%;
+        }
+
+        .nav-btn:hover {
+            opacity: 0.85;
+            color: var(--amber-deep);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.1;
+            cursor: default;
+        }
+
+        .nav-btn:disabled::after {
+            display: none;
+        }
+
+        /* Page dots */
+        .page-dots {
+            display: flex;
+            gap: 0.6rem;
+            margin: 0 1rem;
+        }
+
+        .page-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--slate);
+            opacity: 0.15;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .page-dot.active {
+            opacity: 0.55;
+            background: var(--amber);
+            transform: scale(1.4);
+            animation: dot-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes dot-pulse {
+            0%, 100% { transform: scale(1.4); opacity: 0.55; }
+            50% { transform: scale(1.6); opacity: 0.7; }
+        }
+
+        .page-dot:hover {
+            opacity: 0.4;
+        }
+
+        /* Counter - more subtle */
+        .counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        body:hover .counter {
+            opacity: 0.2;
+        }
+
+        /* Word count - appears only after changes */
+        .word-count {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .word-count.active {
+            opacity: 0.25;
+        }
+
+        /* Hint - appears once, fades forever */
+        .hint {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .hint.visible {
+            opacity: 0.35;
+        }
+
+        /* Echo word effect - enhanced with drift */
+        .echo-word {
+            position: fixed;
+            font-size: 1rem;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            font-style: italic;
+            animation: echo-fade 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes echo-fade {
+            0% { opacity: 0.6; transform: scale(1) translateY(0); filter: blur(0); }
+            40% { opacity: 0.35; }
+            100% { opacity: 0; transform: scale(2) translateY(-50px); filter: blur(4px); }
+        }
+
+        /* Ghost trail for words */
+        .ghost-trail {
+            position: fixed;
+            font-size: 0.75rem;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            animation: ghost-drift 5s ease-out forwards;
+        }
+
+        @keyframes ghost-drift {
+            0% { opacity: 0.25; transform: translateX(0) translateY(0); }
+            100% { opacity: 0; transform: translateX(60px) translateY(-20px); }
+        }
+
+        /* Key hint - hidden until hover, minimal */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1.2s ease;
+            text-align: right;
+            line-height: 2;
+            letter-spacing: 0.05em;
+        }
+
+        body:hover .key-hint { opacity: 0.2; }
+        body.night-mode .key-hint { filter: invert(1) hue-rotate(180deg); }
+
+        /* Secret poem reveal */
+        .secret-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.5s ease;
+            z-index: 1000;
+        }
+
+        .secret-overlay.revealed {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .secret-poem {
+            color: var(--golden);
+            font-size: 1.2rem;
+            text-align: center;
+            line-height: 2.8;
+            max-width: 480px;
+            padding: 2rem;
+        }
+
+        .secret-poem span {
+            display: block;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .secret-overlay.revealed .secret-poem span {
+            animation: secret-reveal 1.2s ease forwards;
+        }
+
+        .secret-poem span:nth-child(1) { animation-delay: 0.5s; }
+        .secret-poem span:nth-child(2) { animation-delay: 1s; }
+        .secret-poem span:nth-child(3) { animation-delay: 1.5s; }
+        .secret-poem span:nth-child(4) { animation-delay: 2s; }
+        .secret-poem span:nth-child(5) { animation-delay: 2.5s; }
+
+        @keyframes secret-reveal {
+            to { opacity: 0.9; transform: translateY(0); }
+        }
+
+        .close-secret {
+            position: absolute;
+            bottom: 3rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 0.6s ease;
+            letter-spacing: 0.1em;
+        }
+
+        .secret-overlay.revealed .close-secret {
+            animation: fadeIn 1s ease 3.5s forwards;
+        }
+
+        .close-secret:hover {
+            color: var(--golden);
+        }
+
+        /* Combination indicator */
+        .combo-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            letter-spacing: 0.15em;
+        }
+
+        /* Title glow on special combinations */
+        .rhyme.harmonized .rhyme-line {
+            text-shadow: 0 0 40px var(--amber-glow);
+            animation: harmonic-pulse 2s ease-in-out;
+        }
+
+        @keyframes harmonic-pulse {
+            0%, 100% { text-shadow: 0 0 40px var(--amber-glow); }
+            50% { text-shadow: 0 0 60px var(--amber-glow), 0 0 80px var(--amber); }
+        }
+
+        /* Double-click word expansion */
+        .word-expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: var(--ink);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 500;
+            animation: word-expand 2.5s ease forwards;
+            letter-spacing: 0.1em;
+        }
+
+        @keyframes word-expand {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); filter: blur(4px); }
+            20% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+            75% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); filter: blur(6px); }
+        }
+
+        /* Hidden rhythm indicator */
+        .rhythm-indicator {
+            position: fixed;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+
+        .rhythm-indicator.active {
+            opacity: 0.4;
+        }
+
+        .rhythm-dot {
+            width: 3px;
+            height: 3px;
+            background: var(--amber);
+            border-radius: 50%;
+            animation: rhythm-beat 1s ease-in-out infinite;
+        }
+
+        .rhythm-dot:nth-child(1) { animation-delay: 0s; }
+        .rhythm-dot:nth-child(2) { animation-delay: 0.25s; }
+        .rhythm-dot:nth-child(3) { animation-delay: 0.5s; }
+        .rhythm-dot:nth-child(4) { animation-delay: 0.75s; }
+
+        @keyframes rhythm-beat {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.8); opacity: 1; }
+        }
+
+        /* Koan overlay */
+        .koan-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(45, 42, 36, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            z-index: 900;
+        }
+
+        .koan-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .koan-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--bone);
+            text-align: center;
+            line-height: 2.5;
+            max-width: 400px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 1s ease 0.3s;
+        }
+
+        .koan-overlay.visible .koan-text {
+            opacity: 0.8;
+            transform: translateY(0);
+        }
+
+        /* Touch feedback */
+        .touch-ripple {
+            position: fixed;
+            border-radius: 50%;
+            border: 1px solid var(--amber);
+            pointer-events: none;
+            animation: touch-expand 1.5s ease-out forwards;
+        }
+
+        @keyframes touch-expand {
+            0% { width: 0; height: 0; opacity: 0.5; }
+            100% { width: 200px; height: 200px; opacity: 0; margin: -100px; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <!-- Ambient particles -->
+    <div id="particles"></div>
+
+    <!-- Stillness message -->
+    <div class="stillness-message" id="stillnessMessage">
+        <span>the poem waits</span><br>
+        <span>for the reader</span><br>
+        <span>who waits for the poem</span>
+    </div>
+
+    <!-- Koan overlay -->
+    <div class="koan-overlay" id="koanOverlay">
+        <div class="koan-text" id="koanText"></div>
+    </div>
+
+    <!-- Secret poem overlay -->
+    <div class="secret-overlay" id="secretOverlay">
+        <div class="secret-poem">
+            <span>between the words we choose</span>
+            <span>and those we leave behind</span>
+            <span>lives every poem</span>
+            <span>we will never find</span>
+            <span style="margin-top: 1.5rem; font-style: italic; font-size: 0.85rem; opacity: 0.6;">- the unwritten</span>
+        </div>
+        <span class="close-secret" id="closeSecret">any key returns</span>
+    </div>
+
+    <!-- Hidden rhythm indicator -->
+    <div class="rhythm-indicator" id="rhythmIndicator">
+        <div class="rhythm-dot"></div>
+        <div class="rhythm-dot"></div>
+        <div class="rhythm-dot"></div>
+        <div class="rhythm-dot"></div>
+    </div>
+
+    <div class="rhyme-container">
+        <div class="flourish">...</div>
+        <span class="verse-num" id="verseNum">i</span>
+        <div class="rhyme" id="rhyme"></div>
+
+        <div class="nav">
+            <button class="nav-btn" id="prevBtn">before</button>
+            <div class="page-dots" id="pageDots"></div>
+            <button class="nav-btn" id="nextBtn">after</button>
+        </div>
+    </div>
+
+    <p class="counter" id="counter"></p>
+    <p class="word-count" id="wordCount"></p>
+    <p class="hint" id="hint">touch the words to reshape</p>
+    <div class="combo-indicator" id="comboIndicator"></div>
+    <div class="key-hint">
+        arrows: wander<br>
+        r: scatter<br>
+        space: cascade<br>
+        p: rhythm<br>
+        k: koan<br>
+        esc: return
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        const rhymeEl = document.getElementById('rhyme');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const counterEl = document.getElementById('counter');
+        const hint = document.getElementById('hint');
+        const pageDots = document.getElementById('pageDots');
+        const verseNum = document.getElementById('verseNum');
+        const wordCount = document.getElementById('wordCount');
+        const comboIndicator = document.getElementById('comboIndicator');
+        const secretOverlay = document.getElementById('secretOverlay');
+        const closeSecret = document.getElementById('closeSecret');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const rhythmIndicator = document.getElementById('rhythmIndicator');
+        const koanOverlay = document.getElementById('koanOverlay');
+        const koanText = document.getElementById('koanText');
+
+        const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+
+        // Koans - small truths
+        const koans = [
+            "the word that changes\nis still the same word",
+            "to read is to write\nthe poem anew",
+            "the space between verses\nholds more than the verses",
+            "every choice closes a door\nevery door was already open",
+            "the rhyme exists\nbefore it is spoken",
+            "meaning arrives\nwhen seeking departs",
+            "the unclicked word\nalso speaks",
+            "patience is not waiting\npatience is being"
+        ];
+
+        // Stillness messages - cycle through
+        const stillnessMessages = [
+            "the poem waits<br>for the reader<br>who waits for the poem",
+            "stillness is also<br>a kind of touch",
+            "between breaths<br>meaning settles",
+            "the page reads you<br>while you read it",
+            "what changes<br>when nothing changes?"
+        ];
+
+        // Enhanced rhymes with paradox poems
+        const rhymes = [
+            {
+                lines: [
+                    'what <span class="mutable" data-options="remains,departs,transforms,endures">remains</span> will remain',
+                    'what <span class="mutable" data-options="fades,stays,returns,dissolves">fades</span> will fade',
+                    'the <span class="mutable" data-options="space between,breath within,silence after,light before">space between</span>',
+                    'is where we are <span class="mutable" data-options="made,unmade,remade,displayed">made</span>'
+                ],
+                harmony: ['remains', 'fades', 'space between', 'made']
+            },
+            {
+                lines: [
+                    'the <span class="mutable" data-options="threshold,window,mirror,passage">threshold</span> you cross',
+                    'becomes the one you <span class="mutable" data-options="seek,leave,keep,grieve">seek</span>',
+                    'what you <span class="mutable" data-options="surrender,discover,remember,uncover">surrender</span>',
+                    'is what lets you <span class="mutable" data-options="speak,peek,reach,teach">speak</span>'
+                ],
+                harmony: ['threshold', 'seek', 'surrender', 'speak']
+            },
+            {
+                lines: [
+                    'now is simply <span class="mutable" data-options="now,then,when,again">now</span>',
+                    'then was merely <span class="mutable" data-options="then,now,how,somehow">then</span>',
+                    'soon becomes <span class="mutable" data-options="soon,never,ever,forever">soon</span>',
+                    'and <span class="mutable" data-options="again,amen,zen,when">again</span>, and again'
+                ],
+                harmony: ['now', 'then', 'soon', 'again']
+            },
+            {
+                lines: [
+                    'the <span class="mutable" data-options="light,dark,warmth,cold">light</span> that reaches you',
+                    'has been <span class="mutable" data-options="traveling,waiting,searching,dreaming">traveling</span> forever',
+                    'the <span class="mutable" data-options="silence,music,distance,absence">silence</span> that keeps you',
+                    'will hold you <span class="mutable" data-options="together,forever,wherever,however">together</span>'
+                ],
+                harmony: ['light', 'traveling', 'silence', 'together']
+            },
+            {
+                lines: [
+                    'not <span class="mutable" data-options="lost,found,broken,whole">lost</span>',
+                    'merely <span class="mutable" data-options="unseen,unheard,unspoken,unbroken">unseen</span>',
+                    'not <span class="mutable" data-options="gone,here,near,clear">gone</span>',
+                    'just <span class="mutable" data-options="in-between,serene,pristine,evergreen">in-between</span>'
+                ],
+                harmony: ['lost', 'unseen', 'gone', 'in-between']
+            },
+            {
+                lines: [
+                    'every <span class="mutable" data-options="question,answer,wonder,whisper">question</span> holds',
+                    'its own quiet <span class="mutable" data-options="reply,sigh,why,goodbye">reply</span>',
+                    'every <span class="mutable" data-options="ending,bending,mending,sending">ending</span> folds',
+                    'into a softer <span class="mutable" data-options="sky,try,fly,lie">sky</span>'
+                ],
+                harmony: ['question', 'reply', 'ending', 'sky']
+            },
+            {
+                lines: [
+                    'we are the <span class="mutable" data-options="pause,breath,space,weight">pause</span>',
+                    'between two <span class="mutable" data-options="heartbeats,footsteps,whispers,shadows">heartbeats</span>',
+                    'we are the <span class="mutable" data-options="cause,clause,gauze,thaw">cause</span>',
+                    'of our own <span class="mutable" data-options="defeats,retreats,completes,repeats">repeats</span>'
+                ],
+                harmony: ['pause', 'heartbeats', 'cause', 'repeats']
+            },
+            {
+                lines: [
+                    'hold <span class="mutable" data-options="loosely,tightly,gently,lightly">loosely</span>',
+                    'what you wish to <span class="mutable" data-options="keep,reap,sleep,seep">keep</span>',
+                    'fall <span class="mutable" data-options="slowly,wholly,lowly,solely">slowly</span>',
+                    'into <span class="mutable" data-options="dreamless,endless,nameless,blameless">dreamless</span> sleep'
+                ],
+                harmony: ['loosely', 'keep', 'slowly', 'dreamless']
+            },
+            {
+                lines: [
+                    'the door <span class="mutable" data-options="opens,closes,waits,breathes">opens</span>',
+                    'into the <span class="mutable" data-options="same,changed,other,neither">same</span> room',
+                    'the path <span class="mutable" data-options="leads,ends,bends,sends">leads</span>',
+                    'to where we <span class="mutable" data-options="assume,resume,consume,bloom">assume</span>'
+                ],
+                harmony: ['opens', 'same', 'leads', 'bloom']
+            }
+        ];
+
+        let currentIndex = 0;
+        let totalWordChanges = 0;
+        let stillnessTimer = null;
+        let stillnessIndex = 0;
+        let rhythmActive = false;
+        let konamiProgress = 0;
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+
+        // Stillness detection
+        function resetStillnessTimer() {
+            stillnessMessage.classList.remove('visible');
+            clearTimeout(stillnessTimer);
+            stillnessTimer = setTimeout(() => {
+                stillnessIndex = (stillnessIndex + 1) % stillnessMessages.length;
+                stillnessMessage.innerHTML = stillnessMessages[stillnessIndex];
+                stillnessMessage.classList.add('visible');
+            }, 7000);
+        }
+
+        document.addEventListener('mousemove', resetStillnessTimer);
+        document.addEventListener('keydown', resetStillnessTimer);
+        document.addEventListener('click', resetStillnessTimer);
+        resetStillnessTimer();
+
+        // Touch feedback on click anywhere
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('mutable')) return;
+            const ripple = document.createElement('div');
+            ripple.className = 'touch-ripple';
+            ripple.style.left = e.clientX + 'px';
+            ripple.style.top = e.clientY + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1500);
+        });
+
+        // Create ambient particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 12; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDelay = Math.random() * 18 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Create page dots
+        function createPageDots() {
+            pageDots.innerHTML = '';
+            rhymes.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'page-dot' + (i === currentIndex ? ' active' : '');
+                dot.addEventListener('click', () => {
+                    currentIndex = i;
+                    showRhyme(currentIndex);
+                });
+                pageDots.appendChild(dot);
+            });
+        }
+
+        function updatePageDots() {
+            const dots = pageDots.querySelectorAll('.page-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentIndex);
+            });
+        }
+
+        function showRhyme(index) {
+            const rhyme = rhymes[index];
+            rhymeEl.innerHTML = rhyme.lines.map(line =>
+                `<span class="rhyme-line">${line}</span>`
+            ).join('');
+
+            // Update verse number
+            verseNum.textContent = romanNumerals[index] || (index + 1);
+
+            // Animate lines in with staggered timing - slower, more deliberate
+            const lines = rhymeEl.querySelectorAll('.rhyme-line');
+            lines.forEach((line, i) => {
+                setTimeout(() => line.classList.add('visible'), i * 450 + 150);
+            });
+
+            // Setup mutable words
+            rhymeEl.querySelectorAll('.mutable').forEach(word => {
+                // Click to cycle forward
+                word.addEventListener('click', (e) => {
+                    const options = word.dataset.options.split(',');
+                    const currentIdx = options.indexOf(word.textContent);
+                    const nextIdx = (currentIdx + 1) % options.length;
+
+                    // Add morphing animation
+                    word.classList.add('changing');
+                    setTimeout(() => {
+                        word.textContent = options[nextIdx];
+                        word.classList.remove('changing');
+                    }, 200);
+
+                    createRipple(e, word);
+                    createEcho(options[nextIdx], word);
+                    totalWordChanges++;
+                    updateWordCount();
+                    checkHarmony();
+                });
+
+                // Right-click reverses through options
+                word.addEventListener('mousedown', (e) => {
+                    if (e.button === 2) {
+                        e.stopPropagation();
+                        const options = word.dataset.options.split(',');
+                        const currentIdx = options.indexOf(word.textContent);
+                        const prevIdx = (currentIdx - 1 + options.length) % options.length;
+
+                        word.classList.add('changing');
+                        setTimeout(() => {
+                            word.textContent = options[prevIdx];
+                            word.classList.remove('changing');
+                        }, 200);
+
+                        word.classList.add('reverse-highlight');
+                        setTimeout(() => word.classList.remove('reverse-highlight'), 600);
+                        createGhostTrail(options[currentIdx], word);
+                        totalWordChanges++;
+                        updateWordCount();
+                        checkHarmony();
+                    }
+                });
+
+                // Double-click for meditation mode
+                word.addEventListener('dblclick', (e) => {
+                    e.preventDefault();
+                    createExpandedWord(word.textContent);
+                });
+            });
+
+            // Update counter
+            counterEl.textContent = `${index + 1} / ${rhymes.length}`;
+
+            // Update buttons
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === rhymes.length - 1;
+
+            updatePageDots();
+        }
+
+        function createRipple(e, element) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            const rect = element.getBoundingClientRect();
+            ripple.style.left = (e.clientX - rect.left) + 'px';
+            ripple.style.top = (e.clientY - rect.top) + 'px';
+            element.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1000);
+        }
+
+        function createEcho(text, sourceEl) {
+            const echo = document.createElement('div');
+            echo.className = 'echo-word';
+            echo.textContent = text;
+            const rect = sourceEl.getBoundingClientRect();
+            echo.style.left = rect.left + 'px';
+            echo.style.top = rect.top + 'px';
+            document.body.appendChild(echo);
+            setTimeout(() => echo.remove(), 3000);
+        }
+
+        function createGhostTrail(text, sourceEl) {
+            const ghost = document.createElement('div');
+            ghost.className = 'ghost-trail';
+            ghost.textContent = text;
+            const rect = sourceEl.getBoundingClientRect();
+            ghost.style.left = rect.left + 'px';
+            ghost.style.top = rect.top + 'px';
+            document.body.appendChild(ghost);
+            setTimeout(() => ghost.remove(), 5000);
+        }
+
+        function createExpandedWord(text) {
+            const expanded = document.createElement('div');
+            expanded.className = 'word-expanded';
+            expanded.textContent = text;
+            document.body.appendChild(expanded);
+            setTimeout(() => expanded.remove(), 2500);
+        }
+
+        function updateWordCount() {
+            wordCount.textContent = `${totalWordChanges} transformations`;
+            wordCount.classList.add('active');
+        }
+
+        function checkHarmony() {
+            const rhyme = rhymes[currentIndex];
+            if (!rhyme.harmony) return;
+
+            const mutables = rhymeEl.querySelectorAll('.mutable');
+            const currentWords = Array.from(mutables).map(m => m.textContent);
+            const isHarmonic = currentWords.every((word, i) => word === rhyme.harmony[i]);
+
+            if (isHarmonic) {
+                rhymeEl.classList.add('harmonized');
+                comboIndicator.textContent = 'original form restored';
+                comboIndicator.style.opacity = '0.5';
+                setTimeout(() => {
+                    comboIndicator.style.opacity = '0';
+                    rhymeEl.classList.remove('harmonized');
+                }, 2500);
+            }
+        }
+
+        function randomizeWords() {
+            rhymeEl.querySelectorAll('.mutable').forEach((word, i) => {
+                setTimeout(() => {
+                    const options = word.dataset.options.split(',');
+                    const randomIndex = Math.floor(Math.random() * options.length);
+                    word.classList.add('changing');
+                    setTimeout(() => {
+                        word.textContent = options[randomIndex];
+                        word.classList.remove('changing');
+                    }, 200);
+                }, i * 150);
+            });
+        }
+
+        function showKoan() {
+            const koan = koans[Math.floor(Math.random() * koans.length)];
+            koanText.innerHTML = koan.replace('\n', '<br><br>');
+            koanOverlay.classList.add('visible');
+        }
+
+        function hideKoan() {
+            koanOverlay.classList.remove('visible');
+        }
+
+        function toggleRhythm() {
+            rhythmActive = !rhythmActive;
+            rhythmIndicator.classList.toggle('active', rhythmActive);
+        }
+
+        function revealSecretPoem() {
+            secretOverlay.classList.add('revealed');
+        }
+
+        function hideSecretPoem() {
+            secretOverlay.classList.remove('revealed');
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showRhyme(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < rhymes.length - 1) {
+                currentIndex++;
+                showRhyme(currentIndex);
+            }
+        });
+
+        closeSecret.addEventListener('click', hideSecretPoem);
+        koanOverlay.addEventListener('click', hideKoan);
+
+        // Show hint after delay, then never again
+        setTimeout(() => {
+            hint.classList.add('visible');
+            setTimeout(() => hint.classList.remove('visible'), 5000);
+        }, 4000);
+
+        // Keyboard interactions
+        document.addEventListener('keydown', (e) => {
+            // Check for koan overlay
+            if (koanOverlay.classList.contains('visible')) {
+                hideKoan();
+                return;
+            }
+
+            // Check for secret overlay
+            if (secretOverlay.classList.contains('revealed')) {
+                hideSecretPoem();
+                return;
+            }
+
+            // Konami code detection
+            if (e.code === konamiCode[konamiProgress]) {
+                konamiProgress++;
+                if (konamiProgress === konamiCode.length) {
+                    revealSecretPoem();
+                    konamiProgress = 0;
+                }
+            } else {
+                konamiProgress = 0;
+            }
+
+            if (e.code === 'ArrowRight') {
+                if (currentIndex < rhymes.length - 1) {
+                    currentIndex++;
+                    showRhyme(currentIndex);
+                }
+            }
+            if (e.code === 'ArrowLeft') {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    showRhyme(currentIndex);
+                }
+            }
+            if (e.code === 'KeyR' && !e.metaKey && !e.ctrlKey) {
+                randomizeWords();
+            }
+            if (e.code === 'KeyP' && !e.metaKey && !e.ctrlKey) {
+                toggleRhythm();
+            }
+            if (e.code === 'KeyK' && !e.metaKey && !e.ctrlKey) {
+                showKoan();
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Cascade change with wave effect - slower, more meditative
+                rhymeEl.querySelectorAll('.mutable').forEach((word, i) => {
+                    setTimeout(() => {
+                        const options = word.dataset.options.split(',');
+                        const currentIdx = options.indexOf(word.textContent);
+                        const nextIdx = (currentIdx + 1) % options.length;
+                        word.classList.add('changing');
+                        setTimeout(() => {
+                            word.textContent = options[nextIdx];
+                            word.classList.remove('changing');
+                        }, 200);
+                        createEcho(options[nextIdx], word);
+                    }, i * 350);
+                });
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Initialize
+        createParticles();
+        createPageDots();
+        showRhyme(0);
+
+        // Console poetry - koans for developers
+        console.log('%c', 'padding: 20px;');
+        console.log('%c  rhyme  ', 'background: linear-gradient(90deg, #2d2a24, #3d3a34, #2d2a24); color: #d4a056; font-size: 16px; padding: 12px 24px; border-radius: 2px; font-family: serif; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 10px;');
+        console.log('%cthe word you click', 'color: #718096; font-size: 11px; font-style: italic;');
+        console.log('%cwas always going to change', 'color: #718096; font-size: 11px; font-style: italic;');
+        console.log('%c', 'padding: 8px;');
+        console.log('%carrows wander | space cascades | r scatters | p pulses | k speaks', 'color: #4a5568; font-size: 9px; letter-spacing: 0.1em;');
+        console.log('%c', 'padding: 8px;');
+        console.log('%cthere is a sequence the fingers remember', 'color: #4a5568; font-size: 9px; font-style: italic;');
+        console.log('%c(up up down down...)', 'color: #4a5568; font-size: 8px; opacity: 0.6;');
+    </script>
+</body>
+</html>

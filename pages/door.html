@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>door - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: linear-gradient(180deg, var(--bone) 0%, var(--amber-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            perspective: 1200px;
+            transition: filter 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.night-door { filter: brightness(0.35) contrast(1.25) sepia(0.1); }
+        body.dreaming { filter: blur(2px) brightness(1.15) saturate(0.8); }
+        body.liminal { filter: brightness(0.9) contrast(0.95) hue-rotate(5deg); }
+        body.deep-stillness { filter: brightness(0.85) saturate(0.9); }
+
+        .door-container {
+            position: relative;
+            width: 200px;
+            height: 350px;
+            transform-style: preserve-3d;
+            animation: container-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes container-breathe {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.008) translateY(-2px); }
+        }
+
+        /* Door frame with wood grain texture */
+        .frame {
+            position: absolute;
+            top: -12px;
+            left: -12px;
+            right: -12px;
+            bottom: -12px;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent 0px,
+                    rgba(60, 40, 20, 0.03) 1px,
+                    transparent 2px,
+                    transparent 8px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(40, 30, 15, 0.02) 40px,
+                    transparent 80px
+                ),
+                linear-gradient(180deg, #6a5a4a 0%, #5a4a3a 50%, #4a3a2a 100%);
+            border: 4px solid var(--amber-deep);
+            box-shadow:
+                inset 2px 2px 8px rgba(0,0,0,0.3),
+                inset -1px -1px 4px rgba(255,255,255,0.1),
+                4px 8px 20px rgba(0,0,0,0.4);
+            animation: frame-breathe 12s ease-in-out infinite;
+        }
+
+        @keyframes frame-breathe {
+            0%, 100% { box-shadow: inset 2px 2px 8px rgba(0,0,0,0.3), inset -1px -1px 4px rgba(255,255,255,0.1), 4px 8px 20px rgba(0,0,0,0.4); }
+            50% { box-shadow: inset 2px 2px 10px rgba(0,0,0,0.35), inset -1px -1px 4px rgba(255,255,255,0.12), 4px 10px 25px rgba(0,0,0,0.45); }
+        }
+
+        /* Frame molding details */
+        .frame::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+
+        /* The door itself with realistic wood grain */
+        .door {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                /* Wood grain pattern */
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(30, 20, 10, 0.08) 2px,
+                    transparent 4px,
+                    transparent 20px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(50, 35, 20, 0.05) 60px,
+                    transparent 120px
+                ),
+                /* Knot simulation */
+                radial-gradient(ellipse 8px 12px at 30% 25%, rgba(30, 20, 10, 0.15) 0%, transparent 100%),
+                radial-gradient(ellipse 6px 10px at 70% 65%, rgba(30, 20, 10, 0.12) 0%, transparent 100%),
+                radial-gradient(ellipse 5px 8px at 25% 80%, rgba(30, 20, 10, 0.1) 0%, transparent 100%),
+                /* Base gradient */
+                linear-gradient(135deg, #5a4a3a 0%, #4a3a2a 40%, #3a2a1a 100%);
+            border: 2px solid var(--amber-dark);
+            cursor: pointer;
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            box-shadow:
+                inset 3px 0 10px rgba(0,0,0,0.2),
+                inset -2px 0 8px rgba(255,255,255,0.05);
+            /* Realistic door physics with spring easing */
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: door-breathe 10s ease-in-out infinite;
+        }
+
+        @keyframes door-breathe {
+            0%, 100% { box-shadow: inset 3px 0 10px rgba(0,0,0,0.2), inset -2px 0 8px rgba(255,255,255,0.05); }
+            50% { box-shadow: inset 3px 0 12px rgba(0,0,0,0.22), inset -2px 0 10px rgba(255,255,255,0.06); }
+        }
+
+        .door:hover:not(.open):not(.locked) {
+            box-shadow:
+                inset 3px 0 10px rgba(0,0,0,0.2),
+                inset -2px 0 8px rgba(255,255,255,0.08),
+                0 0 20px rgba(92, 74, 31, 0.2);
+            animation: none;
+        }
+
+        .door.open {
+            transform: rotateY(-85deg);
+            transition: transform 1.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+            animation: none;
+        }
+
+        /* Door closing has different physics - heavier, with slight bounce */
+        .door.closing {
+            transition: transform 0.6s cubic-bezier(0.68, -0.1, 0.27, 1.1);
+        }
+
+        /* Door panels with beveled edges */
+        .door-panel {
+            position: absolute;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    rgba(30, 20, 10, 0.06) 2px,
+                    transparent 4px,
+                    transparent 15px
+                ),
+                linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+            border: 1px solid #2a1a0a;
+            box-shadow:
+                inset 2px 2px 4px rgba(0,0,0,0.3),
+                inset -1px -1px 3px rgba(255,255,255,0.05),
+                1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .door-panel.top {
+            top: 25px;
+            left: 25px;
+            right: 25px;
+            height: 90px;
+        }
+
+        .door-panel.middle {
+            top: 135px;
+            left: 25px;
+            right: 25px;
+            height: 70px;
+        }
+
+        .door-panel.bottom {
+            bottom: 25px;
+            left: 25px;
+            right: 25px;
+            height: 90px;
+        }
+
+        /* Door handle with metallic sheen */
+        .handle {
+            position: absolute;
+            right: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 45px;
+            background: linear-gradient(
+                90deg,
+                #a08060 0%,
+                #d4b896 30%,
+                #c0a080 50%,
+                #a08060 70%,
+                #806040 100%
+            );
+            border-radius: 3px;
+            box-shadow:
+                2px 3px 6px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            animation: handle-warmth 15s ease-in-out infinite;
+        }
+
+        @keyframes handle-warmth {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.05); }
+        }
+
+        .handle::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(
+                ellipse at 40% 40%,
+                #d4b896 0%,
+                #c0a080 40%,
+                #a08060 70%,
+                #806040 100%
+            );
+            border-radius: 50%;
+            box-shadow:
+                1px 2px 4px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        /* Keyhole */
+        .keyhole {
+            position: absolute;
+            right: 26px;
+            top: calc(50% + 35px);
+            width: 6px;
+            height: 12px;
+            background: #1a0a00;
+            border-radius: 3px 3px 0 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+            animation: keyhole-pulse 20s ease-in-out infinite;
+        }
+
+        @keyframes keyhole-pulse {
+            0%, 100% { background: #1a0a00; }
+            50% { background: #150800; }
+        }
+
+        .keyhole::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 6px;
+            background: #1a0a00;
+            border-radius: 0 0 2px 2px;
+        }
+
+        /* Handle animation on door open */
+        .door.opening .handle {
+            transform: translateY(-50%) rotate(-25deg);
+        }
+
+        /* What's behind the door - the same room */
+        .beyond {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%),
+                linear-gradient(180deg, var(--bone) 0%, var(--amber-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        /* Subtle miniature room effect */
+        .beyond::before {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 80%;
+            border: 1px solid rgba(92, 74, 31, 0.2);
+            background: linear-gradient(180deg,
+                rgba(255,255,255,0.05) 0%,
+                rgba(92, 74, 31, 0.05) 100%
+            );
+            animation: beyond-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes beyond-breathe {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(1.02); }
+        }
+
+        .beyond-text {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--ink);
+            opacity: 0;
+            transition: opacity 1.5s ease 0.3s;
+            text-align: center;
+            padding: 1rem;
+            letter-spacing: 0.03em;
+        }
+
+        .door.open + .beyond .beyond-text,
+        .door.open ~ .beyond .beyond-text {
+            opacity: 0.6;
+        }
+
+        /* Message styling */
+        .message {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--ink);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: center;
+            max-width: 320px;
+            line-height: 1.7;
+        }
+
+        .message.visible {
+            opacity: 0.55;
+        }
+
+        /* Special revelation message */
+        .message.revelation {
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+
+        /* Stillness message - appears after being still */
+        .stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--ink);
+            opacity: 0;
+            transition: opacity 3s ease;
+            text-align: center;
+            pointer-events: none;
+            max-width: 280px;
+            line-height: 1.8;
+            letter-spacing: 0.04em;
+            z-index: 50;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.4;
+        }
+
+        /* Door counter */
+        .counter {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--ink);
+            opacity: 0.25;
+            transition: opacity 0.5s ease;
+        }
+
+        .counter:hover {
+            opacity: 0.5;
+        }
+
+        /* Threshold counter - hidden easter egg */
+        .threshold-count {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .threshold-count.visible {
+            opacity: 0.3;
+        }
+
+        /* Journey counter - the paradox counter */
+        .journey-count {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+        }
+
+        .journey-count.visible {
+            opacity: 0.2;
+        }
+
+        /* Hint */
+        .hint {
+            position: fixed;
+            bottom: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .hint.visible {
+            opacity: 0.4;
+        }
+
+        /* Locked state */
+        .door.locked {
+            cursor: not-allowed;
+        }
+
+        .door.locked .handle {
+            filter: brightness(0.8);
+        }
+
+        /* Knock animation - more realistic */
+        .door.knock {
+            animation: knock 0.4s cubic-bezier(0.36, 0, 0.66, -0.56);
+        }
+
+        @keyframes knock {
+            0%, 100% { transform: rotateY(0deg) translateZ(0); }
+            15% { transform: rotateY(-2deg) translateZ(-2px); }
+            30% { transform: rotateY(1deg) translateZ(1px); }
+            45% { transform: rotateY(-1.5deg) translateZ(-1px); }
+            60% { transform: rotateY(0.5deg) translateZ(0); }
+        }
+
+        .door.knock.open {
+            animation: knock-open 0.4s cubic-bezier(0.36, 0, 0.66, -0.56);
+        }
+
+        @keyframes knock-open {
+            0%, 100% { transform: rotateY(-85deg); }
+            15% { transform: rotateY(-87deg); }
+            30% { transform: rotateY(-84deg); }
+            45% { transform: rotateY(-86deg); }
+            60% { transform: rotateY(-84.5deg); }
+        }
+
+        /* Knock sound visual */
+        .knock-sound {
+            position: fixed;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--amber);
+            opacity: 0;
+            pointer-events: none;
+            animation: knock-fade 1.2s ease forwards;
+        }
+
+        @keyframes knock-fade {
+            0% { opacity: 0.7; transform: scale(1) translateY(0); }
+            100% { opacity: 0; transform: scale(1.3) translateY(-30px); }
+        }
+
+        /* Key hints - hidden by default, revealed on stillness or hover */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--ink);
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-align: right;
+            line-height: 1.8;
+        }
+
+        body.hints-revealed .key-hint { opacity: 0.25; }
+
+        /* Door style variations with unique wood types */
+        .door-style-2 .door {
+            background:
+                repeating-linear-gradient(0deg, transparent 0px, rgba(30, 40, 30, 0.08) 2px, transparent 4px, transparent 18px),
+                radial-gradient(ellipse 10px 14px at 40% 35%, rgba(20, 30, 20, 0.12) 0%, transparent 100%),
+                linear-gradient(135deg, #4a5a4a 0%, #3a4a3a 50%, #2a3a2a 100%);
+        }
+        .door-style-3 .door {
+            background:
+                repeating-linear-gradient(0deg, transparent 0px, rgba(40, 30, 40, 0.08) 2px, transparent 4px, transparent 22px),
+                radial-gradient(ellipse 7px 11px at 60% 45%, rgba(30, 20, 30, 0.1) 0%, transparent 100%),
+                linear-gradient(135deg, #5a4a5a 0%, #4a3a4a 50%, #3a2a3a 100%);
+        }
+        .door-style-4 .door {
+            background:
+                repeating-linear-gradient(0deg, transparent 0px, rgba(30, 30, 40, 0.08) 2px, transparent 4px, transparent 16px),
+                radial-gradient(ellipse 9px 13px at 35% 55%, rgba(20, 20, 30, 0.1) 0%, transparent 100%),
+                linear-gradient(135deg, #4a4a5a 0%, #3a3a4a 50%, #2a2a3a 100%);
+        }
+        .door-style-5 .door {
+            /* Ancient oak */
+            background:
+                repeating-linear-gradient(0deg, transparent 0px, rgba(40, 30, 15, 0.1) 3px, transparent 6px, transparent 25px),
+                radial-gradient(ellipse 12px 18px at 50% 30%, rgba(30, 20, 10, 0.2) 0%, transparent 100%),
+                radial-gradient(ellipse 8px 12px at 30% 70%, rgba(30, 20, 10, 0.15) 0%, transparent 100%),
+                linear-gradient(135deg, #6a5a3a 0%, #5a4a2a 50%, #4a3a1a 100%);
+        }
+
+        /* Creak animation - subtle door settling */
+        .door.creak {
+            animation: creak 2s ease-in-out;
+        }
+
+        @keyframes creak {
+            0%, 100% { transform: rotateY(-85deg); }
+            30% { transform: rotateY(-83deg); }
+            60% { transform: rotateY(-86deg); }
+        }
+
+        /* Peeking through keyhole effect */
+        .peek-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(
+                ellipse 60px 80px at center,
+                transparent 0%,
+                rgba(0,0,0,0.95) 100%
+            );
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 100;
+        }
+
+        .peek-overlay.active {
+            opacity: 1;
+        }
+
+        /* Scratch marks - hidden detail */
+        .scratch {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.1), transparent);
+            transform: rotate(-15deg);
+            opacity: 0.3;
+        }
+
+        .scratch:nth-child(1) { bottom: 60px; left: 40px; }
+        .scratch:nth-child(2) { bottom: 58px; left: 45px; height: 18px; }
+        .scratch:nth-child(3) { bottom: 62px; left: 50px; height: 22px; }
+
+        /* Dust motes floating */
+        .dust {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 250, 240, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-dust 15s infinite linear;
+        }
+
+        @keyframes float-dust {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        /* Shadow under door */
+        .door-shadow {
+            position: absolute;
+            bottom: -8px;
+            left: 10%;
+            width: 80%;
+            height: 8px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 70%);
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: shadow-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes shadow-breathe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        .door.open ~ .door-shadow {
+            transform: scaleX(0.3) translateX(-100%);
+            animation: none;
+        }
+
+        /* Sound toggle - hidden in corner */
+        .sound-toggle {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.4rem;
+            color: var(--slate);
+            opacity: 0;
+            cursor: pointer;
+            transition: opacity 1s ease;
+            padding: 0.5rem;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.4;
+        }
+
+        body.sound-visible .sound-toggle {
+            opacity: 0.15;
+        }
+
+        /* Creak text - the "sound" */
+        .creak-text {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 0.7rem;
+            color: var(--amber-deep);
+            opacity: 0;
+            pointer-events: none;
+            animation: creak-fade 3s ease forwards;
+        }
+
+        @keyframes creak-fade {
+            0% { opacity: 0; transform: translateY(0) rotate(-5deg); }
+            20% { opacity: 0.5; }
+            100% { opacity: 0; transform: translateY(-40px) rotate(5deg); }
+        }
+
+        /* Breath indicator - subtle ambient animation */
+        .breath-indicator {
+            position: fixed;
+            bottom: 50%;
+            left: 1rem;
+            width: 3px;
+            height: 60px;
+            background: linear-gradient(180deg, transparent, var(--amber), transparent);
+            opacity: 0;
+            transition: opacity 3s ease;
+            animation: breath-wave 6s ease-in-out infinite;
+        }
+
+        @keyframes breath-wave {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+
+        body.stillness-active .breath-indicator {
+            opacity: 0.15;
+        }
+
+        /* Reflection text - appears in deep stillness */
+        .reflection {
+            position: fixed;
+            top: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 4s ease;
+            letter-spacing: 0.2em;
+            text-transform: lowercase;
+        }
+
+        .reflection.visible {
+            opacity: 0.25;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="peek-overlay" id="peekOverlay"></div>
+
+    <div class="breath-indicator"></div>
+
+    <p class="reflection" id="reflection"></p>
+
+    <div class="door-container">
+        <div class="frame"></div>
+        <div class="door" id="door">
+            <div class="door-panel top"></div>
+            <div class="door-panel middle"></div>
+            <div class="door-panel bottom"></div>
+            <div class="handle"></div>
+            <div class="keyhole"></div>
+            <!-- Hidden scratch marks -->
+            <div class="scratch"></div>
+            <div class="scratch"></div>
+            <div class="scratch"></div>
+        </div>
+        <div class="beyond">
+            <p class="beyond-text" id="beyondText">the same room</p>
+        </div>
+        <div class="door-shadow"></div>
+    </div>
+
+    <p class="stillness-message" id="stillnessMessage"></p>
+    <p class="message" id="message"></p>
+    <p class="counter" id="counter"></p>
+    <p class="threshold-count" id="thresholdCount"></p>
+    <p class="journey-count" id="journeyCount"></p>
+    <p class="hint" id="hint"></p>
+    <div class="key-hint">
+        [o] open/close<br>
+        [l] lock/unlock<br>
+        [k] knock<br>
+        [d] different door<br>
+        [n] night<br>
+        [b] dream<br>
+        [.] listen
+    </div>
+    <div class="sound-toggle" id="soundToggle">creak</div>
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const door = document.getElementById('door');
+        const beyondText = document.getElementById('beyondText');
+        const message = document.getElementById('message');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const counter = document.getElementById('counter');
+        const thresholdCount = document.getElementById('thresholdCount');
+        const journeyCount = document.getElementById('journeyCount');
+        const hint = document.getElementById('hint');
+        const peekOverlay = document.getElementById('peekOverlay');
+        const reflection = document.getElementById('reflection');
+        const soundToggle = document.getElementById('soundToggle');
+
+        let openCount = 0;
+        let closeCount = 0;
+        let totalThresholds = 0;
+        let isOpen = false;
+        let isLocked = false;
+        let doorStyle = 1;
+        let knockCount = 0;
+        let peekCount = 0;
+        let secretFound = false;
+        let soundEnabled = false;
+        let stillnessTimer = null;
+        let deepStillnessTimer = null;
+        let lastMoveTime = Date.now();
+        let stillnessLevel = 0;
+        let journeysMade = 0; // A journey is open + close
+
+        // Expanded beyond messages - the paradox of same
+        const beyondMessages = [
+            'the same room',
+            'where you already are',
+            'the beginning',
+            'the end',
+            'here',
+            'there',
+            'nowhere different',
+            'somewhere familiar',
+            'the room you left',
+            'the room you entered',
+            'where you started',
+            'where you will finish',
+            'the other side of the same',
+            'a reflection',
+            'the present',
+            'the only moment',
+            'this room, again',
+            'still here',
+            'always here',
+            'home',
+            'the departure',
+            'the arrival',
+            'both at once'
+        ];
+
+        // Door messages - meditations on passage
+        const doorMessages = [
+            'the door you enter is the door you leave',
+            'in and out are the same',
+            'the entrance is the exit',
+            'you are already there',
+            'you never left',
+            'the threshold remembers',
+            'every crossing is a return',
+            'to go through is to come back',
+            'the door opens both ways into one room',
+            'there is no other side',
+            'departure and arrival are one',
+            'you have always been on the other side',
+            'the door is a mirror',
+            'walking through, you meet yourself',
+            'the room waits, as it always has',
+            'movement that returns',
+            'a journey that is an arrival',
+            'passage without distance',
+            'the paradox of leaving to stay',
+            'going nowhere, arriving everywhere'
+        ];
+
+        // Stillness messages - appear when visitor is still
+        const stillnessMessages = [
+            'the door waits',
+            'stillness before the threshold',
+            'the handle grows warm',
+            'the hinges hold their breath',
+            'wood remembers those who pause',
+            'in not-moving, something opens',
+            'the door knows patience',
+            'between thoughts of going',
+            'rest before passage',
+            'the frame holds you here'
+        ];
+
+        // Deep stillness messages - longer stillness
+        const deepStillnessMessages = [
+            'the door you enter is the door you leave by',
+            'there is only one room',
+            'all doors lead here',
+            'arrival and departure: one gesture',
+            'the threshold is the only place'
+        ];
+
+        // Closing messages - when door closes
+        const closingMessages = [
+            'closed, as if nothing happened',
+            'the door returns',
+            'back to waiting',
+            'sealed, holding nothing out',
+            'the room is whole again'
+        ];
+
+        // Revelation messages at milestones
+        const revelationMessages = {
+            10: 'ten times through the same door...',
+            25: 'the hinges know you now',
+            50: 'the door has become a ritual',
+            100: 'one hundred crossings, one room',
+            200: 'the door is patient',
+            500: 'you and the door understand each other'
+        };
+
+        // Journey milestones (complete open-close cycles)
+        const journeyMilestones = {
+            5: 'five journeys to the same place',
+            10: 'the circle closes, opens, closes',
+            25: 'each return is the first arrival',
+            50: 'departure has lost its meaning'
+        };
+
+        // Locked door messages
+        const lockedMessages = [
+            'the door is locked',
+            'it will not open',
+            'locked, but to what end?',
+            'the lock keeps nothing out',
+            'locked against yourself',
+            'locked from which side?'
+        ];
+
+        // Knock response messages
+        const knockResponses = [
+            '*silence*',
+            '...no answer',
+            'who knocks on their own door?',
+            'the room does not answer',
+            '*echo*',
+            'you knock from the inside',
+            '*waiting*',
+            'the sound returns to you'
+        ];
+
+        // Creak texts - the "sound"
+        const creakTexts = [
+            'creak',
+            'creeeak',
+            'eeee',
+            'groan',
+            '*wood settling*',
+            '...crk...'
+        ];
+
+        // Reflections - appear at top during deep stillness
+        const reflections = [
+            'the door you enter',
+            'is the door you leave',
+            'movement that returns',
+            'passage without distance'
+        ];
+
+        // Create floating dust particles
+        function createDust() {
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    const dust = document.createElement('div');
+                    dust.className = 'dust';
+                    dust.style.left = Math.random() * 100 + '%';
+                    dust.style.animationDelay = Math.random() * 15 + 's';
+                    dust.style.animationDuration = (12 + Math.random() * 8) + 's';
+                    document.body.appendChild(dust);
+                }, i * 2000);
+            }
+        }
+        createDust();
+
+        function showMessage(text, duration = 3500, isRevelation = false) {
+            message.textContent = text;
+            message.classList.toggle('revelation', isRevelation);
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), duration);
+        }
+
+        function showStillnessMessage(text) {
+            stillnessMessage.textContent = text;
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 6000);
+        }
+
+        function showReflection(text) {
+            reflection.textContent = text;
+            reflection.classList.add('visible');
+            setTimeout(() => reflection.classList.remove('visible'), 8000);
+        }
+
+        // Creak "sound" - visual text
+        function playCreak() {
+            if (!soundEnabled) return;
+            const creakEl = document.createElement('div');
+            creakEl.className = 'creak-text';
+            creakEl.textContent = creakTexts[Math.floor(Math.random() * creakTexts.length)];
+            const rect = door.getBoundingClientRect();
+            creakEl.style.left = (rect.left - 30 + Math.random() * 20) + 'px';
+            creakEl.style.top = (rect.top + 100 + Math.random() * 100) + 'px';
+            document.body.appendChild(creakEl);
+            setTimeout(() => creakEl.remove(), 3000);
+        }
+
+        function toggleDoor() {
+            if (isLocked) {
+                const lockedMsg = lockedMessages[Math.floor(Math.random() * lockedMessages.length)];
+                showMessage(lockedMsg);
+                door.style.transform = 'rotateY(-2deg)';
+                setTimeout(() => door.style.transform = '', 100);
+                return;
+            }
+
+            isOpen = !isOpen;
+            totalThresholds++;
+            resetStillness();
+
+            if (isOpen) {
+                door.classList.add('opening');
+                setTimeout(() => door.classList.remove('opening'), 200);
+                door.classList.add('open');
+                door.classList.remove('closing');
+
+                openCount++;
+
+                // Update beyond text with cycling messages
+                const beyondIndex = (openCount - 1) % beyondMessages.length;
+                beyondText.textContent = beyondMessages[beyondIndex];
+
+                // Update counter
+                counter.textContent = `opened: ${openCount}`;
+
+                // Play creak on open
+                setTimeout(() => playCreak(), 300);
+
+                // Check for revelation milestones
+                if (revelationMessages[openCount]) {
+                    showMessage(revelationMessages[openCount], 4500, true);
+                } else {
+                    const msgIndex = Math.floor((openCount - 1) / 2) % doorMessages.length;
+                    showMessage(doorMessages[msgIndex]);
+                }
+
+                hint.classList.remove('visible');
+
+                // Random creak after opening
+                if (Math.random() < 0.25) {
+                    setTimeout(() => {
+                        if (isOpen) {
+                            door.classList.add('creak');
+                            playCreak();
+                        }
+                        setTimeout(() => door.classList.remove('creak'), 2000);
+                    }, 2500);
+                }
+            } else {
+                door.classList.add('closing');
+                door.classList.remove('open');
+                closeCount++;
+
+                // Complete journey on close
+                journeysMade++;
+
+                // Play creak on close
+                setTimeout(() => playCreak(), 100);
+
+                // Show closing message occasionally
+                if (closeCount > 3 && Math.random() < 0.3) {
+                    const closeMsg = closingMessages[Math.floor(Math.random() * closingMessages.length)];
+                    showMessage(closeMsg, 3000);
+                } else {
+                    message.classList.remove('visible');
+                }
+
+                // Journey milestones
+                if (journeyMilestones[journeysMade]) {
+                    setTimeout(() => {
+                        showMessage(journeyMilestones[journeysMade], 4500, true);
+                    }, 1500);
+                }
+
+                // Update journey count
+                if (journeysMade >= 3) {
+                    journeyCount.textContent = `journeys: ${journeysMade}\narrivals: ${journeysMade}`;
+                    journeyCount.classList.add('visible');
+                }
+            }
+
+            // Show threshold count after enough interactions
+            if (totalThresholds >= 15) {
+                thresholdCount.textContent = `thresholds: ${totalThresholds}`;
+                thresholdCount.classList.add('visible');
+            }
+        }
+
+        door.addEventListener('click', toggleDoor);
+
+        // Stillness detection
+        function resetStillness() {
+            lastMoveTime = Date.now();
+            stillnessLevel = 0;
+            document.body.classList.remove('stillness-active', 'deep-stillness');
+            clearTimeout(stillnessTimer);
+            clearTimeout(deepStillnessTimer);
+            stillnessMessage.classList.remove('visible');
+            reflection.classList.remove('visible');
+        }
+
+        function checkStillness() {
+            const now = Date.now();
+            const stillDuration = now - lastMoveTime;
+
+            // First stillness level - 5 seconds
+            if (stillDuration > 5000 && stillnessLevel === 0) {
+                stillnessLevel = 1;
+                document.body.classList.add('stillness-active');
+                const msg = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                showStillnessMessage(msg);
+            }
+
+            // Deep stillness - 12 seconds
+            if (stillDuration > 12000 && stillnessLevel === 1) {
+                stillnessLevel = 2;
+                document.body.classList.add('deep-stillness');
+                const msg = deepStillnessMessages[Math.floor(Math.random() * deepStillnessMessages.length)];
+                showStillnessMessage(msg);
+
+                // Show reflection
+                setTimeout(() => {
+                    const refIndex = Math.floor(Math.random() * reflections.length);
+                    showReflection(reflections[refIndex]);
+                }, 3000);
+
+                // Reveal hints after deep stillness
+                document.body.classList.add('hints-revealed');
+            }
+
+            // Very deep stillness - 25 seconds
+            if (stillDuration > 25000 && stillnessLevel === 2) {
+                stillnessLevel = 3;
+                showStillnessMessage('the door you enter is the door you leave by');
+            }
+        }
+
+        // Track movement
+        document.addEventListener('mousemove', () => {
+            if (Date.now() - lastMoveTime > 500) {
+                resetStillness();
+            }
+        });
+
+        document.addEventListener('keydown', () => {
+            if (Date.now() - lastMoveTime > 500) {
+                resetStillness();
+            }
+        });
+
+        // Check stillness periodically
+        setInterval(checkStillness, 1000);
+
+        // Show hint after delay (only if no stillness message showing)
+        setTimeout(() => {
+            if (stillnessLevel === 0 && openCount === 0) {
+                hint.textContent = 'the door waits';
+                hint.classList.add('visible');
+            }
+        }, 3000);
+
+        // Right-click to peek through keyhole
+        door.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                e.stopPropagation();
+                resetStillness();
+                if (!isOpen) {
+                    peekCount++;
+                    peekOverlay.classList.add('active');
+                    beyondText.style.opacity = '0.4';
+
+                    const peekMessages = [
+                        'through the keyhole...',
+                        'darkness, and light beyond',
+                        'the same room, through a small hole',
+                        'you see yourself, peeking back',
+                        'the keyhole shows what you already know',
+                        'the view is familiar',
+                        'nothing hidden, nothing revealed'
+                    ];
+                    const peekMsg = peekMessages[Math.min(peekCount - 1, peekMessages.length - 1)];
+                    showMessage(peekMsg);
+
+                    setTimeout(() => {
+                        peekOverlay.classList.remove('active');
+                        beyondText.style.opacity = '';
+                    }, 1800);
+                }
+            }
+        });
+
+        function knock() {
+            knockCount++;
+            resetStillness();
+            door.classList.add('knock');
+            setTimeout(() => door.classList.remove('knock'), 400);
+
+            // Create knock sound visuals
+            const knockTexts = ['*knock*', '*tap*', '*thump*'];
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const knockEl = document.createElement('div');
+                    knockEl.className = 'knock-sound';
+                    knockEl.textContent = knockTexts[i % knockTexts.length];
+                    const rect = door.getBoundingClientRect();
+                    knockEl.style.left = (rect.left + 40 + Math.random() * 60) + 'px';
+                    knockEl.style.top = (rect.top + 80 + Math.random() * 120) + 'px';
+                    document.body.appendChild(knockEl);
+                    setTimeout(() => knockEl.remove(), 1200);
+                }, i * 150);
+            }
+
+            // Show knock response after a pause
+            setTimeout(() => {
+                const responseIndex = Math.min(knockCount - 1, knockResponses.length - 1);
+                showMessage(knockResponses[responseIndex], 3000);
+            }, 700);
+
+            // Easter egg: knock 7 times
+            if (knockCount === 7 && !secretFound) {
+                secretFound = true;
+                setTimeout(() => {
+                    showMessage('...the door acknowledges you', 4500, true);
+                }, 1800);
+            }
+        }
+
+        // Sound toggle
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? 'creak (on)' : 'creak';
+            if (soundEnabled) {
+                showMessage('the door will speak', 2000);
+                playCreak();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyO' || e.code === 'Space') {
+                e.preventDefault();
+                toggleDoor();
+            }
+            if (e.code === 'KeyL') {
+                isLocked = !isLocked;
+                door.classList.toggle('locked', isLocked);
+                const lockMsg = isLocked
+                    ? 'you locked the door'
+                    : 'you unlocked the door';
+                showMessage(lockMsg);
+            }
+            if (e.code === 'KeyK') {
+                knock();
+            }
+            if (e.code === 'KeyD') {
+                doorStyle = (doorStyle % 5) + 1;
+                document.body.className = document.body.className.replace(/door-style-\d/g, '');
+                if (doorStyle > 1) {
+                    document.body.classList.add(`door-style-${doorStyle}`);
+                }
+                const doorNames = ['', 'oak', 'forest pine', 'dusk mahogany', 'midnight ash', 'ancient oak'];
+                showMessage(`a different door. ${doorNames[doorStyle]}. same room.`);
+            }
+            if (e.code === 'KeyN') {
+                document.body.classList.remove('dreaming', 'liminal');
+                document.body.classList.toggle('night-door');
+                if (document.body.classList.contains('night-door')) {
+                    showMessage('the door at night', 2500);
+                }
+            }
+            if (e.code === 'KeyB') {
+                document.body.classList.remove('night-door', 'liminal');
+                document.body.classList.toggle('dreaming');
+                if (document.body.classList.contains('dreaming')) {
+                    showMessage('the door in a dream', 2500);
+                }
+            }
+            // Hidden: liminal mode
+            if (e.code === 'KeyM') {
+                document.body.classList.remove('night-door', 'dreaming');
+                document.body.classList.toggle('liminal');
+                if (document.body.classList.contains('liminal')) {
+                    showMessage('the in-between', 2500);
+                }
+            }
+            // Period key - toggle sound
+            if (e.code === 'Period') {
+                soundEnabled = !soundEnabled;
+                document.body.classList.toggle('sound-visible', soundEnabled);
+                soundToggle.textContent = soundEnabled ? 'creak (on)' : 'creak';
+                if (soundEnabled) {
+                    showMessage('listening...', 2000);
+                    playCreak();
+                }
+            }
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+            // Hidden: reset
+            if (e.code === 'KeyR' && e.shiftKey) {
+                openCount = 0;
+                closeCount = 0;
+                totalThresholds = 0;
+                knockCount = 0;
+                peekCount = 0;
+                journeysMade = 0;
+                counter.textContent = '';
+                thresholdCount.textContent = '';
+                thresholdCount.classList.remove('visible');
+                journeyCount.textContent = '';
+                journeyCount.classList.remove('visible');
+                showMessage('...reset', 2000);
+            }
+            // Arrow keys easter egg - stillness paradox
+            if (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                // Pressing arrow keys is movement, but going nowhere
+                showMessage('movement without motion', 2500);
+            }
+        });
+
+        // Console poetry
+        console.log('%c', 'padding: 20px;');
+        console.log('%cdoor', 'font-size: 24px; font-weight: 300; color: #5c4a1f; font-family: Georgia, serif; letter-spacing: 0.3em;');
+        console.log('%c', 'padding: 5px;');
+        console.log('%cthe door you enter', 'font-size: 11px; color: #718096; font-style: italic; font-family: Georgia, serif;');
+        console.log('%cis the door you leave by', 'font-size: 11px; color: #718096; font-style: italic; font-family: Georgia, serif;');
+        console.log('%c', 'padding: 10px;');
+        console.log('%cmovement that returns', 'font-size: 10px; color: #a0aec0; font-style: italic;');
+        console.log('%cjourneys that are arrivals', 'font-size: 10px; color: #a0aec0; font-style: italic;');
+        console.log('%c', 'padding: 10px;');
+        console.log('%cthe paradox of passage:', 'font-size: 9px; color: #cbd5e0;');
+        console.log('%cto cross the threshold', 'font-size: 9px; color: #cbd5e0;');
+        console.log('%cis to find yourself', 'font-size: 9px; color: #cbd5e0;');
+        console.log('%calready on the other side', 'font-size: 9px; color: #cbd5e0;');
+        console.log('%c', 'padding: 15px;');
+        console.log('%cbe still. the door will wait.', 'font-size: 8px; color: #e2e8f0; font-style: italic;');
+
+        // Ambient door settling (visual "creaks")
+        setInterval(() => {
+            if (isOpen && Math.random() < 0.08) {
+                const settleEl = document.createElement('div');
+                settleEl.className = 'knock-sound';
+                settleEl.textContent = '*settle*';
+                settleEl.style.fontSize = '0.65rem';
+                settleEl.style.opacity = '0.35';
+                settleEl.style.color = 'var(--slate)';
+                const rect = door.getBoundingClientRect();
+                settleEl.style.left = (rect.left + 10) + 'px';
+                settleEl.style.top = (rect.top + 180 + Math.random() * 80) + 'px';
+                document.body.appendChild(settleEl);
+                setTimeout(() => settleEl.remove(), 1200);
+
+                if (soundEnabled) {
+                    playCreak();
+                }
+            }
+        }, 10000);
+
+        // Initial breath - subtle animation start delay
+        setTimeout(() => {
+            document.body.style.opacity = '1';
+        }, 100);
+    </script>
+</body>
+</html>

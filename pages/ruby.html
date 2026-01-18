@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ruby - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            --ruby: #b91c3c;
+            --ruby-glow: #dc2850;
+            --ruby-deep: #7f1d3d;
+            --ruby-pale: #f9d5dc;
+            --frost: #f0f8ff;
+            --frost-pale: rgba(240, 248, 255, 0.3);
+        }
+
+        body {
+            background: linear-gradient(180deg, var(--bone) 0%, #f5f0e6 50%, #e8e0d0 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            overflow-y: auto;
+            transition: filter 3s ease, background 2s ease;
+        }
+
+        body.cold {
+            filter: brightness(1.05) saturate(0.9);
+            background: linear-gradient(180deg, #f8f5f0 0%, #f0ebe4 50%, #e5e0d8 100%);
+        }
+
+        body.frozen {
+            filter: brightness(1.1) saturate(0.7) hue-rotate(-5deg);
+            background: linear-gradient(180deg, #f5f8fa 0%, #e8eef2 50%, #dce4e8 100%);
+        }
+
+        .back-link {
+            color: var(--ruby);
+            z-index: 100;
+            opacity: 0.4;
+        }
+
+        .back-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Main container */
+        .ruby-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6rem 2rem 4rem;
+        }
+
+        /* The mound - central interactive element */
+        .mound-container {
+            position: relative;
+            margin: 4rem 0;
+            cursor: crosshair;
+        }
+
+        .mound {
+            width: 280px;
+            height: 180px;
+            background: radial-gradient(ellipse 100% 100% at 50% 80%,
+                var(--ruby-deep) 0%,
+                var(--ruby) 30%,
+                var(--ruby-glow) 60%,
+                var(--ruby-pale) 95%
+            );
+            border-radius: 50% 50% 45% 45% / 100% 100% 20% 20%;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                inset 0 -20px 40px rgba(127, 29, 61, 0.4),
+                inset 0 10px 30px rgba(255, 255, 255, 0.1),
+                0 10px 30px rgba(185, 28, 60, 0.2);
+            transition: transform 0.3s ease, box-shadow 1s ease;
+            animation: mound-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes mound-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.008); }
+        }
+
+        /* Crystalline texture overlay */
+        .mound::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 3%),
+                radial-gradient(circle at 40% 20%, rgba(255,255,255,0.25) 0%, transparent 2%),
+                radial-gradient(circle at 60% 35%, rgba(255,255,255,0.2) 0%, transparent 4%),
+                radial-gradient(circle at 80% 25%, rgba(255,255,255,0.3) 0%, transparent 2%),
+                radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 3%),
+                radial-gradient(circle at 70% 45%, rgba(255,255,255,0.2) 0%, transparent 2%),
+                radial-gradient(circle at 50% 60%, rgba(255,255,255,0.25) 0%, transparent 3%),
+                radial-gradient(circle at 25% 70%, rgba(255,255,255,0.2) 0%, transparent 2%),
+                radial-gradient(circle at 75% 65%, rgba(255,255,255,0.15) 0%, transparent 4%);
+            pointer-events: none;
+            animation: crystal-shimmer 12s ease-in-out infinite;
+        }
+
+        @keyframes crystal-shimmer {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* Frost layer on top */
+        .mound::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 15%;
+            background: linear-gradient(180deg,
+                rgba(255,255,255,0.4) 0%,
+                rgba(255,255,255,0.1) 50%,
+                transparent 100%
+            );
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            pointer-events: none;
+        }
+
+        /* Crystal particles that scatter on scrape */
+        .crystal {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--ruby-glow);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 0 4px var(--ruby);
+        }
+
+        .crystal.scattered {
+            animation: crystal-scatter 1.5s ease-out forwards;
+        }
+
+        @keyframes crystal-scatter {
+            0% { opacity: 0.9; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--scatter-x), var(--scatter-y)) scale(0.3); }
+        }
+
+        /* Scrape trail effect */
+        .scrape-trail {
+            position: absolute;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--ruby-pale) 30%,
+                rgba(255,255,255,0.6) 50%,
+                var(--ruby-pale) 70%,
+                transparent 100%
+            );
+            height: 3px;
+            pointer-events: none;
+            opacity: 0.7;
+            border-radius: 2px;
+            animation: trail-fade 2s ease-out forwards;
+        }
+
+        @keyframes trail-fade {
+            0% { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+
+        /* The cup - subtle container suggestion */
+        .cup {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 60px;
+            background: linear-gradient(180deg,
+                rgba(245, 240, 230, 0.3) 0%,
+                rgba(230, 225, 215, 0.5) 100%
+            );
+            border-radius: 0 0 10px 10px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Wooden implement hint */
+        .implement {
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            width: 80px;
+            height: 8px;
+            background: linear-gradient(180deg, #d4b896 0%, #c4a882 50%, #b49872 100%);
+            border-radius: 2px;
+            transform: rotate(25deg);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        body:hover .implement {
+            opacity: 0.3;
+        }
+
+        /* Temperature indicator */
+        .temperature-indicator {
+            position: fixed;
+            top: 50%;
+            right: 2rem;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 100px;
+            background: var(--bone-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        body:hover .temperature-indicator {
+            opacity: 0.4;
+        }
+
+        .temperature-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            background: linear-gradient(180deg, var(--frost) 0%, #a8d8ff 100%);
+            transition: height 1s ease;
+            border-radius: 2px;
+        }
+
+        .temperature-indicator.cold .temperature-fill {
+            height: 80%;
+        }
+
+        /* Message display */
+        .message {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--ruby-deep);
+            opacity: 0;
+            transition: opacity 2.5s ease;
+            text-align: center;
+            max-width: 80%;
+            pointer-events: none;
+        }
+
+        .message.visible { opacity: 0.5; }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.7rem;
+            color: var(--ruby);
+            opacity: 0;
+            transition: opacity 4s ease;
+            text-align: center;
+            letter-spacing: 0.2em;
+            pointer-events: none;
+        }
+
+        .stillness-message.visible { opacity: 0.35; }
+
+        /* Scrape counter */
+        .counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--ruby);
+            opacity: 0.3;
+            z-index: 30;
+            transition: opacity 1s ease, color 1s ease;
+        }
+
+        .counter.active {
+            opacity: 0.6;
+            color: var(--ruby-glow);
+        }
+
+        /* Key hints */
+        .key-hint {
+            position: fixed;
+            top: 5rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: right;
+            line-height: 1.8;
+            z-index: 30;
+        }
+
+        body:hover .key-hint { opacity: 0.25; }
+
+        /* History scroll section */
+        .history-section {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 6rem;
+            padding: 3rem 2rem;
+            opacity: 0;
+            animation: fadeIn 3s ease 2s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .history-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--ruby) transparent;
+        }
+
+        .history-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .history-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: var(--ruby);
+            border-radius: 2px;
+            opacity: 0.5;
+        }
+
+        .history-entry {
+            margin-bottom: 2.5rem;
+            opacity: 0.6;
+            transition: opacity 0.5s ease;
+        }
+
+        .history-entry:hover {
+            opacity: 0.9;
+        }
+
+        .history-era {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--ruby);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            opacity: 0.7;
+        }
+
+        .history-text {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--slate-deep);
+            font-style: italic;
+        }
+
+        /* Ambient frost particles */
+        .frost-particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+
+        .frost-particle.active {
+            animation: frost-fall 4s linear forwards;
+        }
+
+        @keyframes frost-fall {
+            0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.4; }
+            100% { opacity: 0; transform: translateY(100px) rotate(180deg); }
+        }
+
+        /* Sound visualization - visual scraping representation */
+        .sound-wave {
+            position: fixed;
+            left: 50%;
+            bottom: 8rem;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+            z-index: 19;
+        }
+
+        .sound-wave.visible {
+            opacity: 0.5;
+        }
+
+        .sound-wave span {
+            width: 2px;
+            background: var(--ruby);
+            border-radius: 1px;
+            animation: wave-pulse 0.8s ease-in-out infinite;
+        }
+
+        .sound-wave span:nth-child(1) { height: 6px; animation-delay: 0s; }
+        .sound-wave span:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+        .sound-wave span:nth-child(3) { height: 8px; animation-delay: 0.2s; }
+        .sound-wave span:nth-child(4) { height: 15px; animation-delay: 0.15s; }
+        .sound-wave span:nth-child(5) { height: 10px; animation-delay: 0.25s; }
+        .sound-wave span:nth-child(6) { height: 5px; animation-delay: 0.3s; }
+        .sound-wave span:nth-child(7) { height: 11px; animation-delay: 0.05s; }
+
+        @keyframes wave-pulse {
+            0%, 100% { transform: scaleY(1); opacity: 0.5; }
+            50% { transform: scaleY(1.8); opacity: 1; }
+        }
+
+        /* Texture overlay */
+        .texture {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            z-index: 100;
+            mix-blend-mode: overlay;
+        }
+
+        /* Patience reward */
+        .patience-reward {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            color: var(--ruby);
+            opacity: 0;
+            transition: opacity 6s ease;
+            text-align: center;
+            z-index: 35;
+            pointer-events: none;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 20px rgba(185, 28, 60, 0.2);
+        }
+
+        .patience-reward.visible { opacity: 0.4; }
+
+        /* Summer heat indicator */
+        .heat-shimmer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(180deg,
+                rgba(255, 200, 150, 0.05) 0%,
+                transparent 100%
+            );
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s ease;
+            z-index: 1;
+        }
+
+        body.summer .heat-shimmer {
+            opacity: 1;
+            animation: shimmer-wave 8s ease-in-out infinite;
+        }
+
+        @keyframes shimmer-wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        /* Memory indicator */
+        .memory-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--ruby);
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .memory-indicator.remembered {
+            opacity: 0.3;
+            animation: memory-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes memory-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+        }
+
+        /* Selection styling */
+        ::selection {
+            background: var(--ruby-pale);
+            color: var(--ruby-deep);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .mound {
+                width: 220px;
+                height: 140px;
+            }
+            .cup {
+                width: 240px;
+            }
+            .history-section {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="texture"></div>
+    <div class="heat-shimmer"></div>
+
+    <div class="ruby-container">
+        <div class="mound-container" id="moundContainer">
+            <div class="mound" id="mound"></div>
+            <div class="cup"></div>
+            <div class="implement"></div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-scroll" id="historyScroll">
+                <div class="history-entry">
+                    <div class="history-era">from the mountain</div>
+                    <div class="history-text">
+                        On an island in the sea, a mountain breathed fire and ice.
+                        The people who lived in its shadow learned to harvest what
+                        fell from its heights - white crystals that held the cold
+                        of ancient winters.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">the traders</div>
+                    <div class="history-text">
+                        Merchants from the east brought knowledge of pressing fruit
+                        into bright syrups. They called their mixtures by words that
+                        meant "to drink." The island people listened, learned, and
+                        remembered.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">the blending</div>
+                    <div class="history-text">
+                        What resulted was neither one thing nor the other - not the
+                        snow of the mountain, not the syrup of the traders. Something
+                        new. Something that held the color of deep-summer fruit and
+                        the cold of high places.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">the crossing</div>
+                    <div class="history-text">
+                        When the island people crossed the water to new cities, they
+                        carried the knowledge with them. In crowded streets where
+                        summer heat rose from stone, they remembered the cold that
+                        waits.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">the carts</div>
+                    <div class="history-text">
+                        Wooden wheels on cobblestones. The sound of bells. Children
+                        running with coins in their hands toward relief from the
+                        pressing heat. A small paper vessel. A flat piece of pale
+                        wood. The first scrape. That instant when cold meets tongue—
+                        how it blooms and stings and numbs all at once.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">the passing down</div>
+                    <div class="history-text">
+                        Recipes whispered between generations. The exact proportions
+                        kept in memory, not in books. Each family with their own
+                        secret, their own particular depth of color, their own way
+                        of coaxing the crystals to form just so.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">the city of brothers</div>
+                    <div class="history-text">
+                        One city claimed it as their own. They gave it a different
+                        name - simpler, more direct. Just the cold and the liquid
+                        it came from. The stands multiplied. Corner after corner.
+                        Summer after summer.
+                    </div>
+                </div>
+
+                <div class="history-entry">
+                    <div class="history-era">now</div>
+                    <div class="history-text">
+                        The mountain still breathes. The color persists - this
+                        particular shade of depth that catches light and holds it.
+                        The cold still spreads on the tongue. The scrape still
+                        yields. Some things endure by being simple.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sound-wave" id="soundWave">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="temperature-indicator" id="tempIndicator">
+        <div class="temperature-fill" id="tempFill"></div>
+    </div>
+
+    <p class="message" id="message"></p>
+    <p class="stillness-message" id="stillnessMessage"></p>
+    <p class="patience-reward" id="patienceReward"></p>
+    <p class="counter" id="counter">yielded: 0</p>
+    <div class="memory-indicator" id="memoryIndicator"></div>
+
+    <div class="key-hint">
+        [c] cold<br>
+        [s] summer<br>
+        [r] reform<br>
+        drag: yield
+    </div>
+
+    <script>
+        const mound = document.getElementById('mound');
+        const moundContainer = document.getElementById('moundContainer');
+        const message = document.getElementById('message');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const patienceReward = document.getElementById('patienceReward');
+        const counter = document.getElementById('counter');
+        const soundWave = document.getElementById('soundWave');
+        const tempIndicator = document.getElementById('tempIndicator');
+        const tempFill = document.getElementById('tempFill');
+        const memoryIndicator = document.getElementById('memoryIndicator');
+
+        let scrapeCount = 0;
+        let isScraping = false;
+        let lastScrapeTime = 0;
+        let lastMousePos = { x: 0, y: 0 };
+        let crystalReformTimer = null;
+        let stillnessTimer = null;
+        let lastMovementTime = Date.now();
+        let coldLevel = 100;
+        let soundMode = false;
+
+        // Messages that evoke without naming
+        const messages = [
+            'the surface yields',
+            'crystals scatter like memories',
+            'cold spreads where it touches',
+            'the color deepens at the center',
+            'it remembers being whole',
+            'relief from what presses down',
+            'the scrape finds what waits beneath',
+            'simple pleasure, simply taken',
+            'the anticipation was the beginning',
+            'summer afternoons live here',
+            'some things taste like returning'
+        ];
+
+        const stillnessMessages = [
+            'the crystals reform in silence',
+            'cold waits patiently',
+            'stillness lets it remember its shape',
+            'the surface smooths itself',
+            'anticipation rebuilds'
+        ];
+
+        const patienceMessages = [
+            'you understand what this is',
+            'the cold knows you now',
+            'some memories need no names',
+            'the color holds everything'
+        ];
+
+        // Console poetry
+        console.log('%c', 'padding: 20px');
+        console.log('%cruby', 'font-size: 24px; color: #b91c3c; font-family: "Cormorant Garamond", serif; font-weight: 300;');
+        console.log('%c', 'padding: 5px');
+        console.log('%cthe cold that yields', 'font-size: 12px; color: #7f1d3d; font-style: italic;');
+        console.log('%cthe color that remembers', 'font-size: 12px; color: #7f1d3d; font-style: italic;');
+        console.log('%c', 'padding: 10px');
+        console.log('%cdrag across the surface', 'font-size: 10px; color: #4a5568; font-style: italic;');
+        console.log('%cit will yield', 'font-size: 10px; color: #4a5568; font-style: italic;');
+        console.log('%c', 'padding: 5px');
+        console.log('%c~', 'font-size: 14px; color: #b91c3c;');
+        console.log('%c', 'padding: 5px');
+        console.log('%csummer afternoons. corner stands. the anticipation.', 'font-size: 9px; color: #718096; font-style: italic;');
+
+        // Track visits
+        let visitCount = parseInt(localStorage.getItem('ruby_visits') || '0');
+        visitCount++;
+        localStorage.setItem('ruby_visits', visitCount.toString());
+
+        if (visitCount > 1) {
+            memoryIndicator.classList.add('remembered');
+            setTimeout(() => {
+                showMessage('it remembers your return');
+            }, 2000);
+        }
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Crystal scatter effect
+        function createCrystal(x, y) {
+            const crystal = document.createElement('div');
+            crystal.className = 'crystal';
+
+            const moundRect = mound.getBoundingClientRect();
+            crystal.style.left = (x - moundRect.left) + 'px';
+            crystal.style.top = (y - moundRect.top) + 'px';
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 30 + Math.random() * 50;
+            crystal.style.setProperty('--scatter-x', Math.cos(angle) * distance + 'px');
+            crystal.style.setProperty('--scatter-y', Math.sin(angle) * distance + 'px');
+
+            mound.appendChild(crystal);
+
+            requestAnimationFrame(() => {
+                crystal.classList.add('scattered');
+            });
+
+            setTimeout(() => crystal.remove(), 1500);
+        }
+
+        // Scrape trail effect
+        function createScrapeTrail(x1, y1, x2, y2) {
+            const trail = document.createElement('div');
+            trail.className = 'scrape-trail';
+
+            const moundRect = mound.getBoundingClientRect();
+            const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+            trail.style.left = (x1 - moundRect.left) + 'px';
+            trail.style.top = (y1 - moundRect.top) + 'px';
+            trail.style.width = length + 'px';
+            trail.style.transform = `rotate(${angle}deg)`;
+            trail.style.transformOrigin = '0 50%';
+
+            mound.appendChild(trail);
+
+            setTimeout(() => trail.remove(), 2000);
+        }
+
+        // Frost particle effect
+        function createFrostParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'frost-particle';
+            particle.style.left = (20 + Math.random() * 60) + '%';
+            particle.style.top = (Math.random() * 30) + '%';
+            document.body.appendChild(particle);
+
+            requestAnimationFrame(() => {
+                particle.classList.add('active');
+            });
+
+            setTimeout(() => particle.remove(), 4000);
+        }
+
+        // Scraping interaction
+        function handleScrape(e) {
+            if (!isScraping) return;
+
+            const moundRect = mound.getBoundingClientRect();
+            const x = e.clientX || e.touches[0].clientX;
+            const y = e.clientY || e.touches[0].clientY;
+
+            // Check if within mound bounds
+            if (x < moundRect.left || x > moundRect.right ||
+                y < moundRect.top || y > moundRect.bottom) {
+                return;
+            }
+
+            const dx = x - lastMousePos.x;
+            const dy = y - lastMousePos.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 5) {
+                // Create crystals along the path
+                const crystalCount = Math.min(5, Math.floor(distance / 10));
+                for (let i = 0; i < crystalCount; i++) {
+                    setTimeout(() => {
+                        createCrystal(
+                            lastMousePos.x + (dx * i / crystalCount),
+                            lastMousePos.y + (dy * i / crystalCount)
+                        );
+                    }, i * 30);
+                }
+
+                // Create scrape trail
+                createScrapeTrail(lastMousePos.x, lastMousePos.y, x, y);
+
+                // Update scrape count
+                scrapeCount++;
+                counter.textContent = `yielded: ${scrapeCount}`;
+                counter.classList.add('active');
+                setTimeout(() => counter.classList.remove('active'), 500);
+
+                // Increase cold level (page gets "colder")
+                coldLevel = Math.min(100, coldLevel + 0.5);
+                updateColdLevel();
+
+                // Show sound visualization
+                if (soundMode) {
+                    soundWave.classList.add('visible');
+                }
+
+                // Show messages at milestones
+                if (scrapeCount === 1) {
+                    showMessage(messages[0]);
+                } else if (scrapeCount === 10) {
+                    showMessage(messages[1]);
+                } else if (scrapeCount === 25) {
+                    showMessage(messages[3]);
+                } else if (scrapeCount === 50) {
+                    showMessage(messages[5]);
+                    console.log('%cthe yielding continues', 'font-size: 10px; color: #b91c3c; font-style: italic;');
+                } else if (scrapeCount === 100) {
+                    showMessage(messages[9]);
+                    console.log('%c', 'padding: 5px');
+                    console.log('%csummer afternoons', 'font-size: 12px; color: #b91c3c; font-style: italic;');
+                    console.log('%cthe anticipation', 'font-size: 12px; color: #b91c3c; font-style: italic;');
+                    console.log('%cthe first scrape', 'font-size: 12px; color: #b91c3c; font-style: italic;');
+                } else if (scrapeCount % 50 === 0 && scrapeCount > 100) {
+                    showMessage(messages[Math.floor(Math.random() * messages.length)]);
+                }
+
+                lastMousePos = { x, y };
+                lastScrapeTime = Date.now();
+                lastMovementTime = Date.now();
+
+                // Reset crystal reform timer
+                clearTimeout(crystalReformTimer);
+                crystalReformTimer = setTimeout(reformCrystals, 3000);
+            }
+        }
+
+        function updateColdLevel() {
+            tempFill.style.height = coldLevel + '%';
+
+            if (coldLevel > 80) {
+                tempIndicator.classList.add('cold');
+            } else {
+                tempIndicator.classList.remove('cold');
+            }
+        }
+
+        function reformCrystals() {
+            // Crystals reform when still
+            coldLevel = Math.max(50, coldLevel - 10);
+            updateColdLevel();
+
+            showStillnessMessage(stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)]);
+
+            // Create a few frost particles as it reforms
+            for (let i = 0; i < 3; i++) {
+                setTimeout(createFrostParticle, i * 500);
+            }
+
+            console.log('%cthe crystals reform', 'font-size: 9px; color: #718096; font-style: italic;');
+        }
+
+        function showMessage(text) {
+            message.textContent = text;
+            message.classList.add('visible');
+            setTimeout(() => message.classList.remove('visible'), 4000);
+        }
+
+        function showStillnessMessage(text) {
+            stillnessMessage.textContent = text;
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 5000);
+        }
+
+        function showPatienceReward(text) {
+            patienceReward.textContent = text;
+            patienceReward.classList.add('visible');
+            setTimeout(() => patienceReward.classList.remove('visible'), 8000);
+        }
+
+        // Mouse/touch events for scraping
+        mound.addEventListener('mousedown', (e) => {
+            isScraping = true;
+            lastMousePos = { x: e.clientX, y: e.clientY };
+            mound.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            lastMovementTime = Date.now();
+            if (isScraping) {
+                handleScrape(e);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isScraping = false;
+            mound.style.cursor = 'crosshair';
+            soundWave.classList.remove('visible');
+        });
+
+        // Touch events
+        mound.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isScraping = true;
+            lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            lastMovementTime = Date.now();
+            if (isScraping) {
+                handleScrape(e);
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            isScraping = false;
+            soundWave.classList.remove('visible');
+        });
+
+        // Stillness detection
+        setInterval(() => {
+            const stillnessDuration = (Date.now() - lastMovementTime) / 1000;
+
+            if (stillnessDuration > 5 && scrapeCount > 0) {
+                // Page slowly warms (cold dissipates)
+                coldLevel = Math.max(30, coldLevel - 1);
+                updateColdLevel();
+            }
+
+            if (stillnessDuration > 10 && scrapeCount > 10) {
+                reformCrystals();
+                lastMovementTime = Date.now(); // Reset to prevent constant reforming
+            }
+
+            if (stillnessDuration > 30 && scrapeCount > 20) {
+                showPatienceReward(patienceMessages[Math.floor(Math.random() * patienceMessages.length)]);
+                lastMovementTime = Date.now();
+            }
+        }, 1000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            lastMovementTime = Date.now();
+
+            if (e.code === 'KeyC') {
+                document.body.classList.remove('summer');
+                document.body.classList.toggle('cold');
+                document.body.classList.toggle('frozen');
+                if (document.body.classList.contains('frozen')) {
+                    coldLevel = 100;
+                    updateColdLevel();
+                    console.log('%cthe cold deepens', 'font-size: 10px; color: #5a6a7a; font-style: italic;');
+                }
+            }
+
+            if (e.code === 'KeyS') {
+                document.body.classList.remove('cold', 'frozen');
+                document.body.classList.toggle('summer');
+                if (document.body.classList.contains('summer')) {
+                    coldLevel = Math.max(20, coldLevel - 30);
+                    updateColdLevel();
+                    console.log('%cthe heat presses down', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                    console.log('%cbut relief waits', 'font-size: 10px; color: #d4a056; font-style: italic;');
+                }
+            }
+
+            if (e.code === 'KeyR') {
+                // Reform / reset
+                scrapeCount = 0;
+                coldLevel = 100;
+                counter.textContent = 'yielded: 0';
+                updateColdLevel();
+                document.body.classList.remove('cold', 'frozen', 'summer');
+
+                // Visual reform effect
+                mound.style.transition = 'transform 1s ease, box-shadow 1s ease';
+                mound.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    mound.style.transform = '';
+                }, 1000);
+
+                showStillnessMessage('it remembers its original shape');
+                console.log('%creformed', 'font-size: 10px; color: #b91c3c;');
+            }
+
+            if (e.code === 'KeyM') {
+                // Toggle sound mode (visual representation)
+                soundMode = !soundMode;
+                if (soundMode) {
+                    console.log('%clistening to the scrape', 'font-size: 10px; color: #b91c3c; font-style: italic;');
+                }
+            }
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Quick scrape burst
+                const moundRect = mound.getBoundingClientRect();
+                const centerX = moundRect.left + moundRect.width / 2;
+                const centerY = moundRect.top + moundRect.height / 2;
+
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        createCrystal(
+                            centerX + (Math.random() - 0.5) * 100,
+                            centerY + (Math.random() - 0.5) * 60
+                        );
+                    }, i * 50);
+                }
+
+                scrapeCount += 10;
+                counter.textContent = `yielded: ${scrapeCount}`;
+            }
+
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Secret: arrow sequence reveals hidden message
+        let arrowSequence = [];
+        const targetSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown'];
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code.startsWith('Arrow')) {
+                arrowSequence.push(e.code);
+                if (arrowSequence.length > 4) arrowSequence.shift();
+
+                if (arrowSequence.join(',') === targetSequence.join(',')) {
+                    showPatienceReward('the first summer. the first taste. it never leaves.');
+                    console.log('%c', 'padding: 10px');
+                    console.log('%cthe color of summer', 'font-size: 14px; color: #b91c3c; font-style: italic;');
+                    console.log('%cthe cold of memory', 'font-size: 14px; color: #b91c3c; font-style: italic;');
+                    console.log('%csome things stay', 'font-size: 14px; color: #b91c3c; font-style: italic;');
+                    arrowSequence = [];
+                }
+            }
+        });
+
+        // Ambient frost particles occasionally
+        setInterval(() => {
+            if (coldLevel > 70 && Math.random() < 0.3) {
+                createFrostParticle();
+            }
+        }, 3000);
+
+        // Double-click on mound for extra crystals
+        mound.addEventListener('dblclick', (e) => {
+            const burstCount = 15;
+            for (let i = 0; i < burstCount; i++) {
+                setTimeout(() => {
+                    createCrystal(e.clientX, e.clientY);
+                }, i * 30);
+            }
+
+            scrapeCount += 5;
+            counter.textContent = `yielded: ${scrapeCount}`;
+            showMessage('the center holds the deepest color');
+        });
+
+        // Two minute patience reward
+        setTimeout(() => {
+            if (scrapeCount > 20) {
+                showPatienceReward('the cold knows those who stay');
+                console.log('%c', 'padding: 10px');
+                console.log('%cpatience', 'font-size: 14px; color: #b91c3c;');
+                console.log('%cis its own reward', 'font-size: 12px; color: #718096; font-style: italic;');
+            }
+        }, 120000);
+
+        // Initialize cold level display
+        updateColdLevel();
+    </script>
+</body>
+</html>

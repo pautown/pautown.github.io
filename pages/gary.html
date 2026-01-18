@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gary - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            overflow-x: hidden;
+            transition: background 2s ease;
+        }
+
+        body.calculating {
+            background: linear-gradient(135deg, var(--bone) 0%, var(--paper) 50%, var(--bone) 100%);
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            padding: 2rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Section styling */
+        .section {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--bone-dark);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--slate);
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.15em;
+            text-transform: lowercase;
+        }
+
+        /* Input styling */
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate-light);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"],
+        input[type="date"] {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            color: var(--ink);
+            transition: all 0.4s ease;
+            letter-spacing: 0.02em;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--amber);
+            box-shadow: 0 0 20px rgba(212, 160, 86, 0.1);
+        }
+
+        input::placeholder {
+            color: var(--slate-light);
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        /* Calculate button */
+        .calculate-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: transparent;
+            border: 1px solid var(--slate-light);
+            color: var(--slate);
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            margin-top: 0.5rem;
+        }
+
+        .calculate-btn:hover {
+            border-color: var(--amber);
+            color: var(--amber-deep);
+        }
+
+        /* Result display */
+        .result-container {
+            margin-top: 2rem;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        .result-container.visible {
+            opacity: 1;
+        }
+
+        /* The sacred number */
+        .result-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            color: var(--ink);
+            text-align: center;
+            margin: 1rem 0;
+            letter-spacing: 0.1em;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .result-number::before,
+        .result-number::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 60px;
+            height: 1px;
+            background: var(--bone-dark);
+        }
+
+        .result-number::before {
+            right: calc(50% + 60px);
+        }
+
+        .result-number::after {
+            left: calc(50% + 60px);
+        }
+
+        .result-number.master {
+            color: var(--amber-deep);
+        }
+
+        .result-number.master::before,
+        .result-number.master::after {
+            background: var(--amber);
+        }
+
+        /* Reduction process visualization */
+        .reduction-steps {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--slate);
+            text-align: center;
+            margin: 1rem 0;
+            letter-spacing: 0.05em;
+            line-height: 2;
+        }
+
+        .reduction-step {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: stepReveal 0.6s ease forwards;
+        }
+
+        @keyframes stepReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reduction-arrow {
+            color: var(--amber);
+            margin: 0 0.5rem;
+        }
+
+        /* Letter breakdown */
+        .letter-breakdown {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.3rem;
+            margin: 1rem 0;
+        }
+
+        .letter-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.4rem;
+            min-width: 28px;
+            opacity: 0;
+            animation: letterFade 0.3s ease forwards;
+        }
+
+        @keyframes letterFade {
+            to { opacity: 1; }
+        }
+
+        .letter-char {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .letter-char.vowel {
+            color: var(--amber-deep);
+        }
+
+        .letter-char.consonant {
+            color: var(--slate-deep);
+        }
+
+        .letter-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            margin-top: 0.2rem;
+        }
+
+        /* Personality description */
+        .personality {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--paper);
+            border-left: 2px solid var(--amber);
+        }
+
+        .personality-text {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--slate-deep);
+            line-height: 1.8;
+        }
+
+        /* Choose your destiny */
+        .destiny-choice {
+            margin-top: 2rem;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 1.5s ease 2s forwards;
+        }
+
+        .destiny-note {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate-light);
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .destiny-options {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .destiny-option {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--slate);
+            background: transparent;
+            border: 1px solid var(--bone-dark);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .destiny-option:hover {
+            border-color: var(--amber);
+            color: var(--amber-deep);
+        }
+
+        .destiny-adjusted {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--amber);
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 1s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .destiny-adjusted.visible {
+            opacity: 0.7;
+        }
+
+        /* Gary says */
+        .gary-says {
+            margin-top: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate-light);
+            text-align: center;
+            letter-spacing: 0.05em;
+        }
+
+        .gary-says::before {
+            content: 'gary says: ';
+            color: var(--amber);
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: center;
+            letter-spacing: 0.05em;
+        }
+
+        body:hover .disclaimer {
+            opacity: 0.3;
+        }
+
+        /* Stillness secrets */
+        .stillness-secret {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            transition: opacity 3s ease;
+            pointer-events: none;
+        }
+
+        .stillness-secret.visible {
+            opacity: 0.4;
+        }
+
+        /* System selector */
+        .system-toggle {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .system-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: transparent;
+            border: 1px solid var(--bone-dark);
+            color: var(--slate-light);
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .system-btn.active {
+            border-color: var(--amber);
+            color: var(--amber-deep);
+        }
+
+        .system-btn:hover {
+            border-color: var(--slate);
+        }
+
+        /* Key hint */
+        .key-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate-light);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 2;
+        }
+
+        body:hover .key-hint {
+            opacity: 0.2;
+        }
+
+        /* Right-click whisper */
+        .whisper {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--amber);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s ease, transform 2s ease;
+            z-index: 100;
+        }
+
+        /* Calculation time */
+        .calc-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate-light);
+            text-align: center;
+            margin-top: 0.5rem;
+            opacity: 0.4;
+        }
+
+        /* Number interpretation header */
+        .interpretation-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--slate-light);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .result-number {
+                font-size: 3rem;
+            }
+
+            .result-number::before,
+            .result-number::after {
+                width: 30px;
+            }
+
+            .result-number::before {
+                right: calc(50% + 40px);
+            }
+
+            .result-number::after {
+                left: calc(50% + 40px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">return</a>
+
+    <div class="container">
+        <!-- Life Path Calculator -->
+        <div class="section" id="lifePathSection">
+            <h2 class="section-title">life path number</h2>
+            <div class="input-group">
+                <label class="input-label">birthdate</label>
+                <input type="date" id="birthdate" />
+            </div>
+            <button class="calculate-btn" id="calcLifePath">calculate essence</button>
+            <div class="result-container" id="lifePathResult">
+                <div class="reduction-steps" id="lifePathSteps"></div>
+                <div class="result-number" id="lifePathNumber"></div>
+                <div class="calc-time" id="lifePathTime"></div>
+                <div class="personality" id="lifePathPersonality">
+                    <div class="interpretation-header">interpretation</div>
+                    <p class="personality-text" id="lifePathText"></p>
+                </div>
+                <div class="destiny-choice" id="lifePathChoice">
+                    <p class="destiny-note">your number is <span id="lifePathCalc"></span>. unless you'd prefer it wasn't.</p>
+                    <div class="destiny-options" id="lifePathOptions"></div>
+                    <p class="destiny-adjusted" id="lifePathAdjusted"></p>
+                </div>
+                <p class="gary-says" id="lifePathGary"></p>
+            </div>
+        </div>
+
+        <!-- Name Calculator -->
+        <div class="section" id="nameSection">
+            <h2 class="section-title">name gematria</h2>
+            <div class="system-toggle">
+                <button class="system-btn active" data-system="pythagorean">pythagorean</button>
+                <button class="system-btn" data-system="chaldean">chaldean</button>
+            </div>
+            <div class="input-group">
+                <label class="input-label">full birth name</label>
+                <input type="text" id="fullName" placeholder="the name you were given" />
+            </div>
+            <button class="calculate-btn" id="calcName">reveal the numbers</button>
+            <div class="result-container" id="nameResult">
+                <div class="letter-breakdown" id="letterBreakdown"></div>
+                <div class="reduction-steps" id="nameSteps"></div>
+
+                <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem; margin-top: 2rem;">
+                    <!-- Expression Number -->
+                    <div style="text-align: center;">
+                        <div class="interpretation-header">expression / destiny</div>
+                        <div class="result-number" id="expressionNumber" style="font-size: 2.5rem;"></div>
+                        <div class="reduction-steps" id="expressionSteps" style="font-size: 0.6rem;"></div>
+                    </div>
+
+                    <!-- Soul Urge Number -->
+                    <div style="text-align: center;">
+                        <div class="interpretation-header">soul urge (vowels)</div>
+                        <div class="result-number" id="soulNumber" style="font-size: 2.5rem;"></div>
+                        <div class="reduction-steps" id="soulSteps" style="font-size: 0.6rem;"></div>
+                    </div>
+
+                    <!-- Personality Number -->
+                    <div style="text-align: center;">
+                        <div class="interpretation-header">personality (consonants)</div>
+                        <div class="result-number" id="personalityNumber" style="font-size: 2.5rem;"></div>
+                        <div class="reduction-steps" id="personalitySteps" style="font-size: 0.6rem;"></div>
+                    </div>
+                </div>
+
+                <div class="calc-time" id="nameTime"></div>
+
+                <div class="personality" id="namePersonality">
+                    <div class="interpretation-header">expression meaning</div>
+                    <p class="personality-text" id="expressionText"></p>
+                </div>
+                <div class="personality" id="soulPersonality" style="margin-top: 1rem; border-left-color: var(--green-orb);">
+                    <div class="interpretation-header">soul urge meaning</div>
+                    <p class="personality-text" id="soulText"></p>
+                </div>
+                <div class="personality" id="personalityPersonality" style="margin-top: 1rem; border-left-color: var(--slate);">
+                    <div class="interpretation-header">personality meaning</div>
+                    <p class="personality-text" id="personalityText"></p>
+                </div>
+
+                <div class="destiny-choice" id="nameChoice">
+                    <p class="destiny-note">your expression number is <span id="nameCalc"></span>. but math has been wrong before.</p>
+                    <div class="destiny-options" id="nameOptions"></div>
+                    <p class="destiny-adjusted" id="nameAdjusted"></p>
+                </div>
+                <p class="gary-says" id="nameGary"></p>
+            </div>
+        </div>
+
+        <!-- Date Energy Calculator -->
+        <div class="section" id="dateSection">
+            <h2 class="section-title">date energy</h2>
+            <div class="input-group">
+                <label class="input-label">any date</label>
+                <input type="date" id="anyDate" />
+            </div>
+            <button class="calculate-btn" id="calcDate">feel the day</button>
+            <div class="result-container" id="dateResult">
+                <div class="reduction-steps" id="dateSteps"></div>
+                <div class="result-number" id="dateNumber"></div>
+                <div class="calc-time" id="dateTime"></div>
+                <div class="personality" id="datePersonality">
+                    <div class="interpretation-header">this day's energy</div>
+                    <p class="personality-text" id="dateText"></p>
+                </div>
+                <p class="gary-says" id="dateGary"></p>
+            </div>
+        </div>
+    </div>
+
+    <p class="disclaimer">numerological disclaimer: these numbers are as real as you need them to be</p>
+
+    <div class="stillness-secret" id="stillnessSecret1" style="top: 20%; left: 10%;">every number is also its opposite</div>
+    <div class="stillness-secret" id="stillnessSecret2" style="top: 70%; right: 10%;">gary knew you'd be here</div>
+    <div class="stillness-secret" id="stillnessSecret3" style="bottom: 20%; left: 20%;">the numbers are patient</div>
+
+    <div class="key-hint">
+        [g] gary speaks<br>
+        [r] reset all<br>
+        [t] today's energy
+    </div>
+
+    <script>
+        // Pythagorean system: A=1, B=2, C=3... I=9, J=1, K=2...
+        const PYTHAGOREAN = {
+            A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9,
+            J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9,
+            S: 1, T: 2, U: 3, V: 4, W: 5, X: 6, Y: 7, Z: 8
+        };
+
+        // Chaldean system: different values, no 9
+        const CHALDEAN = {
+            A: 1, B: 2, C: 3, D: 4, E: 5, F: 8, G: 3, H: 5, I: 1,
+            J: 1, K: 2, L: 3, M: 4, N: 5, O: 7, P: 8, Q: 1, R: 2,
+            S: 3, T: 4, U: 6, V: 6, W: 6, X: 5, Y: 1, Z: 7
+        };
+
+        const VOWELS = ['A', 'E', 'I', 'O', 'U'];
+
+        let currentSystem = 'pythagorean';
+
+        // Personality descriptions - funny, warm, gently absurd
+        const PERSONALITIES = {
+            1: "You are the beginning of things. This is exhausting. You arrive first at parties and also at conclusions. Your independence is admirable and also, frankly, suspicious. You lead even when no one asked you to. Especially then.",
+            2: "You are the space between two people talking. The pause before the laugh. Diplomacy runs through you like water through a river that really, really wants everyone to get along. Your sensitivity is a gift you didn't ask for but use constantly.",
+            3: "Creativity leaks from you like light from a cracked door. You can't help making things beautiful, interesting, or at least weird in a good way. Expression is not optional for you. It is as necessary as breathing, possibly more so.",
+            4: "You are the foundation. The reliable one. The one who shows up. This is both a blessing and a curse, because now everyone expects you to show up. Always. You build things that last. Including grudges, occasionally.",
+            5: "Change follows you like a persistent cat. You cannot sit still because sitting still is a form of death to you. Adventure is not a choice but a requirement. Routine is your nemesis. You've probably already stopped reading this to do something else.",
+            6: "Responsibility found you early and never let go. You care for others with a devotion that borders on suspicious. Home is sacred. Family is everything. You would reorganize the cosmos if it seemed untidy. It does. You're working on it.",
+            7: "You know things you shouldn't know. This is not a compliment or a criticism, just a fact. Libraries feel like home. So do caves. Analysis is your love language. Mystery is not a problem to solve but a place to live.",
+            8: "Power flows through you like electricity through copper. You understand material reality in ways others find either impressive or threatening. Success is not a hope but an expectation. The universe owes you something, and you intend to collect.",
+            9: "You are the end of things, which means you understand everything that came before. Wisdom accumulated across lifetimes, possibly literally. Humanitarianism is not a choice but a compulsion. You give until empty, then give more.",
+            11: "A master number. You didn't ask for this. The universe has opinions about you specifically. Intuition arrives like lightning, illuminating everything, blinding you temporarily. You walk between worlds. Neither one is entirely comfortable.",
+            22: "The master builder. You see blueprints in the air that others cannot see. Dreams become reality through your hands, whether you want them to or not. The weight of potential presses on you. It is both gift and burden.",
+            33: "The master teacher. You heal without trying. Words emerge from you that others need to hear, sometimes before you know you're saying them. Compassion is your native language. The world leans on you. You're used to it."
+        };
+
+        // Soul Urge descriptions
+        const SOUL_URGE = {
+            1: "Your soul urges... urges. Obviously. It urges independence, recognition, and being first. Deep down, you want to create something that is entirely, unmistakably yours.",
+            2: "Your soul craves harmony like a tuning fork craves its perfect pitch. Partnership. Peace. The deep satisfaction of making things work between people.",
+            3: "Expression. That's what your soul urges. To create, to speak, to make beautiful things that didn't exist before you imagined them.",
+            4: "Security. Foundation. The knowledge that what you build will stand. Your soul wants to construct something that outlasts you.",
+            5: "Freedom, obviously. Your soul urges variety, adventure, the next horizon. Standing still is not an option your soul recognizes.",
+            6: "Love. Home. Taking care of things. Your soul urges you toward nurturing, toward creating sanctuaries, toward making others safe.",
+            7: "Understanding. Your soul urges you toward truth, toward the hidden meanings beneath the surface. Knowledge is not optional for you.",
+            8: "Mastery. Your soul urges achievement, influence, the power to shape reality according to your vision. Small dreams don't interest it.",
+            9: "Completion. Your soul urges you toward healing, toward making the world better, toward finishing what others started.",
+            11: "Your soul urges illumination. It wants to channel something larger than yourself. This is inconvenient but non-negotiable.",
+            22: "Your soul urges construction on a scale that makes others nervous. Grand visions. Lasting legacies. The impossible made manifest.",
+            33: "Your soul urges healing. Teaching. Lifting others up. It is not content with small kindnesses. It wants to transform."
+        };
+
+        // Personality (consonant) descriptions
+        const PERSONALITY_DESC = {
+            1: "You present as confident. Perhaps too confident. Others see a leader before they see anything else.",
+            2: "You appear gentle, cooperative, the one who smooths rough edges. A diplomat in all visible ways.",
+            3: "Charm radiates from you visibly. Others see creativity, expressiveness, a certain magnetic sparkle.",
+            4: "Solid. Reliable. Others see someone they can depend on, possibly take advantage of, though they wouldn't dare.",
+            5: "Dynamic. Restless. Others see someone always in motion, always seeking the next thing.",
+            6: "Nurturing. Responsible. Others see a caretaker, a parent figure, whether children are involved or not.",
+            7: "Mysterious. Thoughtful. Others see depth, possibly inaccessibility. You seem to know things.",
+            8: "Powerful. Others see authority, competence, someone not to be crossed lightly.",
+            9: "Wise. Worldly. Others see someone who has seen much and judged little. Mostly.",
+            11: "Intense. Others see illumination, possibly too much of it. You're a lot, in a good way.",
+            22: "Formidable. Others see capability on a grand scale. They're not wrong to be slightly intimidated.",
+            33: "Radiant. Others see someone who heals by presence alone. The helper. The teacher. The light."
+        };
+
+        // Gary quotes
+        const GARY_QUOTES = [
+            "all numbers are made up. but some are made up more carefully than others.",
+            "your essence was calculated in 0.003 seconds. the universe is efficient.",
+            "the numbers have spoken. they said: 'we're just numbers.'",
+            "numerology is the science of making patterns feel meaningful. it's working.",
+            "these calculations are accurate to the fourteenth decimal of truthiness.",
+            "the ancient mystics would recognize this number. they might not approve.",
+            "mathematics and magic are the same thing with different fonts.",
+            "this number has been yours since before you were born. suspicious.",
+            "the universe spent considerable effort arranging these digits. probably.",
+            "gary has been waiting to tell you this. gary is patient.",
+            "some numbers are more equal than others. yours is one of them.",
+            "the probability of this exact number is 1 in 9. or 1 in 1. depends how you count.",
+            "your ancestors knew this number. they whispered it to the void. the void whispered back."
+        ];
+
+        // Stillness detection
+        let lastActivity = Date.now();
+        let stillnessRevealed = 0;
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+            if (elapsed > 6000 && stillnessRevealed < 1) {
+                document.getElementById('stillnessSecret1').classList.add('visible');
+                stillnessRevealed = 1;
+            }
+            if (elapsed > 12000 && stillnessRevealed < 2) {
+                document.getElementById('stillnessSecret2').classList.add('visible');
+                stillnessRevealed = 2;
+            }
+            if (elapsed > 20000 && stillnessRevealed < 3) {
+                document.getElementById('stillnessSecret3').classList.add('visible');
+                stillnessRevealed = 3;
+            }
+        }
+
+        setInterval(checkStillness, 1000);
+
+        document.addEventListener('mousemove', () => {
+            lastActivity = Date.now();
+            document.querySelectorAll('.stillness-secret').forEach(el => el.classList.remove('visible'));
+            stillnessRevealed = 0;
+        });
+
+        // Reduce to single digit or master number
+        function reduceNumber(num, keepMaster = true) {
+            const steps = [num];
+            while (num > 9) {
+                if (keepMaster && (num === 11 || num === 22 || num === 33)) break;
+                const digits = String(num).split('').map(Number);
+                num = digits.reduce((a, b) => a + b, 0);
+                steps.push(num);
+            }
+            return { result: num, steps };
+        }
+
+        // Format reduction steps
+        function formatSteps(steps, delays = true) {
+            return steps.map((step, i) => {
+                const delay = delays ? `animation-delay: ${i * 0.3}s` : '';
+                const arrow = i < steps.length - 1 ? '<span class="reduction-arrow">→</span>' : '';
+                return `<span class="reduction-step" style="${delay}">${step}</span>${arrow}`;
+            }).join('');
+        }
+
+        // Calculate Life Path Number
+        function calculateLifePath(dateStr) {
+            const start = performance.now();
+            const [year, month, day] = dateStr.split('-').map(Number);
+
+            // Reduce each component
+            const monthReduced = reduceNumber(month);
+            const dayReduced = reduceNumber(day);
+            const yearReduced = reduceNumber(year);
+
+            // Sum and reduce
+            const sum = monthReduced.result + dayReduced.result + yearReduced.result;
+            const final = reduceNumber(sum);
+
+            const elapsed = performance.now() - start;
+
+            // Build detailed steps
+            const detailSteps = [];
+            detailSteps.push(`(${month}=${monthReduced.result}) + (${day}→${dayReduced.steps.join('→')}) + (${year}→${yearReduced.steps.join('→')})`);
+            detailSteps.push(`${monthReduced.result} + ${dayReduced.result} + ${yearReduced.result} = ${sum}`);
+            if (final.steps.length > 1) {
+                detailSteps.push(final.steps.join(' → '));
+            }
+
+            return {
+                result: final.result,
+                steps: detailSteps,
+                elapsed: elapsed.toFixed(3)
+            };
+        }
+
+        // Calculate name numbers
+        function calculateName(name, system = 'pythagorean') {
+            const start = performance.now();
+            const letters = name.toUpperCase().replace(/[^A-Z]/g, '').split('');
+            const values = system === 'pythagorean' ? PYTHAGOREAN : CHALDEAN;
+
+            let vowelSum = 0;
+            let consonantSum = 0;
+            let totalSum = 0;
+
+            const breakdown = letters.map(letter => {
+                const value = values[letter] || 0;
+                const isVowel = VOWELS.includes(letter);
+                if (isVowel) vowelSum += value;
+                else consonantSum += value;
+                totalSum += value;
+                return { letter, value, isVowel };
+            });
+
+            const expression = reduceNumber(totalSum);
+            const soul = reduceNumber(vowelSum);
+            const personality = reduceNumber(consonantSum);
+
+            const elapsed = performance.now() - start;
+
+            return {
+                breakdown,
+                expression: { result: expression.result, sum: totalSum, steps: expression.steps },
+                soul: { result: soul.result, sum: vowelSum, steps: soul.steps },
+                personality: { result: personality.result, sum: consonantSum, steps: personality.steps },
+                elapsed: elapsed.toFixed(3)
+            };
+        }
+
+        // Calculate date energy
+        function calculateDate(dateStr) {
+            const start = performance.now();
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const sum = year + month + day;
+            const final = reduceNumber(sum);
+            const elapsed = performance.now() - start;
+
+            return {
+                result: final.result,
+                steps: [`${year} + ${month} + ${day} = ${sum}`, ...final.steps.slice(1).map((s, i) => i === 0 ? `${sum} → ${s}` : s)],
+                elapsed: elapsed.toFixed(3)
+            };
+        }
+
+        // Generate alternative numbers
+        function getAlternatives(num) {
+            const all = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33];
+            return all.filter(n => n !== num).sort(() => Math.random() - 0.5).slice(0, 3);
+        }
+
+        // Get random Gary quote
+        function getGaryQuote() {
+            return GARY_QUOTES[Math.floor(Math.random() * GARY_QUOTES.length)];
+        }
+
+        // Display life path result
+        function displayLifePath(result) {
+            const container = document.getElementById('lifePathResult');
+            const stepsEl = document.getElementById('lifePathSteps');
+            const numberEl = document.getElementById('lifePathNumber');
+            const timeEl = document.getElementById('lifePathTime');
+            const textEl = document.getElementById('lifePathText');
+            const calcEl = document.getElementById('lifePathCalc');
+            const optionsEl = document.getElementById('lifePathOptions');
+            const adjustedEl = document.getElementById('lifePathAdjusted');
+            const garyEl = document.getElementById('lifePathGary');
+
+            document.body.classList.add('calculating');
+            setTimeout(() => document.body.classList.remove('calculating'), 2000);
+
+            stepsEl.innerHTML = result.steps.map((step, i) =>
+                `<span class="reduction-step" style="animation-delay: ${i * 0.4}s">${step}</span><br>`
+            ).join('');
+
+            numberEl.textContent = result.result;
+            numberEl.className = 'result-number' + ([11, 22, 33].includes(result.result) ? ' master' : '');
+
+            timeEl.textContent = `the universe has calculated your essence. it took ${result.elapsed} seconds.`;
+
+            textEl.textContent = PERSONALITIES[result.result];
+            calcEl.textContent = result.result;
+
+            // Generate alternatives
+            const alts = getAlternatives(result.result);
+            optionsEl.innerHTML = alts.map(n =>
+                `<button class="destiny-option" data-number="${n}">${n}</button>`
+            ).join('');
+
+            optionsEl.querySelectorAll('.destiny-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const newNum = parseInt(btn.dataset.number);
+                    numberEl.textContent = newNum;
+                    numberEl.className = 'result-number' + ([11, 22, 33].includes(newNum) ? ' master' : '');
+                    textEl.textContent = PERSONALITIES[newNum];
+                    adjustedEl.textContent = 'excellent choice. the numbers have been... adjusted.';
+                    adjustedEl.classList.add('visible');
+                });
+            });
+
+            garyEl.textContent = getGaryQuote();
+
+            container.classList.add('visible');
+        }
+
+        // Display name result
+        function displayName(result) {
+            const container = document.getElementById('nameResult');
+            const breakdownEl = document.getElementById('letterBreakdown');
+            const expressionEl = document.getElementById('expressionNumber');
+            const soulEl = document.getElementById('soulNumber');
+            const personalityEl = document.getElementById('personalityNumber');
+            const expressionStepsEl = document.getElementById('expressionSteps');
+            const soulStepsEl = document.getElementById('soulSteps');
+            const personalityStepsEl = document.getElementById('personalitySteps');
+            const timeEl = document.getElementById('nameTime');
+            const expressionTextEl = document.getElementById('expressionText');
+            const soulTextEl = document.getElementById('soulText');
+            const personalityTextEl = document.getElementById('personalityText');
+            const calcEl = document.getElementById('nameCalc');
+            const optionsEl = document.getElementById('nameOptions');
+            const adjustedEl = document.getElementById('nameAdjusted');
+            const garyEl = document.getElementById('nameGary');
+
+            document.body.classList.add('calculating');
+            setTimeout(() => document.body.classList.remove('calculating'), 2000);
+
+            // Letter breakdown
+            breakdownEl.innerHTML = result.breakdown.map((item, i) => `
+                <div class="letter-item" style="animation-delay: ${i * 0.05}s">
+                    <span class="letter-char ${item.isVowel ? 'vowel' : 'consonant'}">${item.letter}</span>
+                    <span class="letter-value">${item.value}</span>
+                </div>
+            `).join('');
+
+            // Numbers
+            expressionEl.textContent = result.expression.result;
+            expressionEl.className = 'result-number' + ([11, 22, 33].includes(result.expression.result) ? ' master' : '');
+            expressionStepsEl.innerHTML = `${result.expression.sum} → ${formatSteps(result.expression.steps, false)}`;
+
+            soulEl.textContent = result.soul.result;
+            soulEl.className = 'result-number' + ([11, 22, 33].includes(result.soul.result) ? ' master' : '');
+            soulStepsEl.innerHTML = `${result.soul.sum} → ${formatSteps(result.soul.steps, false)}`;
+
+            personalityEl.textContent = result.personality.result;
+            personalityEl.className = 'result-number' + ([11, 22, 33].includes(result.personality.result) ? ' master' : '');
+            personalityStepsEl.innerHTML = `${result.personality.sum} → ${formatSteps(result.personality.steps, false)}`;
+
+            timeEl.textContent = `calculated in ${result.elapsed} seconds. the letters have spoken.`;
+
+            // Descriptions
+            expressionTextEl.textContent = PERSONALITIES[result.expression.result];
+            soulTextEl.textContent = SOUL_URGE[result.soul.result];
+            personalityTextEl.textContent = PERSONALITY_DESC[result.personality.result];
+
+            calcEl.textContent = result.expression.result;
+
+            // Alternatives
+            const alts = getAlternatives(result.expression.result);
+            optionsEl.innerHTML = alts.map(n =>
+                `<button class="destiny-option" data-number="${n}">${n}</button>`
+            ).join('');
+
+            optionsEl.querySelectorAll('.destiny-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const newNum = parseInt(btn.dataset.number);
+                    expressionEl.textContent = newNum;
+                    expressionEl.className = 'result-number' + ([11, 22, 33].includes(newNum) ? ' master' : '');
+                    expressionTextEl.textContent = PERSONALITIES[newNum];
+                    adjustedEl.textContent = 'the math has been reconsidered. reality is flexible.';
+                    adjustedEl.classList.add('visible');
+                });
+            });
+
+            garyEl.textContent = getGaryQuote();
+
+            container.classList.add('visible');
+        }
+
+        // Display date result
+        function displayDate(result) {
+            const container = document.getElementById('dateResult');
+            const stepsEl = document.getElementById('dateSteps');
+            const numberEl = document.getElementById('dateNumber');
+            const timeEl = document.getElementById('dateTime');
+            const textEl = document.getElementById('dateText');
+            const garyEl = document.getElementById('dateGary');
+
+            stepsEl.innerHTML = result.steps.map((step, i) =>
+                `<span class="reduction-step" style="animation-delay: ${i * 0.4}s">${step}</span><br>`
+            ).join('');
+
+            numberEl.textContent = result.result;
+            numberEl.className = 'result-number' + ([11, 22, 33].includes(result.result) ? ' master' : '');
+
+            timeEl.textContent = `the day's vibration, calculated in ${result.elapsed} seconds.`;
+
+            const dateEnergy = {
+                1: "A day for beginnings. Start things. The universe is paying attention to new ventures. Act independently. Be the first.",
+                2: "A day for partnerships. Cooperation flows. The energy favors collaboration, patience, and gentle persistence. Listen more than you speak.",
+                3: "Creative energy abounds. Express yourself. Make things. The day rewards joy, communication, and artistic endeavors.",
+                4: "Build something. The energy is grounded, practical. Good for foundations, planning, and hard work that will last.",
+                5: "Change is in the air. Adventure calls. The day favors flexibility, travel, and unexpected opportunities. Stay loose.",
+                6: "Home and family resonate strongly. Nurture. Care for others. The energy supports domestic harmony and responsibility.",
+                7: "A day for introspection. Study. Contemplate. The energy favors solitude, analysis, and seeking deeper truths.",
+                8: "Power moves today. Business matters flow. The energy supports material success, authority, and manifesting abundance.",
+                9: "Completion energy. Finish things. Give generously. The day favors humanitarian efforts and tying up loose ends.",
+                11: "Illumination. Insights arrive unbidden. The energy is heightened, intuitive. Pay attention to dreams and sudden knowing.",
+                22: "Master builder energy. Grand visions can become reality. The day supports ambitious plans and lasting creations.",
+                33: "Master healer energy. Teaching and healing flow naturally. The day supports uplifting others and selfless service."
+            };
+
+            textEl.textContent = dateEnergy[result.result];
+            garyEl.textContent = getGaryQuote();
+
+            container.classList.add('visible');
+        }
+
+        // Event listeners
+        document.getElementById('calcLifePath').addEventListener('click', () => {
+            const date = document.getElementById('birthdate').value;
+            if (!date) return;
+            const result = calculateLifePath(date);
+            displayLifePath(result);
+        });
+
+        document.getElementById('calcName').addEventListener('click', () => {
+            const name = document.getElementById('fullName').value;
+            if (!name.trim()) return;
+            const result = calculateName(name, currentSystem);
+            displayName(result);
+        });
+
+        document.getElementById('calcDate').addEventListener('click', () => {
+            const date = document.getElementById('anyDate').value;
+            if (!date) return;
+            const result = calculateDate(date);
+            displayDate(result);
+        });
+
+        // System toggle
+        document.querySelectorAll('.system-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.system-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSystem = btn.dataset.system;
+
+                // Recalculate if name exists
+                const name = document.getElementById('fullName').value;
+                if (name.trim()) {
+                    const result = calculateName(name, currentSystem);
+                    displayName(result);
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            lastActivity = Date.now();
+
+            if (e.code === 'KeyG') {
+                // Gary speaks
+                const whispers = document.querySelectorAll('.gary-says');
+                whispers.forEach(w => {
+                    if (w.textContent) {
+                        w.textContent = getGaryQuote();
+                    }
+                });
+            }
+
+            if (e.code === 'KeyR') {
+                // Reset
+                document.querySelectorAll('.result-container').forEach(c => c.classList.remove('visible'));
+                document.querySelectorAll('.destiny-adjusted').forEach(a => a.classList.remove('visible'));
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            }
+
+            if (e.code === 'KeyT') {
+                // Today's energy
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('anyDate').value = today;
+                const result = calculateDate(today);
+                displayDate(result);
+            }
+
+            if (e.code === 'Escape') {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Right-click whisper
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            const numberWhispers = [
+                'numbers don\'t lie, but they do exaggerate',
+                'gary sees all calculations',
+                'the void has a number. it\'s zero.',
+                '11:11 was not a coincidence',
+                'some digits are more equal than others',
+                'the number you need is the number you got',
+                'mathematics is just organized magic'
+            ];
+
+            const whisper = document.createElement('div');
+            whisper.className = 'whisper';
+            whisper.style.left = e.clientX + 'px';
+            whisper.style.top = e.clientY + 'px';
+            whisper.textContent = numberWhispers[Math.floor(Math.random() * numberWhispers.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.6';
+                whisper.style.transform = 'translateY(-15px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 800);
+            }, 2000);
+        });
+
+        // Console poetry
+        console.log('%c' + `
+    ·  ·  ·  gary  ·  ·  ·
+        `, 'font-size: 14px; color: #d4a056; font-family: serif;');
+
+        console.log('%cthe numbers were here before you', 'font-size: 11px; color: #4a5568; font-style: italic;');
+        console.log('%cthey will be here after', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log(' ');
+        console.log('%c[g] to hear gary', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c[t] for today\'s energy', 'font-size: 9px; color: #a0aec0;');
+        console.log('%c[r] to reset all', 'font-size: 9px; color: #a0aec0;');
+        console.log(' ');
+        console.log('%cnumerological disclaimer: gary is not a licensed numerologist.', 'font-size: 8px; color: #cbd5e0;');
+        console.log('%cgary is not licensed at all. gary is a concept.', 'font-size: 8px; color: #cbd5e0;');
+    </script>
+</body>
+</html>

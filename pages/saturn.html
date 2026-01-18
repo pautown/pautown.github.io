@@ -1,0 +1,3067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>saturn - townhaus</title>
+    <link rel="stylesheet" href="../shared.css">
+    <style>
+        :root {
+            /* Fear palette */
+            --void-deep: #0a0812;
+            --void: #12101a;
+            --purple-deep: #1a1025;
+            --purple-mid: #2d1f3d;
+            --midnight: #0f1729;
+            --midnight-blue: #1a2744;
+            --star-white: rgba(255, 255, 255, 0.7);
+            --star-dim: rgba(200, 210, 230, 0.3);
+
+            /* Peace palette */
+            --amber-warm: #d4a056;
+            --gold-soft: #f4e4c1;
+            --gold-glow: rgba(244, 228, 193, 0.4);
+
+            /* Mercury */
+            --quicksilver: #c0d8e8;
+            --mercury-bright: #e8f4ff;
+
+            /* Janus */
+            --janus-past: #3d2d4d;
+            --janus-future: #4d3d2d;
+
+            /* Parallax depth multipliers - archaeological layering */
+            --parallax-abyss: 0.008;
+            --parallax-deep: 0.02;
+            --parallax-bg: 0.04;
+            --parallax-mid: 0.07;
+            --parallax-fg: 0.14;
+
+            /* Dreamlike easing curves - buttery smooth, contemplative motion */
+            --ease-dream: cubic-bezier(0.23, 0.1, 0.1, 0.98);
+            --ease-contemplate: cubic-bezier(0.4, 0, 0.1, 1);
+            --ease-float: cubic-bezier(0.25, 0.46, 0.35, 1.02);
+            --ease-ethereal: cubic-bezier(0.16, 0.5, 0.2, 1);
+            --ease-breath: cubic-bezier(0.37, 0, 0.63, 1);
+            --ease-quicksilver: cubic-bezier(0.68, -0.2, 0.32, 1.3);
+            --ease-wake: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        body {
+            background: var(--void-deep);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: crosshair;
+            transition: background 8s var(--ease-dream);
+        }
+
+        /* ===== VIGNETTE - Changes with layer depth ===== */
+        .vignette {
+            position: fixed;
+            inset: -20%;
+            pointer-events: none;
+            z-index: 996;
+            transition: all 6s var(--ease-dream);
+            background: radial-gradient(ellipse 60% 60% at 50% 50%,
+                transparent 0%,
+                transparent 30%,
+                rgba(10, 8, 18, 0.9) 100%);
+        }
+
+        body[data-layer="1"] .vignette {
+            background: radial-gradient(ellipse 50% 50% at 50% 50%,
+                transparent 0%,
+                transparent 20%,
+                rgba(10, 8, 18, 0.95) 100%);
+        }
+
+        body[data-layer="2"] .vignette {
+            background: radial-gradient(ellipse 65% 65% at 50% 50%,
+                transparent 0%,
+                transparent 35%,
+                rgba(26, 16, 37, 0.8) 100%);
+        }
+
+        body[data-layer="3"] .vignette {
+            background: radial-gradient(ellipse 80% 80% at 50% 50%,
+                transparent 0%,
+                transparent 50%,
+                rgba(77, 61, 45, 0.5) 100%);
+        }
+
+        /* ===== LAYER VEILS - Archaeological peeling effect ===== */
+        .layer-veil {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 250;
+            opacity: 0;
+        }
+
+        .layer-veil.peeling {
+            animation: veilPeel 5s var(--ease-dream) forwards;
+        }
+
+        @keyframes veilPeel {
+            0% {
+                opacity: 0.9;
+                transform: scale(1);
+                filter: blur(0px);
+            }
+            20% {
+                opacity: 0.7;
+                filter: blur(1px);
+            }
+            50% {
+                opacity: 0.4;
+                transform: scale(1.05);
+                filter: blur(3px);
+            }
+            80% {
+                opacity: 0.15;
+                filter: blur(6px);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.12);
+                filter: blur(10px);
+            }
+        }
+
+        .layer-veil-fear {
+            background: radial-gradient(ellipse at center,
+                transparent 10%,
+                rgba(10, 8, 18, 0.95) 70%);
+        }
+
+        .layer-veil-understanding {
+            background: radial-gradient(ellipse at center,
+                transparent 20%,
+                rgba(45, 31, 61, 0.8) 70%);
+        }
+
+        .layer-veil-peace {
+            background: radial-gradient(ellipse at center,
+                transparent 30%,
+                rgba(212, 160, 86, 0.15) 70%);
+        }
+
+        /* ===== DEPTH LAYERS - Parallax containers ===== */
+        .depth-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            will-change: transform;
+            transition: transform 0.25s var(--ease-float);
+        }
+
+        .depth-abyss {
+            inset: -10%;
+            z-index: -1;
+        }
+
+        .depth-deep {
+            inset: -8%;
+            z-index: 0;
+        }
+
+        .depth-background {
+            inset: -5%;
+            z-index: 1;
+        }
+
+        .depth-midground {
+            z-index: 10;
+        }
+
+        .depth-foreground {
+            inset: -15%;
+            z-index: 45;
+        }
+
+        /* ===== HIDDEN DEPTH ELEMENTS - Emerge at deeper layers ===== */
+        .hidden-depths {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 5s var(--ease-dream);
+        }
+
+        body[data-layer="2"] .hidden-depths {
+            opacity: 0.2;
+        }
+
+        body[data-layer="3"] .hidden-depths {
+            opacity: 0.5;
+        }
+
+        .hidden-glyph {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--quicksilver);
+            opacity: 0.25;
+            transition: color 5s var(--ease-dream), opacity 5s var(--ease-dream), transform 4s var(--ease-float);
+        }
+
+        body[data-layer="3"] .hidden-glyph {
+            color: var(--amber-warm);
+            opacity: 0.4;
+        }
+
+        .hidden-glyph.ancient {
+            font-size: 3rem;
+            opacity: 0.15;
+        }
+
+        /* ===== FOREGROUND DUST MOTES ===== */
+        .foreground-dust {
+            position: fixed;
+            inset: -15%;
+            pointer-events: none;
+            z-index: 46;
+            will-change: transform;
+            transition: transform 0.2s var(--ease-float);
+        }
+
+        .dust-mote-fg {
+            position: absolute;
+            background: rgba(200, 210, 230, 0.2);
+            border-radius: 50%;
+            opacity: 0;
+            animation: dustFloat var(--float-dur, 25s) ease-in-out infinite,
+                       dustFade var(--fade-dur, 10s) ease-in-out infinite;
+            animation-delay: var(--del, 0s);
+        }
+
+        @keyframes dustFloat {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(var(--dx1, 15px), var(--dy1, -20px)); }
+            50% { transform: translate(var(--dx2, -10px), var(--dy2, -35px)); }
+            75% { transform: translate(var(--dx3, 8px), var(--dy3, -15px)); }
+        }
+
+        @keyframes dustFade {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: var(--max-op, 0.35); }
+        }
+
+        body[data-layer="3"] .dust-mote-fg {
+            background: rgba(212, 160, 86, 0.25);
+        }
+
+        /* ===== DEPTH REVEAL LINES - archaeological strata ===== */
+        .strata-lines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        body[data-layer="2"] .strata-lines {
+            opacity: 0.08;
+        }
+
+        body[data-layer="3"] .strata-lines {
+            opacity: 0.15;
+        }
+
+        .stratum {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--quicksilver) 20%,
+                var(--quicksilver) 80%,
+                transparent 100%);
+            opacity: 0.3;
+        }
+
+        body[data-layer="3"] .stratum {
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--amber-warm) 20%,
+                var(--amber-warm) 80%,
+                transparent 100%);
+        }
+
+        .back-link {
+            color: var(--star-dim);
+            opacity: 0.2;
+            z-index: 1000;
+        }
+
+        .back-link:hover {
+            opacity: 0.6;
+            color: var(--star-white);
+        }
+
+        /* Grain overlay */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 999;
+            mix-blend-mode: overlay;
+        }
+
+        /* Stars - layered depths */
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--star-white);
+            border-radius: 50%;
+            opacity: 0;
+            animation: starTwinkle var(--dur, 4s) var(--ease-breath) infinite;
+            animation-delay: var(--del, 0s);
+        }
+
+        .star.distant {
+            width: 1px;
+            height: 1px;
+            filter: blur(0.3px);
+        }
+
+        .star.golden {
+            background: #f4d9a0;
+            box-shadow: 0 0 2px rgba(244, 217, 160, 0.4);
+        }
+
+        .star.blue {
+            background: #c8d8f0;
+            box-shadow: 0 0 2px rgba(200, 216, 240, 0.3);
+        }
+
+        .star.near {
+            width: 3px;
+            height: 3px;
+            box-shadow: 0 0 4px var(--star-white);
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: var(--max-opacity, 0.6); transform: scale(1.08); }
+        }
+
+        /* Cosmic dust particles */
+        .cosmic-dust {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .dust-particle {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: rgba(200, 210, 230, 0.15);
+            border-radius: 50%;
+            animation: dustDrift var(--drift-dur, 60s) linear infinite;
+        }
+
+        @keyframes dustDrift {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: var(--dust-opacity, 0.15); }
+            90% { opacity: var(--dust-opacity, 0.15); }
+            100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+        }
+
+        /* Nebula gradients */
+        .nebula {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+            transition: opacity 3s ease;
+        }
+
+        .nebula-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .nebula-1 {
+            background: radial-gradient(ellipse 80% 50% at 20% 80%,
+                rgba(45, 31, 77, 0.3) 0%,
+                transparent 60%);
+        }
+
+        .nebula-2 {
+            background: radial-gradient(ellipse 60% 40% at 85% 20%,
+                rgba(26, 39, 68, 0.25) 0%,
+                transparent 50%);
+        }
+
+        .nebula-3 {
+            background: radial-gradient(ellipse 50% 60% at 50% 50%,
+                rgba(20, 15, 30, 0.2) 0%,
+                transparent 70%);
+            animation: nebulaBreathe 30s ease-in-out infinite;
+        }
+
+        @keyframes nebulaBreathe {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        body[data-layer="2"] .nebula { opacity: 0.5; }
+        body[data-layer="3"] .nebula { opacity: 0.3; }
+
+        body[data-layer="3"] .nebula-1 {
+            background: radial-gradient(ellipse 80% 50% at 20% 80%,
+                rgba(212, 160, 86, 0.15) 0%,
+                transparent 60%);
+        }
+
+        /* Aurora veil */
+        .aurora {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .aurora-band {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(45, 80, 100, 0.03) 30%,
+                rgba(60, 45, 80, 0.02) 60%,
+                transparent 100%);
+            animation: auroraShimmer 20s ease-in-out infinite;
+        }
+
+        .aurora-band:nth-child(2) {
+            animation-delay: -7s;
+            opacity: 0.7;
+        }
+
+        @keyframes auroraShimmer {
+            0%, 100% { transform: translateX(-5%) scaleY(1); opacity: 0.5; }
+            50% { transform: translateX(5%) scaleY(1.1); opacity: 0.8; }
+        }
+
+        body[data-layer="2"] .aurora { opacity: 0.4; }
+        body[data-layer="3"] .aurora { opacity: 0.6; }
+
+        body[data-layer="3"] .aurora-band {
+            background: linear-gradient(180deg,
+                transparent 0%,
+                rgba(212, 160, 86, 0.04) 30%,
+                rgba(244, 228, 193, 0.02) 60%,
+                transparent 100%);
+        }
+
+        /* God rays - subtle light emanation at peace layer */
+        .god-rays {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200vmax;
+            height: 200vmax;
+            pointer-events: none;
+            z-index: 8;
+            opacity: 0;
+            transition: opacity 4s ease;
+        }
+
+        .god-ray {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 50%;
+            background: linear-gradient(to top,
+                rgba(244, 228, 193, 0.15) 0%,
+                rgba(244, 228, 193, 0.05) 40%,
+                transparent 100%);
+            transform-origin: bottom center;
+            opacity: 0.4;
+        }
+
+        body[data-layer="3"] .god-rays {
+            opacity: 1;
+            animation: raysRotate 120s linear infinite;
+        }
+
+        @keyframes raysRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Saturn container */
+        .saturn-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmin;
+            height: 100vmin;
+            z-index: 10;
+            perspective: 1000px;
+        }
+
+        /* Saturn core */
+        .saturn-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--purple-mid) 0%,
+                var(--void-deep) 60%,
+                var(--void) 100%);
+            box-shadow:
+                0 0 60px rgba(26, 16, 37, 0.8),
+                inset 0 0 40px rgba(0, 0, 0, 0.6);
+            transition: all 6s var(--ease-dream), transform 1.2s var(--ease-float);
+            z-index: 20;
+            cursor: pointer;
+        }
+
+        .saturn-core.breathing {
+            animation: saturnBreathe 12s var(--ease-breath) infinite;
+        }
+
+        @keyframes saturnBreathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.025); }
+        }
+
+        .saturn-core.held {
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow:
+                0 0 100px rgba(212, 160, 86, 0.4),
+                inset 0 0 60px rgba(212, 160, 86, 0.2);
+        }
+
+        /* Core inner glow for deep stillness */
+        .saturn-core::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                rgba(212, 160, 86, 0) 0%,
+                rgba(212, 160, 86, 0) 100%);
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        .saturn-core.deep-peace::before {
+            opacity: 1;
+            background: radial-gradient(circle at center,
+                rgba(212, 160, 86, 0.3) 0%,
+                rgba(212, 160, 86, 0) 70%);
+            animation: innerPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes innerPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .saturn-core::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 70% 70%,
+                transparent 40%,
+                rgba(0, 0, 0, 0.4) 100%);
+        }
+
+        /* Rings container */
+        .rings {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(75deg);
+            transform-style: preserve-3d;
+            z-index: 15;
+            transition: transform 2s var(--ease-float);
+            cursor: grab;
+        }
+
+        .rings.dragging {
+            cursor: grabbing;
+            transition: none;
+        }
+
+        .rings.tilted {
+            transition: transform 3s var(--ease-contemplate);
+        }
+
+        /* Individual rings - with texture and density variations */
+        .ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 1px solid var(--star-dim);
+            transform: translate(-50%, -50%);
+            opacity: 0.3;
+            transition: all 5s var(--ease-dream);
+            pointer-events: none;
+        }
+
+        /* Ring density classes - some rings are denser, some sparser */
+        .ring-dense {
+            border-width: 3px;
+            border-style: double;
+        }
+
+        .ring-sparse {
+            border-style: dashed;
+            border-width: 1px;
+        }
+
+        .ring-shimmer {
+            animation: ringRotate 60s linear infinite, ringShimmer 8s ease-in-out infinite;
+        }
+
+        @keyframes ringShimmer {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Individual ring configurations with gaps and density */
+        .ring-1 {
+            width: 200px; height: 200px;
+            animation: ringRotate 60s linear infinite;
+            border-width: 2px;
+        }
+        .ring-2 {
+            width: 240px; height: 240px;
+            animation: ringRotate 70s linear infinite reverse;
+            border-width: 1px;
+            border-style: dashed;
+            opacity: 0.15; /* Cassini division - gap */
+        }
+        .ring-3 {
+            width: 280px; height: 280px;
+            animation: ringRotate 80s linear infinite, ringShimmer 12s ease-in-out infinite;
+            border-width: 4px;
+            border-style: double;
+        }
+        .ring-4 {
+            width: 340px; height: 340px;
+            animation: ringRotate 100s linear infinite reverse;
+            border-width: 1.5px;
+        }
+        .ring-5 {
+            width: 400px; height: 400px;
+            animation: ringRotate 120s linear infinite, ringShimmer 15s ease-in-out infinite;
+            animation-delay: 0s, -5s;
+            border-width: 3px;
+        }
+        .ring-6 {
+            width: 450px; height: 450px;
+            animation: ringRotate 140s linear infinite reverse;
+            border-width: 1px;
+            opacity: 0.2; /* Encke gap */
+        }
+        .ring-7 {
+            width: 520px; height: 520px;
+            animation: ringRotate 160s linear infinite, ringShimmer 18s ease-in-out infinite;
+            animation-delay: 0s, -8s;
+            border-width: 2px;
+        }
+
+        /* Additional outer rings for depth */
+        .ring-8 {
+            width: 580px; height: 580px;
+            animation: ringRotate 180s linear infinite reverse;
+            border-width: 1px;
+            opacity: 0.15;
+        }
+
+        .ring-9 {
+            width: 640px; height: 640px;
+            animation: ringRotate 200s linear infinite;
+            border-width: 1px;
+            border-style: dotted;
+            opacity: 0.1;
+        }
+
+        @keyframes ringRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Ring glow at peace layer */
+        body[data-layer="3"] .ring {
+            box-shadow: 0 0 8px rgba(212, 160, 86, 0.2);
+        }
+
+        body[data-layer="3"] .ring-3,
+        body[data-layer="3"] .ring-5,
+        body[data-layer="3"] .ring-7 {
+            box-shadow: 0 0 12px rgba(244, 228, 193, 0.3);
+        }
+
+        /* Orbiting text fragments */
+        .orbit-text {
+            position: absolute;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-style: italic;
+            color: var(--star-dim);
+            white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: color 3s var(--ease-dream), opacity 2s var(--ease-contemplate), transform 1.5s var(--ease-float);
+            opacity: 0.4;
+            text-shadow: 0 0 10px var(--void);
+            will-change: transform, left, top;
+        }
+
+        .orbit-text:hover {
+            opacity: 0.8;
+            transform: scale(1.1);
+            color: var(--star-white);
+        }
+
+        .orbit-text.transformed {
+            color: var(--amber-warm);
+            opacity: 0.7;
+        }
+
+        .orbit-text.shed {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+
+        /* Ring fragments (clickable debris) */
+        .ring-fragment {
+            position: absolute;
+            width: 8px;
+            height: 3px;
+            background: var(--star-dim);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 2s var(--ease-float);
+            opacity: 0.5;
+            will-change: transform, left, top;
+        }
+
+        .ring-fragment:hover {
+            opacity: 1;
+            background: var(--star-white);
+            transform: scale(1.8) !important;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .ring-fragment.transformed {
+            background: var(--amber-warm);
+            box-shadow: 0 0 12px var(--gold-glow);
+            transition: all 3s var(--ease-dream);
+        }
+
+        .ring-fragment.shed {
+            opacity: 0;
+            transform: translateY(-40px) scale(0) rotate(720deg) !important;
+            transition: all 4s var(--ease-dream);
+        }
+
+        /* Layer slider */
+        .layer-slider-container {
+            position: fixed;
+            right: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .layer-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 300px;
+            height: 4px;
+            background: linear-gradient(to right,
+                var(--void-deep) 0%,
+                var(--purple-mid) 50%,
+                var(--gold-soft) 100%);
+            border-radius: 2px;
+            outline: none;
+            transform: rotate(-90deg);
+            transform-origin: center center;
+            cursor: grab;
+            opacity: 0.6;
+            transition: opacity 1s var(--ease-contemplate);
+        }
+
+        .layer-slider:hover {
+            opacity: 1;
+        }
+
+        .layer-slider:active {
+            cursor: grabbing;
+        }
+
+        .layer-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--star-white) 0%,
+                var(--slate) 100%);
+            cursor: grab;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .layer-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .layer-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--star-white) 0%,
+                var(--slate) 100%);
+            cursor: grab;
+            border: none;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .layer-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--star-dim);
+            margin-top: 1rem;
+            opacity: 0.4;
+            transition: all 4s var(--ease-dream);
+        }
+
+        /* Layer states */
+        body[data-layer="1"] { background: var(--void-deep); }
+        body[data-layer="2"] { background: var(--purple-deep); }
+        body[data-layer="3"] { background: linear-gradient(135deg, var(--purple-mid) 0%, var(--midnight-blue) 50%, var(--janus-future) 100%); }
+
+        body[data-layer="2"] .saturn-core {
+            background: radial-gradient(circle at 30% 30%,
+                var(--purple-mid) 0%,
+                var(--midnight-blue) 60%,
+                var(--void) 100%);
+            box-shadow: 0 0 80px rgba(45, 31, 61, 0.6);
+        }
+
+        body[data-layer="3"] .saturn-core {
+            background: radial-gradient(circle at 30% 30%,
+                var(--gold-soft) 0%,
+                var(--amber-warm) 40%,
+                var(--purple-mid) 100%);
+            box-shadow:
+                0 0 100px var(--gold-glow),
+                0 0 200px rgba(212, 160, 86, 0.2);
+        }
+
+        body[data-layer="2"] .ring { opacity: 0.5; border-color: var(--quicksilver); }
+        body[data-layer="3"] .ring { opacity: 0.7; border-color: var(--amber-warm); }
+
+        body[data-layer="2"] .layer-label { color: var(--quicksilver); }
+        body[data-layer="3"] .layer-label { color: var(--amber-warm); }
+
+        /* Mercury messenger */
+        .mercury {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--mercury-bright) 0%,
+                var(--quicksilver) 100%);
+            box-shadow:
+                0 0 20px var(--quicksilver),
+                0 0 40px rgba(192, 216, 232, 0.4);
+            pointer-events: none;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 1s var(--ease-ethereal);
+            will-change: transform, left, top;
+        }
+
+        .mercury.active {
+            opacity: 1;
+            animation: mercuryFlow 5s var(--ease-quicksilver) forwards;
+        }
+
+        /* Fluid quicksilver motion - unpredictable, organic path */
+        @keyframes mercuryFlow {
+            0% {
+                left: -20px;
+                top: 30%;
+                transform: scale(0.5) rotate(0deg);
+            }
+            8% {
+                left: 15%;
+                top: 45%;
+                transform: scale(0.9) rotate(30deg);
+            }
+            18% {
+                left: 25%;
+                top: 55%;
+                transform: scale(1.1) rotate(-20deg);
+            }
+            28% {
+                left: 35%;
+                top: 42%;
+                transform: scale(0.85) rotate(45deg);
+            }
+            38% {
+                left: 45%;
+                top: 58%;
+                transform: scale(1.2) rotate(-30deg);
+            }
+            48% {
+                left: 50%;
+                top: 50%;
+                transform: scale(1.4) rotate(0deg);
+            }
+            58% {
+                left: 58%;
+                top: 45%;
+                transform: scale(1.1) rotate(60deg);
+            }
+            68% {
+                left: 68%;
+                top: 52%;
+                transform: scale(0.9) rotate(-45deg);
+            }
+            78% {
+                left: 78%;
+                top: 40%;
+                transform: scale(1.0) rotate(30deg);
+            }
+            88% {
+                left: 88%;
+                top: 48%;
+                transform: scale(0.7) rotate(-60deg);
+            }
+            100% {
+                left: calc(100% + 20px);
+                top: 50%;
+                transform: scale(0.3) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        .mercury-trail {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--quicksilver);
+            pointer-events: none;
+            z-index: 499;
+            opacity: 0.6;
+            animation: trailFade 2s var(--ease-dream) forwards;
+        }
+
+        @keyframes trailFade {
+            to { opacity: 0; transform: scale(0); }
+        }
+
+        .mercury-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--quicksilver);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 501;
+            text-shadow: 0 0 20px var(--quicksilver);
+        }
+
+        .mercury-message.visible {
+            animation: mercuryMessageAppear 3s ease forwards;
+        }
+
+        @keyframes mercuryMessageAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-20px); }
+        }
+
+        /* Janus threshold guardian - ethereal materialization */
+        .janus {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 200px;
+            pointer-events: none;
+            z-index: 400;
+            opacity: 0;
+            filter: blur(10px);
+            transition: opacity 3s var(--ease-dream), filter 3s var(--ease-dream), transform 3s var(--ease-float);
+        }
+
+        .janus.visible {
+            opacity: 1;
+            filter: blur(0px);
+            animation: janusMaterialize 4s var(--ease-ethereal) forwards;
+        }
+
+        @keyframes janusMaterialize {
+            0% {
+                opacity: 0;
+                filter: blur(15px);
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            30% {
+                opacity: 0.7;
+                filter: blur(3px);
+                transform: translate(-50%, -50%) scale(1.02);
+            }
+            50% {
+                opacity: 1;
+                filter: blur(0px);
+                transform: translate(-50%, -50%) scale(1);
+            }
+            80% {
+                opacity: 1;
+                filter: blur(0px);
+            }
+            100% {
+                opacity: 0;
+                filter: blur(8px);
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        .janus-face {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            border-radius: 50% 50% 45% 45%;
+            transition: all 2s var(--ease-float);
+        }
+
+        .janus-past {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%) rotateY(30deg);
+            background: linear-gradient(135deg, var(--janus-past) 0%, var(--void) 100%);
+            border: 1px solid rgba(61, 45, 77, 0.5);
+        }
+
+        .janus-future {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%) rotateY(-30deg);
+            background: linear-gradient(135deg, var(--janus-future) 0%, var(--amber-warm) 100%);
+            border: 1px solid rgba(212, 160, 86, 0.3);
+        }
+
+        .janus-eye {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            top: 35%;
+        }
+
+        .janus-past .janus-eye {
+            background: var(--star-dim);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .janus-future .janus-eye {
+            background: var(--amber-warm);
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .janus-door {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 80px;
+            border: 1px solid var(--star-dim);
+            border-radius: 15px 15px 0 0;
+            background: linear-gradient(180deg,
+                var(--void) 0%,
+                var(--purple-deep) 50%,
+                var(--void-deep) 100%);
+        }
+
+        .janus-blessing {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--star-dim);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 1s ease 0.5s;
+        }
+
+        .janus.visible .janus-blessing {
+            opacity: 0.6;
+        }
+
+        /* Central truth text */
+        .truth {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--star-dim);
+            text-align: center;
+            max-width: 60%;
+            opacity: 0;
+            transition: all 4s var(--ease-dream);
+            z-index: 100;
+            line-height: 1.8;
+        }
+
+        body[data-layer="1"] .truth.visible {
+            opacity: 0.4;
+        }
+
+        body[data-layer="2"] .truth.visible {
+            opacity: 0.6;
+            color: var(--quicksilver);
+        }
+
+        body[data-layer="3"] .truth.visible {
+            opacity: 0.8;
+            color: var(--gold-soft);
+        }
+
+        /* Sound toggle */
+        .sound-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--star-dim);
+            background: none;
+            border: 1px solid var(--star-dim);
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 100;
+            letter-spacing: 0.1em;
+        }
+
+        .sound-toggle:hover {
+            opacity: 0.8;
+            border-color: var(--star-white);
+        }
+
+        body:hover .sound-toggle {
+            opacity: 0.3;
+        }
+
+        .sound-toggle.active {
+            color: var(--amber-warm);
+            border-color: var(--amber-warm);
+        }
+
+        /* Keyboard hints */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--star-dim);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            z-index: 100;
+        }
+
+        .keyboard-hint.visible {
+            opacity: 0.25;
+        }
+
+        .keyboard-hint kbd {
+            display: inline-block;
+            padding: 0.1rem 0.2rem;
+            border: 1px solid var(--star-dim);
+            border-radius: 2px;
+            margin-right: 0.15rem;
+            font-size: 0.45rem;
+        }
+
+        /* Layer indicator */
+        .layer-indicator {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--star-dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            opacity: 0.3;
+            transition: all 4s var(--ease-dream);
+            z-index: 100;
+        }
+
+        body[data-layer="2"] .layer-indicator { color: var(--quicksilver); }
+        body[data-layer="3"] .layer-indicator { color: var(--amber-warm); }
+
+        /* Stillness progress */
+        .stillness-progress {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: linear-gradient(to right, var(--star-dim), var(--amber-warm));
+            transition: width 0.8s var(--ease-contemplate);
+            z-index: 100;
+            opacity: 0.3;
+        }
+
+        /* Deep stillness reward - appears after 30+ seconds */
+        .deep-stillness-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--gold-soft);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 700;
+            max-width: 70%;
+            line-height: 2.2;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 30px var(--gold-glow);
+        }
+
+        .deep-stillness-message.visible {
+            animation: deepStillnessReveal 10s var(--ease-dream) forwards;
+        }
+
+        @keyframes deepStillnessReveal {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); filter: blur(4px); }
+            12% { opacity: 1; filter: blur(0px); }
+            85% { opacity: 1; filter: blur(0px); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.03); filter: blur(2px); }
+        }
+
+        /* Stillness motes - particles that only appear during prolonged stillness */
+        .stillness-motes {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 5s var(--ease-dream);
+        }
+
+        .stillness-motes.active {
+            opacity: 1;
+        }
+
+        .stillness-mote {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--gold-glow);
+            border-radius: 50%;
+            opacity: 0;
+            animation: moteDrift var(--mote-dur, 20s) var(--ease-breath) infinite;
+            animation-delay: var(--mote-del, 0s);
+        }
+
+        @keyframes moteDrift {
+            0% {
+                opacity: 0;
+                transform: translateY(0) translateX(0) scale(0.5);
+            }
+            20% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 0.6;
+                transform: translateY(-30px) translateX(10px) scale(1);
+            }
+            80% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) translateX(-5px) scale(0.5);
+            }
+        }
+
+        /* Zoom overlay for scroll interaction */
+        .zoom-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--void-deep);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 800;
+            transition: opacity 1s var(--ease-contemplate);
+        }
+
+        .zoom-core-vision {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmin;
+            height: 100vmin;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                var(--void) 0%,
+                var(--purple-deep) 30%,
+                var(--purple-mid) 60%,
+                var(--void-deep) 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 801;
+            transition: opacity 1s ease;
+        }
+
+        .zoom-core-vision.visible {
+            opacity: 1;
+        }
+
+        .zoom-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--amber-warm);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 802;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
+        /* Double-click secret reveal */
+        .secret-glyph {
+            position: fixed;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--amber-warm);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 600;
+            text-shadow: 0 0 20px var(--gold-glow);
+            animation: glyphAppear 3s ease forwards;
+        }
+
+        @keyframes glyphAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(-10deg); }
+            20% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+            40% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2) translateY(-30px); }
+        }
+
+        /* Cursor proximity glow on Saturn */
+        .proximity-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                rgba(212, 160, 86, 0.1) 0%,
+                transparent 70%);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.8s ease;
+        }
+
+        /* Touch ripple effect */
+        .touch-ripple {
+            position: fixed;
+            border-radius: 50%;
+            border: 1px solid var(--amber-warm);
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+            animation: touchRipple 1.5s ease-out forwards;
+        }
+
+        @keyframes touchRipple {
+            0% { opacity: 0.6; transform: translate(-50%, -50%) scale(0); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+        }
+
+        /* Star interaction - stars respond to nearby cursor */
+        .star.awakened {
+            animation: starAwaken 2s ease forwards !important;
+        }
+
+        @keyframes starAwaken {
+            0% { opacity: 0.3; }
+            30% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: var(--max-opacity, 0.6); transform: scale(1); }
+        }
+
+        /* Constellation line between awakened stars */
+        .constellation-line {
+            position: fixed;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--star-dim), transparent);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+            transform-origin: left center;
+            animation: constellationFade 4s ease forwards;
+        }
+
+        @keyframes constellationFade {
+            0% { opacity: 0; }
+            20% { opacity: 0.3; }
+            80% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        /* Triple-click whisper - a deeper secret */
+        .deep-whisper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--gold-soft);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 700;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 40px var(--gold-glow);
+            animation: deepWhisperAppear 5s ease forwards;
+        }
+
+        @keyframes deepWhisperAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); filter: blur(4px); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        /* Long press anywhere reveals transient pattern */
+        .transient-pattern {
+            position: fixed;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .transient-ring {
+            position: absolute;
+            border: 1px solid var(--amber-warm);
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            animation: transientRingExpand 3s ease-out forwards;
+        }
+
+        @keyframes transientRingExpand {
+            0% { opacity: 0; width: 20px; height: 20px; }
+            20% { opacity: 0.4; }
+            100% { opacity: 0; width: 200px; height: 200px; }
+        }
+
+        /* Return cycle message */
+        .cycle-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--gold-soft);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 600;
+            max-width: 80%;
+            line-height: 2;
+        }
+
+        .cycle-message.visible {
+            animation: cycleAppear 8s var(--ease-dream) forwards;
+        }
+
+        @keyframes cycleAppear {
+            0% { opacity: 0; filter: blur(5px); transform: translate(-50%, -50%) scale(0.95); }
+            15% { opacity: 1; filter: blur(0px); transform: translate(-50%, -50%) scale(1); }
+            75% { opacity: 1; filter: blur(0px); }
+            100% { opacity: 0; filter: blur(3px); transform: translate(-50%, -50%) scale(1.02); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .layer-slider-container {
+                right: 1rem;
+                height: 200px;
+            }
+            .layer-slider {
+                width: 200px;
+            }
+            .saturn-core {
+                width: 80px;
+                height: 80px;
+            }
+            .ring-1 { width: 130px; height: 130px; }
+            .ring-2 { width: 155px; height: 155px; }
+            .ring-3 { width: 180px; height: 180px; }
+            .ring-4 { width: 215px; height: 215px; }
+            .ring-5 { width: 250px; height: 250px; }
+            .ring-6 { width: 280px; height: 280px; }
+            .ring-7 { width: 320px; height: 320px; }
+            .ring-8 { width: 360px; height: 360px; }
+            .ring-9 { width: 400px; height: 400px; }
+            .keyboard-hint { display: none; }
+            .god-rays { display: none; } /* Hide god rays on small screens for performance */
+        }
+    </style>
+</head>
+<body data-layer="1">
+    <a href="../index.html" class="back-link">return</a>
+
+    <!-- Depth system layers -->
+    <div class="vignette" id="vignette"></div>
+
+    <!-- Layer transition veils -->
+    <div class="layer-veil layer-veil-fear" id="veilFear"></div>
+    <div class="layer-veil layer-veil-understanding" id="veilUnderstanding"></div>
+    <div class="layer-veil layer-veil-peace" id="veilPeace"></div>
+
+    <!-- Hidden depth elements - emerge at deeper layers -->
+    <div class="hidden-depths" id="hiddenDepths"></div>
+
+    <!-- Archaeological strata lines -->
+    <div class="strata-lines" id="strataLines"></div>
+
+    <!-- Foreground dust for parallax -->
+    <div class="foreground-dust" id="foregroundDust"></div>
+
+    <!-- Atmospheric layers -->
+    <div class="nebula" id="nebula">
+        <div class="nebula-layer nebula-1"></div>
+        <div class="nebula-layer nebula-2"></div>
+        <div class="nebula-layer nebula-3"></div>
+    </div>
+
+    <div class="aurora" id="aurora">
+        <div class="aurora-band"></div>
+        <div class="aurora-band"></div>
+    </div>
+
+    <div class="cosmic-dust" id="cosmicDust"></div>
+
+    <div class="grain"></div>
+    <div class="stars" id="stars"></div>
+
+    <!-- God rays for peace layer -->
+    <div class="god-rays" id="godRays"></div>
+
+    <div class="saturn-container">
+        <div class="saturn-core" id="saturnCore"></div>
+        <div class="rings" id="rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="ring ring-4"></div>
+            <div class="ring ring-5"></div>
+            <div class="ring ring-6"></div>
+            <div class="ring ring-7"></div>
+            <div class="ring ring-8"></div>
+            <div class="ring ring-9"></div>
+        </div>
+    </div>
+
+    <div class="layer-slider-container">
+        <input type="range" class="layer-slider" id="layerSlider" min="0" max="100" value="0">
+        <div class="layer-label" id="layerLabel">fear</div>
+    </div>
+
+    <div class="layer-indicator" id="layerIndicator">layer i: fear</div>
+
+    <div class="truth" id="truth"></div>
+
+    <div class="mercury" id="mercury"></div>
+    <div class="mercury-message" id="mercuryMessage"></div>
+
+    <div class="janus" id="janus">
+        <div class="janus-face janus-past">
+            <div class="janus-eye"></div>
+        </div>
+        <div class="janus-door"></div>
+        <div class="janus-face janus-future">
+            <div class="janus-eye"></div>
+        </div>
+        <div class="janus-blessing" id="janusBlessing">you may pass</div>
+    </div>
+
+    <div class="stillness-progress" id="stillnessProgress"></div>
+    <div class="stillness-motes" id="stillnessMotes"></div>
+
+    <div class="deep-stillness-message" id="deepStillnessMessage">
+        in the long silence, saturn speaks:<br><br>
+        "you have learned what the rings already knew.<br>
+        time is not the enemy.<br>
+        time is the embrace."
+    </div>
+
+    <div class="proximity-glow" id="proximityGlow"></div>
+
+    <div class="zoom-overlay" id="zoomOverlay"></div>
+    <div class="zoom-core-vision" id="zoomCoreVision"></div>
+    <div class="zoom-text" id="zoomText"></div>
+
+    <div class="cycle-message" id="cycleMessage">
+        saturn has not changed.<br>
+        you have.
+    </div>
+
+    <button class="sound-toggle" id="soundToggle">sound</button>
+
+    <div class="keyboard-hint" id="keyboardHint">
+        <kbd>m</kbd> mercury
+        <kbd>j</kbd> janus
+        <kbd>s</kbd> sound
+        <kbd>r</kbd> return
+        <kbd>space</kbd> advance
+        <kbd>arrows</kbd> navigate
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // ===== STATE =====
+        let currentLayer = 1;
+        let stillnessTimer = 0;
+        let lastActivity = Date.now();
+        let soundEnabled = false;
+        let audioContext = null;
+        let oscillators = [];
+        let hasCompletedCycle = false;
+        let transformedFragments = 0;
+
+        // New interactive state
+        let deepStillnessReached = false;
+        let stillnessMotesCreated = false;
+        let isHoldingCore = false;
+        let holdStartTime = 0;
+        let zoomLevel = 0;
+        let isDraggingRings = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let ringTiltX = 75;
+        let ringTiltY = 0;
+        let lastTouchTime = 0;
+        let touchHoldTimer = null;
+
+        // Parallax depth state
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let targetMouseX = mouseX;
+        let targetMouseY = mouseY;
+        const parallaxLayers = {
+            abyss: 0.008,
+            deep: 0.02,
+            background: 0.04,
+            mid: 0.07,
+            foreground: 0.14
+        };
+
+        // ===== DOM CACHE =====
+        const $ = id => document.getElementById(id);
+        const body = document.body;
+        const stars = $('stars');
+        const layerSlider = $('layerSlider');
+        const layerLabel = $('layerLabel');
+        const layerIndicator = $('layerIndicator');
+        const truth = $('truth');
+        const mercury = $('mercury');
+        const mercuryMessage = $('mercuryMessage');
+        const janus = $('janus');
+        const janusBlessing = $('janusBlessing');
+        const stillnessProgress = $('stillnessProgress');
+        const stillnessMotes = $('stillnessMotes');
+        const cycleMessage = $('cycleMessage');
+        const soundToggle = $('soundToggle');
+        const keyboardHint = $('keyboardHint');
+        const saturnCore = $('saturnCore');
+        const rings = $('rings');
+        const deepStillnessMessage = $('deepStillnessMessage');
+        const proximityGlow = $('proximityGlow');
+        const zoomOverlay = $('zoomOverlay');
+        const zoomCoreVision = $('zoomCoreVision');
+        const zoomText = $('zoomText');
+
+        // Depth system elements
+        const vignette = $('vignette');
+        const veilFear = $('veilFear');
+        const veilUnderstanding = $('veilUnderstanding');
+        const veilPeace = $('veilPeace');
+        const hiddenDepths = $('hiddenDepths');
+        const strataLines = $('strataLines');
+        const foregroundDust = $('foregroundDust');
+        const nebula = $('nebula');
+
+        // ===== TEXT CONTENT =====
+        const FEAR_TEXTS = [
+            'the silence weighs more than expected',
+            'orbits remember what you forget',
+            'even slowness arrives eventually',
+            'the rings counted before you learned numbers',
+            'distance is just patience misunderstood',
+            'what circles never truly leaves',
+            'the cold has been waiting longer',
+            'gravity is only another name for belonging'
+        ];
+
+        const UNDERSTANDING_TEXTS = [
+            'limits are just love with better posture',
+            'the cage door was always open inward',
+            'structure is the skeleton of tenderness',
+            'what holds you also holds itself',
+            'boundaries are embraces seen from above',
+            'the rings are reading the same book',
+            'time does not pass—you pass through it',
+            'every orbit is a complete sentence'
+        ];
+
+        const PEACE_TEXTS = [
+            'lead was always gold, waiting to remember',
+            'rest is the only work left undone',
+            'saturday asks nothing and receives everything',
+            'the rings have been applauding silently',
+            'completion is beginning with better lighting',
+            'you were held before you arrived',
+            'returning is the only real way forward',
+            'the old god smiles because the joke was kindness'
+        ];
+
+        const TRUTHS = {
+            1: 'the weight you feel is not saturn\'s doing. you brought it here. saturn only made it visible.',
+            2: 'look at how the rings do not trap—they orbit. everything here is going somewhere by staying still.',
+            3: 'and now the secret: saturn was never the taskmaster. saturn is the permission you forgot to give yourself. rest is the final work.'
+        };
+
+        const MERCURY_MESSAGES = [
+            'I borrowed this from tomorrow',
+            'the message was the messenger all along',
+            'catch this before it becomes true',
+            'the password is patience',
+            'stolen from a dream you\'ll have next week',
+            'this thought is just visiting',
+            'the trick is that there is no trick',
+            'I left something here—it was already yours'
+        ];
+
+        const JANUS_BLESSINGS = [
+            'the door you entered through is now ahead',
+            'what you were and what you will be share tea',
+            'the threshold thanks you for your weight',
+            'passage is just presence with momentum',
+            'you are the only ceremony required',
+            'entering and leaving are the same bow',
+            'the hinge is the holiest part of the door'
+        ];
+
+        // Whisper koans for right-click
+        const WHISPER_KOANS = [
+            'the rings remember what you came here to forget',
+            'time is patient because it has already happened',
+            'lead awaits gold the way sleep awaits waking',
+            'the threshold opens to the room you never left',
+            'what orbits you also orbits around you',
+            'the scythe harvests only what was ready',
+            'cold is just warmth being patient',
+            'the weight you carry is mostly made of waiting',
+            'saturn does not judge—saturn witnesses',
+            'every ending rehearses its beginning',
+            'the cage and the key are the same hand',
+            'you were always this old',
+            'rest is not the opposite of movement'
+        ];
+
+        // Saturn's own thoughts - appear and fade
+        const SATURN_THOUGHTS = [
+            'I have been here since before here was a place.',
+            'your fear is so small from this distance. everything is.',
+            'I do not measure time. I am what time measures against.',
+            'the rings are not mine. I am theirs.',
+            'I learned patience from the spaces between things.',
+            'you move so quickly. it is beautiful.',
+            'every visitor becomes a ring eventually.',
+            'I am not old. I am continuous.',
+            'the weight you feel is just my hello.',
+            'I do not remember when I started. that is the secret.'
+        ];
+
+        // Tracking for dynamic console poetry
+        let interactionLog = {
+            mercurySummoned: 0,
+            janusAppeared: 0,
+            rightClicks: 0,
+            layerChanges: 0,
+            cyclesCompleted: 0,
+            deepStillnessCount: 0,
+            saturnThoughtsShown: 0
+        };
+
+        // New content for enhanced interactions
+        const ZOOM_VISIONS = [
+            'at the center, there is no center—just another way of looking',
+            'the core holds what you brought: mostly questions shaped like answers',
+            'look closer. look away. both are seeing. neither is wrong.',
+            'inside saturn: another saturn, dreaming of the one you see',
+            'the void remembers being whole. it is not sad about it.',
+            'you expected to find something. finding nothing is also finding.',
+            'the center of gravity has no weight of its own',
+            'here is where slowness began. it started quickly.'
+        ];
+
+        const SECRET_GLYPHS = ['♄', '☿', '☽', '⚶', '⚷', '✧', '⊛', '◌'];
+
+        const DEEP_STILLNESS_MESSAGES = [
+            'in the long silence, saturn speaks:<br><br>"you have learned what the rings already knew.<br>time is not the enemy.<br>time is the embrace."',
+            'thirty seconds of nothing.<br><br>and in that nothing,<br>everything that needed to be said<br>was said.',
+            'the rings have noticed your patience.<br><br>they remember you now.<br>they will remember you<br>when you forget yourself.',
+            'saturn does not reward stillness.<br><br>stillness is the reward.<br>you already have it.',
+            'you waited long enough<br>for the waiting to notice you.<br><br>it has.',
+            'the planet has been holding its breath too.<br><br>now you both exhale.'
+        ];
+
+        const HOLD_REVELATIONS = [
+            'hold longer. the planet listens with its whole body.',
+            'your warmth reaches the core. the core was already warm.',
+            'gravity is just attention sustained. you are paying attention.',
+            'the rings slow for those who stay. they have nowhere else to be.',
+            'pressing harder changes nothing. presence changes everything.',
+            'the core does not know you are touching it. that is the point.',
+            'hold as if you have already let go.'
+        ];
+
+        const INTERACTION_TONES = {
+            click: { freq: 220, duration: 0.15, type: 'sine' },
+            hold: { freq: 110, duration: 0.5, type: 'triangle' },
+            release: { freq: 330, duration: 0.2, type: 'sine' },
+            zoom: { freq: 165, duration: 0.3, type: 'sine' },
+            secret: { freq: 440, duration: 0.4, type: 'sine' }
+        };
+
+
+        // Hidden depth glyphs - ancient symbols emerging at deeper layers
+        const HIDDEN_GLYPHS = [
+            { glyph: '♄', x: 15, y: 20, ancient: true }, { glyph: '☿', x: 80, y: 15, ancient: false },
+            { glyph: '☽', x: 25, y: 75, ancient: false }, { glyph: '⚶', x: 70, y: 80, ancient: true },
+            { glyph: '✧', x: 10, y: 50, ancient: false }, { glyph: '◌', x: 88, y: 45, ancient: false },
+            { glyph: '⊛', x: 50, y: 10, ancient: true }, { glyph: '⚷', x: 45, y: 90, ancient: false },
+            { glyph: '∞', x: 35, y: 35, ancient: true }, { glyph: '◯', x: 65, y: 60, ancient: false },
+        ];
+
+        // ===== DEPTH SYSTEM - Parallax and archaeological layering =====
+        function createDepthElements() {
+            const glyphFrag = document.createDocumentFragment();
+            HIDDEN_GLYPHS.forEach(item => {
+                const glyph = document.createElement('div');
+                glyph.className = 'hidden-glyph' + (item.ancient ? ' ancient' : '');
+                glyph.textContent = item.glyph;
+                glyph.style.left = item.x + '%';
+                glyph.style.top = item.y + '%';
+                glyphFrag.appendChild(glyph);
+            });
+            if (hiddenDepths) hiddenDepths.appendChild(glyphFrag);
+            const strataFrag = document.createDocumentFragment();
+            for (let i = 0; i < 8; i++) {
+                const stratum = document.createElement('div');
+                stratum.className = 'stratum';
+                stratum.style.top = (15 + i * 10) + '%';
+                stratum.style.opacity = 0.15 + Math.random() * 0.2;
+                strataFrag.appendChild(stratum);
+            }
+            if (strataLines) strataLines.appendChild(strataFrag);
+            const dustFrag = document.createDocumentFragment();
+            for (let i = 0; i < 25; i++) {
+                const mote = document.createElement('div');
+                mote.className = 'dust-mote-fg';
+                const size = 2 + Math.random() * 4;
+                mote.style.width = size + 'px';
+                mote.style.height = size + 'px';
+                mote.style.left = (Math.random() * 100) + '%';
+                mote.style.top = (Math.random() * 100) + '%';
+                mote.style.setProperty('--float-dur', (20 + Math.random() * 20) + 's');
+                mote.style.setProperty('--fade-dur', (8 + Math.random() * 8) + 's');
+                mote.style.setProperty('--del', (Math.random() * 15) + 's');
+                mote.style.setProperty('--dx1', (-20 + Math.random() * 40) + 'px');
+                mote.style.setProperty('--dy1', (-30 + Math.random() * 20) + 'px');
+                mote.style.setProperty('--dx2', (-15 + Math.random() * 30) + 'px');
+                mote.style.setProperty('--dy2', (-40 + Math.random() * 20) + 'px');
+                mote.style.setProperty('--dx3', (-10 + Math.random() * 20) + 'px');
+                mote.style.setProperty('--dy3', (-20 + Math.random() * 25) + 'px');
+                mote.style.setProperty('--max-op', (0.2 + Math.random() * 0.3) + '');
+                dustFrag.appendChild(mote);
+            }
+            if (foregroundDust) foregroundDust.appendChild(dustFrag);
+        }
+
+        function updateParallax() {
+            mouseX += (targetMouseX - mouseX) * 0.08;
+            mouseY += (targetMouseY - mouseY) * 0.08;
+            const centerX = window.innerWidth / 2, centerY = window.innerHeight / 2;
+            const deltaX = mouseX - centerX, deltaY = mouseY - centerY;
+            if (stars) stars.style.transform = 'translate(' + (deltaX * parallaxLayers.background) + 'px, ' + (deltaY * parallaxLayers.background) + 'px)';
+            if (nebula) nebula.style.transform = 'translate(' + (deltaX * parallaxLayers.deep) + 'px, ' + (deltaY * parallaxLayers.deep) + 'px)';
+            if (hiddenDepths) hiddenDepths.style.transform = 'translate(' + (deltaX * parallaxLayers.background * 0.8) + 'px, ' + (deltaY * parallaxLayers.background * 0.8) + 'px)';
+            if (foregroundDust) foregroundDust.style.transform = 'translate(' + (deltaX * parallaxLayers.foreground) + 'px, ' + (deltaY * parallaxLayers.foreground) + 'px)';
+            requestAnimationFrame(updateParallax);
+        }
+
+        function triggerVeilPeel(fromLayer, toLayer) {
+            var veil = null;
+            if (fromLayer === 1 && toLayer === 2) veil = veilFear;
+            else if (fromLayer === 2 && toLayer === 3) veil = veilUnderstanding;
+            else if (toLayer === 3) veil = veilPeace;
+            if (veil) { veil.classList.remove('peeling'); void veil.offsetWidth; veil.classList.add('peeling'); setTimeout(function() { veil.classList.remove('peeling'); }, 2500); }
+        }
+
+        // ===== STARS - Layered ethereal star field =====
+        function createStars() {
+            const frag = document.createDocumentFragment();
+
+            // Distant background stars - small, dim, slow twinkle
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'star distant';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--dur', `${6 + Math.random() * 6}s`);
+                star.style.setProperty('--del', `${Math.random() * 6}s`);
+                star.style.setProperty('--max-opacity', `${0.15 + Math.random() * 0.25}`);
+                frag.appendChild(star);
+            }
+
+            // Mid-layer stars - varied colors (golden and blue-white)
+            for (let i = 0; i < 40; i++) {
+                const star = document.createElement('div');
+                const colorClass = Math.random() < 0.3 ? 'golden' : (Math.random() < 0.5 ? 'blue' : '');
+                star.className = `star ${colorClass}`.trim();
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--dur', `${4 + Math.random() * 4}s`);
+                star.style.setProperty('--del', `${Math.random() * 4}s`);
+                star.style.setProperty('--max-opacity', `${0.3 + Math.random() * 0.4}`);
+                const size = 1.5 + Math.random() * 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                frag.appendChild(star);
+            }
+
+            // Near foreground stars - brighter, larger, with glow
+            for (let i = 0; i < 15; i++) {
+                const star = document.createElement('div');
+                const colorClass = Math.random() < 0.4 ? 'golden' : (Math.random() < 0.5 ? 'blue' : '');
+                star.className = `star near ${colorClass}`.trim();
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--dur', `${3 + Math.random() * 3}s`);
+                star.style.setProperty('--del', `${Math.random() * 3}s`);
+                star.style.setProperty('--max-opacity', `${0.5 + Math.random() * 0.3}`);
+                frag.appendChild(star);
+            }
+
+            stars.appendChild(frag);
+        }
+
+        // ===== COSMIC DUST =====
+        function createCosmicDust() {
+            const cosmicDust = $('cosmicDust');
+            const frag = document.createDocumentFragment();
+
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'dust-particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${100 + Math.random() * 20}%`; // Start below viewport
+                particle.style.setProperty('--drift-dur', `${40 + Math.random() * 60}s`);
+                particle.style.setProperty('--dust-opacity', `${0.08 + Math.random() * 0.12}`);
+                particle.style.animationDelay = `${-Math.random() * 60}s`; // Stagger start times
+                frag.appendChild(particle);
+            }
+
+            cosmicDust.appendChild(frag);
+        }
+
+        // ===== GOD RAYS =====
+        function createGodRays() {
+            const godRays = $('godRays');
+            const rayCount = 12;
+            const frag = document.createDocumentFragment();
+
+            for (let i = 0; i < rayCount; i++) {
+                const ray = document.createElement('div');
+                ray.className = 'god-ray';
+                const angle = (360 / rayCount) * i;
+                ray.style.transform = `rotate(${angle}deg)`;
+                // Vary the opacity slightly for organic feel
+                ray.style.opacity = 0.3 + Math.random() * 0.2;
+                frag.appendChild(ray);
+            }
+
+            godRays.appendChild(frag);
+        }
+
+        // ===== ORBITING ELEMENTS =====
+        const orbitTexts = [];
+        const ringFragments = [];
+
+        function createOrbitingElements() {
+            // Create orbiting text
+            FEAR_TEXTS.forEach((text, i) => {
+                const el = document.createElement('div');
+                el.className = 'orbit-text';
+                el.textContent = text;
+                el.dataset.fear = text;
+                el.dataset.understanding = UNDERSTANDING_TEXTS[i] || UNDERSTANDING_TEXTS[0];
+                el.dataset.peace = PEACE_TEXTS[i] || PEACE_TEXTS[0];
+                el.dataset.orbit = 150 + i * 50;
+                el.dataset.speed = 0.0002 + i * 0.00005;
+                el.dataset.offset = i * (Math.PI / 4);
+                document.querySelector('.saturn-container').appendChild(el);
+                orbitTexts.push(el);
+
+                el.addEventListener('click', () => {
+                    if (!el.classList.contains('shed')) {
+                        el.classList.add('transformed');
+                        transformedFragments++;
+                        checkTransformations();
+                    }
+                });
+            });
+
+            // Create ring fragments
+            for (let i = 0; i < 30; i++) {
+                const frag = document.createElement('div');
+                frag.className = 'ring-fragment';
+                frag.dataset.orbit = 180 + Math.random() * 300;
+                frag.dataset.speed = 0.0003 + Math.random() * 0.0003;
+                frag.dataset.offset = Math.random() * Math.PI * 2;
+                document.querySelector('.saturn-container').appendChild(frag);
+                ringFragments.push(frag);
+
+                frag.addEventListener('click', () => {
+                    if (!frag.classList.contains('shed')) {
+                        if (currentLayer < 3) {
+                            frag.classList.add('transformed');
+                        } else {
+                            frag.classList.add('shed');
+                        }
+                        transformedFragments++;
+                        checkTransformations();
+                    }
+                });
+            }
+        }
+
+        function animateOrbits() {
+            const time = Date.now();
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            orbitTexts.forEach(el => {
+                const orbit = parseFloat(el.dataset.orbit);
+                const speed = parseFloat(el.dataset.speed);
+                const offset = parseFloat(el.dataset.offset);
+                const angle = time * speed + offset;
+
+                const x = centerX + Math.cos(angle) * orbit - el.offsetWidth / 2;
+                const y = centerY + Math.sin(angle) * orbit * 0.3 - el.offsetHeight / 2;
+
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+
+                // Update text based on layer
+                if (currentLayer === 1) {
+                    el.textContent = el.dataset.fear;
+                } else if (currentLayer === 2) {
+                    el.textContent = el.dataset.understanding;
+                } else {
+                    el.textContent = el.dataset.peace;
+                }
+            });
+
+            ringFragments.forEach(frag => {
+                const orbit = parseFloat(frag.dataset.orbit);
+                const speed = parseFloat(frag.dataset.speed);
+                const offset = parseFloat(frag.dataset.offset);
+                const angle = time * speed + offset;
+
+                const x = centerX + Math.cos(angle) * orbit - 4;
+                const y = centerY + Math.sin(angle) * orbit * 0.2 - 1.5;
+
+                frag.style.left = `${x}px`;
+                frag.style.top = `${y}px`;
+                frag.style.transform = `rotate(${angle}rad)`;
+            });
+
+            requestAnimationFrame(animateOrbits);
+        }
+
+        // ===== LAYER CONTROL =====
+        function setLayer(layer) {
+            const prevLayer = currentLayer;
+            currentLayer = Math.max(1, Math.min(3, layer));
+            body.dataset.layer = currentLayer;
+
+            // Update slider
+            layerSlider.value = (currentLayer - 1) * 50;
+
+            // Update labels
+            const labels = ['fear', 'understanding', 'peace'];
+            const indicators = ['layer i: fear', 'layer ii: understanding', 'layer iii: peace'];
+            layerLabel.textContent = labels[currentLayer - 1];
+            layerIndicator.textContent = indicators[currentLayer - 1];
+
+            // Update truth
+            truth.textContent = TRUTHS[currentLayer];
+            truth.classList.add('visible');
+
+            // Trigger Janus and veil peel on layer change
+            if (prevLayer !== currentLayer) {
+                interactionLog.layerChanges++;
+                if (window.saturnConsolePoetry) window.saturnConsolePoetry.onLayerChange(currentLayer);
+
+                triggerVeilPeel(prevLayer, currentLayer);
+                showJanus();
+                updateSound();
+            }
+
+            // Check for cycle completion
+            if (currentLayer === 3 && !hasCompletedCycle) {
+                setTimeout(() => {
+                    hasCompletedCycle = true;
+                    interactionLog.cyclesCompleted++;
+                    if (window.saturnConsolePoetry) window.saturnConsolePoetry.onCycleComplete();
+                }, 5000);
+            }
+        }
+
+        layerSlider.addEventListener('input', e => {
+            resetActivity();
+            const value = parseInt(e.target.value);
+            if (value < 33) {
+                setLayer(1);
+            } else if (value < 66) {
+                setLayer(2);
+            } else {
+                setLayer(3);
+            }
+        });
+
+        // ===== MERCURY =====
+        function summonMercury() {
+            interactionLog.mercurySummoned++;
+            if (window.saturnConsolePoetry) window.saturnConsolePoetry.onMercury();
+
+            mercury.classList.remove('active');
+            void mercury.offsetWidth; // Reflow
+            mercury.classList.add('active');
+
+            // Mercury message
+            mercuryMessage.textContent = MERCURY_MESSAGES[Math.floor(Math.random() * MERCURY_MESSAGES.length)];
+            mercuryMessage.classList.add('visible');
+
+            // Create trails
+            let trailCount = 0;
+            const trailInterval = setInterval(() => {
+                if (trailCount >= 15) {
+                    clearInterval(trailInterval);
+                    return;
+                }
+                const trail = document.createElement('div');
+                trail.className = 'mercury-trail';
+                trail.style.left = `${10 + trailCount * 6}%`;
+                trail.style.top = `${30 + Math.sin(trailCount) * 20}%`;
+                document.body.appendChild(trail);
+                setTimeout(() => trail.remove(), 1000);
+                trailCount++;
+            }, 150);
+
+            // Mercury transforms things
+            setTimeout(() => {
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            }, 1500);
+
+            setTimeout(() => {
+                mercury.classList.remove('active');
+                mercuryMessage.classList.remove('visible');
+            }, 3000);
+        }
+
+        // ===== JANUS =====
+        function showJanus() {
+            interactionLog.janusAppeared++;
+            if (window.saturnConsolePoetry) window.saturnConsolePoetry.onJanus();
+
+            janusBlessing.textContent = JANUS_BLESSINGS[Math.floor(Math.random() * JANUS_BLESSINGS.length)];
+            janus.classList.add('visible');
+            setTimeout(() => {
+                janus.classList.remove('visible');
+            }, 3000);
+        }
+
+        // ===== STILLNESS =====
+        // ===== STILLNESS MOTES =====
+        function createStillnessMotes() {
+            if (stillnessMotesCreated) return;
+            stillnessMotesCreated = true;
+
+            const count = 25;
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < count; i++) {
+                const mote = document.createElement('div');
+                mote.className = 'stillness-mote';
+                mote.style.left = `${20 + Math.random() * 60}%`;
+                mote.style.top = `${30 + Math.random() * 40}%`;
+                mote.style.setProperty('--mote-dur', `${15 + Math.random() * 15}s`);
+                mote.style.setProperty('--mote-del', `${Math.random() * 10}s`);
+                frag.appendChild(mote);
+            }
+            stillnessMotes.appendChild(frag);
+        }
+
+        function resetActivity() {
+            lastActivity = Date.now();
+            stillnessTimer = 0;
+            stillnessProgress.style.width = '0%';
+            deepStillnessReached = false;
+            saturnCore.classList.remove('deep-peace');
+            stillnessMotes.classList.remove('active');
+        }
+
+        function checkStillness() {
+            const elapsed = (Date.now() - lastActivity) / 1000;
+            stillnessTimer = elapsed;
+
+            // Progress bar - now tracks up to 30 seconds for deep stillness
+            const progress = Math.min(elapsed / 30, 1) * 100;
+            stillnessProgress.style.width = `${progress}%`;
+
+            // Stillness reveals after 15-20 seconds
+            if (elapsed >= 15 && elapsed < 15.5) {
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            }
+
+            // Deep stillness reward at 30+ seconds
+            if (elapsed >= 30 && !deepStillnessReached) {
+                deepStillnessReached = true;
+                interactionLog.deepStillnessCount++;
+                if (window.saturnConsolePoetry) window.saturnConsolePoetry.onDeepStillness();
+                triggerDeepStillness();
+            }
+
+            // Saturn starts breathing after 5 seconds of stillness
+            if (elapsed >= 5 && !saturnCore.classList.contains('breathing')) {
+                saturnCore.classList.add('breathing');
+            } else if (elapsed < 5 && saturnCore.classList.contains('breathing')) {
+                saturnCore.classList.remove('breathing');
+            }
+
+            // Activate stillness motes after 8 seconds
+            if (elapsed >= 8 && !stillnessMotes.classList.contains('active')) {
+                createStillnessMotes();
+                stillnessMotes.classList.add('active');
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function triggerDeepStillness() {
+            // Saturn core achieves deep peace
+            saturnCore.classList.add('deep-peace');
+
+            // Show the deep stillness message
+            const message = DEEP_STILLNESS_MESSAGES[Math.floor(Math.random() * DEEP_STILLNESS_MESSAGES.length)];
+            deepStillnessMessage.innerHTML = message;
+            deepStillnessMessage.classList.add('visible');
+
+            // Play a special tone if sound is enabled
+            if (soundEnabled && audioContext) {
+                playInteractionTone('secret');
+            }
+
+            setTimeout(() => {
+                deepStillnessMessage.classList.remove('visible');
+            }, 8000);
+        }
+
+        // ===== TRANSFORMATIONS =====
+        function checkTransformations() {
+            // After enough transformations, advance layer
+            if (transformedFragments >= 5 && currentLayer === 1) {
+                setLayer(2);
+            } else if (transformedFragments >= 12 && currentLayer === 2) {
+                setLayer(3);
+            }
+        }
+
+        // ===== CYCLE RETURN =====
+        function returnToFear() {
+            if (hasCompletedCycle) {
+                cycleMessage.classList.add('visible');
+                setTimeout(() => {
+                    cycleMessage.classList.remove('visible');
+                }, 6000);
+            }
+
+            // Reset transformed elements
+            orbitTexts.forEach(el => {
+                el.classList.remove('transformed', 'shed');
+            });
+            ringFragments.forEach(frag => {
+                frag.classList.remove('transformed', 'shed');
+            });
+            transformedFragments = 0;
+
+            setLayer(1);
+        }
+
+        // ===== SOUND =====
+        function initAudio() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function updateSound() {
+            if (!soundEnabled || !audioContext) return;
+
+            // Stop existing oscillators
+            oscillators.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            oscillators = [];
+
+            // Create drone based on layer
+            const baseFreq = currentLayer === 1 ? 55 : currentLayer === 2 ? 82.5 : 110;
+            const gainValue = currentLayer === 1 ? 0.08 : currentLayer === 2 ? 0.05 : 0.03;
+
+            for (let i = 0; i < 3; i++) {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.value = baseFreq * (i + 1);
+
+                filter.type = 'lowpass';
+                filter.frequency.value = currentLayer === 1 ? 200 : currentLayer === 2 ? 400 : 800;
+
+                gain.gain.value = gainValue / (i + 1);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start();
+                oscillators.push(osc);
+            }
+        }
+
+        function toggleSound() {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            soundToggle.classList.toggle('active', soundEnabled);
+
+            if (soundEnabled) {
+                audioContext.resume();
+                updateSound();
+            } else {
+                oscillators.forEach(osc => {
+                    try { osc.stop(); } catch(e) {}
+                });
+                oscillators = [];
+            }
+        }
+
+        soundToggle.addEventListener('click', toggleSound);
+
+        // ===== INTERACTION TONES =====
+        function playInteractionTone(type) {
+            if (!soundEnabled || !audioContext) return;
+
+            const config = INTERACTION_TONES[type];
+            if (!config) return;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = config.type;
+            osc.frequency.value = config.freq;
+
+            gain.gain.setValueAtTime(0, audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + config.duration);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start();
+            osc.stop(audioContext.currentTime + config.duration);
+        }
+
+        // ===== CURSOR PROXIMITY EFFECT =====
+        function updateProximityGlow(e) {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+            const maxDistance = 300;
+
+            if (distance < maxDistance) {
+                const intensity = 1 - (distance / maxDistance);
+                proximityGlow.style.left = `${e.clientX}px`;
+                proximityGlow.style.top = `${e.clientY}px`;
+                proximityGlow.style.opacity = intensity * 0.6;
+
+                // Subtle response from Saturn core
+                const scale = 1 + (intensity * 0.03);
+                if (!isHoldingCore && !saturnCore.classList.contains('breathing')) {
+                    saturnCore.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                }
+            } else {
+                proximityGlow.style.opacity = 0;
+                if (!isHoldingCore && !saturnCore.classList.contains('breathing')) {
+                    saturnCore.style.transform = 'translate(-50%, -50%) scale(1)';
+                }
+            }
+        }
+
+        // ===== DOUBLE-CLICK SECRET =====
+        function revealSecretGlyph(e) {
+            const glyph = document.createElement('div');
+            glyph.className = 'secret-glyph';
+            glyph.textContent = SECRET_GLYPHS[Math.floor(Math.random() * SECRET_GLYPHS.length)];
+            glyph.style.left = `${e.clientX}px`;
+            glyph.style.top = `${e.clientY}px`;
+            document.body.appendChild(glyph);
+
+            playInteractionTone('secret');
+
+            setTimeout(() => glyph.remove(), 3000);
+        }
+
+        document.addEventListener('dblclick', e => {
+            // Don't trigger on interactive elements
+            if (e.target.closest('.layer-slider-container') || e.target.closest('.sound-toggle')) return;
+            revealSecretGlyph(e);
+        });
+
+        // ===== HOLD INTERACTION ON SATURN CORE =====
+        let holdInterval = null;
+
+        saturnCore.addEventListener('mousedown', e => {
+            if (e.button !== 0) return; // Only left click
+            isHoldingCore = true;
+            holdStartTime = Date.now();
+            saturnCore.classList.add('held');
+            playInteractionTone('hold');
+
+            holdInterval = setInterval(() => {
+                const holdDuration = (Date.now() - holdStartTime) / 1000;
+                if (holdDuration >= 3 && holdDuration < 3.1) {
+                    // After 3 seconds of holding, show revelation
+                    showHoldRevelation();
+                }
+            }, 100);
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isHoldingCore) {
+                isHoldingCore = false;
+                saturnCore.classList.remove('held');
+                clearInterval(holdInterval);
+                playInteractionTone('release');
+            }
+        });
+
+        function showHoldRevelation() {
+            const revelation = HOLD_REVELATIONS[Math.floor(Math.random() * HOLD_REVELATIONS.length)];
+            const el = document.createElement('div');
+            el.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, calc(-50% + 100px));
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.85rem;
+                font-style: italic;
+                color: var(--amber-warm);
+                opacity: 0;
+                pointer-events: none;
+                z-index: 500;
+                text-shadow: 0 0 15px var(--gold-glow);
+                transition: opacity 1s var(--ease-contemplate);
+            `;
+            el.textContent = revelation;
+            document.body.appendChild(el);
+
+            requestAnimationFrame(() => el.style.opacity = '0.8');
+
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            }, 2500);
+        }
+
+        // ===== RING DRAGGING/TILTING =====
+        rings.addEventListener('mousedown', e => {
+            if (e.target === saturnCore) return;
+            isDraggingRings = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            rings.classList.add('dragging');
+            rings.classList.remove('tilted');
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDraggingRings) return;
+
+            const deltaX = (e.clientX - dragStartX) * 0.2;
+            const deltaY = (e.clientY - dragStartY) * 0.2;
+
+            // Constrain tilt angles
+            ringTiltX = Math.max(45, Math.min(85, 75 + deltaY));
+            ringTiltY = Math.max(-30, Math.min(30, deltaX));
+
+            rings.style.transform = `translate(-50%, -50%) rotateX(${ringTiltX}deg) rotateY(${ringTiltY}deg)`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingRings) {
+                isDraggingRings = false;
+                rings.classList.remove('dragging');
+                rings.classList.add('tilted');
+
+                // Slowly return to default after 3 seconds
+                setTimeout(() => {
+                    if (!isDraggingRings) {
+                        ringTiltX = 75;
+                        ringTiltY = 0;
+                        rings.style.transform = 'translate(-50%, -50%) rotateX(75deg) rotateY(0deg)';
+                    }
+                }, 3000);
+            }
+        });
+
+        // ===== SCROLL WHEEL ZOOM =====
+        let zoomTimeout = null;
+
+        document.addEventListener('wheel', e => {
+            e.preventDefault();
+            resetActivity();
+
+            // Accumulate zoom
+            zoomLevel = Math.max(0, Math.min(100, zoomLevel + (e.deltaY > 0 ? 5 : -5)));
+
+            if (zoomLevel > 50) {
+                // Begin zoom into core vision
+                const zoomProgress = (zoomLevel - 50) / 50;
+                zoomOverlay.style.opacity = zoomProgress * 0.8;
+
+                if (zoomLevel >= 90 && !zoomCoreVision.classList.contains('visible')) {
+                    zoomCoreVision.classList.add('visible');
+                    zoomText.textContent = ZOOM_VISIONS[Math.floor(Math.random() * ZOOM_VISIONS.length)];
+                    zoomText.style.opacity = '1';
+                    playInteractionTone('zoom');
+                }
+            } else {
+                zoomOverlay.style.opacity = 0;
+                zoomCoreVision.classList.remove('visible');
+                zoomText.style.opacity = '0';
+            }
+
+            // Reset zoom after inactivity
+            clearTimeout(zoomTimeout);
+            zoomTimeout = setTimeout(() => {
+                zoomLevel = 0;
+                zoomOverlay.style.opacity = 0;
+                zoomCoreVision.classList.remove('visible');
+                zoomText.style.opacity = '0';
+            }, 2000);
+        }, { passive: false });
+
+        // ===== TOUCH INTERACTIONS =====
+        function createTouchRipple(x, y, size = 60) {
+            const ripple = document.createElement('div');
+            ripple.className = 'touch-ripple';
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            ripple.style.width = `${size}px`;
+            ripple.style.height = `${size}px`;
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1500);
+        }
+
+        // Touch start - detect holds and double taps
+        document.addEventListener('touchstart', e => {
+            const touch = e.touches[0];
+            const now = Date.now();
+
+            // Double tap detection
+            if (now - lastTouchTime < 300) {
+                revealSecretGlyph({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+            lastTouchTime = now;
+
+            // Create ripple
+            createTouchRipple(touch.clientX, touch.clientY);
+
+            // Hold detection for core
+            const coreRect = saturnCore.getBoundingClientRect();
+            const touchedCore = touch.clientX >= coreRect.left && touch.clientX <= coreRect.right &&
+                                touch.clientY >= coreRect.top && touch.clientY <= coreRect.bottom;
+
+            if (touchedCore) {
+                touchHoldTimer = setTimeout(() => {
+                    saturnCore.classList.add('held');
+                    playInteractionTone('hold');
+                    setTimeout(() => {
+                        showHoldRevelation();
+                        saturnCore.classList.remove('held');
+                    }, 2000);
+                }, 500);
+            }
+
+            resetActivity();
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            clearTimeout(touchHoldTimer);
+            saturnCore.classList.remove('held');
+        }, { passive: true });
+
+        // Two-finger pinch for zoom
+        let lastPinchDistance = 0;
+
+        document.addEventListener('touchmove', e => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const distance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+
+                if (lastPinchDistance > 0) {
+                    const delta = distance - lastPinchDistance;
+                    zoomLevel = Math.max(0, Math.min(100, zoomLevel + delta * 0.5));
+
+                    if (zoomLevel > 50) {
+                        const zoomProgress = (zoomLevel - 50) / 50;
+                        zoomOverlay.style.opacity = zoomProgress * 0.8;
+
+                        if (zoomLevel >= 90 && !zoomCoreVision.classList.contains('visible')) {
+                            zoomCoreVision.classList.add('visible');
+                            zoomText.textContent = ZOOM_VISIONS[Math.floor(Math.random() * ZOOM_VISIONS.length)];
+                            zoomText.style.opacity = '1';
+                            playInteractionTone('zoom');
+                        }
+                    } else {
+                        zoomOverlay.style.opacity = 0;
+                        zoomCoreVision.classList.remove('visible');
+                        zoomText.style.opacity = '0';
+                    }
+                }
+
+                lastPinchDistance = distance;
+                e.preventDefault();
+            }
+
+            resetActivity();
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            lastPinchDistance = 0;
+            // Reset zoom after touch ends
+            setTimeout(() => {
+                zoomLevel = 0;
+                zoomOverlay.style.opacity = 0;
+                zoomCoreVision.classList.remove('visible');
+                zoomText.style.opacity = '0';
+            }, 1500);
+        }, { passive: true });
+
+        // Two-finger rotation for ring tilt
+        let lastTouchAngle = 0;
+
+        document.addEventListener('touchmove', e => {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const angle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * (180 / Math.PI);
+
+                if (lastTouchAngle !== 0) {
+                    const deltaAngle = angle - lastTouchAngle;
+                    ringTiltY = Math.max(-30, Math.min(30, ringTiltY + deltaAngle * 0.3));
+                    rings.style.transform = `translate(-50%, -50%) rotateX(${ringTiltX}deg) rotateY(${ringTiltY}deg)`;
+                }
+
+                lastTouchAngle = angle;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            lastTouchAngle = 0;
+            // Return rings to default after touch ends
+            setTimeout(() => {
+                ringTiltX = 75;
+                ringTiltY = 0;
+                rings.style.transform = 'translate(-50%, -50%) rotateX(75deg) rotateY(0deg)';
+            }, 2000);
+        }, { passive: true });
+
+        // ===== TRIPLE-CLICK DEEP SECRET =====
+        const DEEP_WHISPERS = ['the rings were never about saturn','time pretends to be linear for your comfort','what orbits, waits. what waits, becomes.','you are the lead that thinks it cannot be gold','every limit is a door pretending to be a wall'];
+        let clickCount = 0, clickTimer = null;
+        document.addEventListener('click', e => {
+            if (e.target.closest('.layer-slider-container, .sound-toggle, .back-link')) return;
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => { if (clickCount >= 3) { const w = document.createElement('div'); w.className = 'deep-whisper'; w.textContent = DEEP_WHISPERS[Math.floor(Math.random() * DEEP_WHISPERS.length)]; document.body.appendChild(w); setTimeout(() => w.remove(), 5000); } clickCount = 0; }, 400);
+        });
+
+        // ===== STAR AWAKENING =====
+        let awakenedStars = [], lastStarAwaken = 0;
+        document.addEventListener('mousemove', e => {
+            const now = Date.now();
+            if (now - lastStarAwaken < 200) return;
+            document.querySelectorAll('.star:not(.awakened)').forEach(star => {
+                const r = star.getBoundingClientRect(), sx = r.left + r.width/2, sy = r.top + r.height/2;
+                if (Math.hypot(e.clientX - sx, e.clientY - sy) < 50) {
+                    star.classList.add('awakened');
+                    awakenedStars.push({ el: star, x: sx, y: sy, time: now });
+                    lastStarAwaken = now;
+                    if (awakenedStars.length >= 2) { const p = awakenedStars[awakenedStars.length - 2]; if (now - p.time < 2000) { const ln = document.createElement('div'); ln.className = 'constellation-line'; ln.style.cssText = 'left:'+p.x+'px;top:'+p.y+'px;width:'+Math.hypot(sx-p.x,sy-p.y)+'px;transform:rotate('+Math.atan2(sy-p.y,sx-p.x)*180/Math.PI+'deg)'; document.body.appendChild(ln); setTimeout(() => ln.remove(), 4000); } }
+                    setTimeout(() => { star.classList.remove('awakened'); awakenedStars = awakenedStars.filter(s => s.el !== star); }, 2000);
+                }
+            });
+        }, { passive: true });
+
+        // ===== LONG PRESS PATTERN =====
+        let lpTimer = null, lpX = 0, lpY = 0;
+        document.addEventListener('mousedown', e => {
+            if (e.target.closest('.layer-slider-container, .sound-toggle, .back-link') || e.target === saturnCore) return;
+            lpX = e.clientX; lpY = e.clientY;
+            lpTimer = setTimeout(() => { const pat = document.createElement('div'); pat.className = 'transient-pattern'; pat.style.cssText = 'left:'+lpX+'px;top:'+lpY+'px'; for (let i = 0; i < 3; i++) { const ring = document.createElement('div'); ring.className = 'transient-ring'; ring.style.animationDelay = (i * 0.3)+'s'; pat.appendChild(ring); } document.body.appendChild(pat); setTimeout(() => pat.remove(), 3500); }, 1500);
+        });
+        document.addEventListener('mouseup', () => clearTimeout(lpTimer));
+        document.addEventListener('mousemove', e => { if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 20) clearTimeout(lpTimer); }, { passive: true });
+
+        // ===== KEYBOARD =====
+        document.addEventListener('keydown', e => {
+            resetActivity();
+            const key = e.key.toLowerCase();
+
+            if (key === 'm') {
+                summonMercury();
+            } else if (key === 'j') {
+                showJanus();
+            } else if (key === 's') {
+                toggleSound();
+            } else if (key === 'r') {
+                returnToFear();
+            } else if (key === ' ') {
+                e.preventDefault();
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            } else if (key === 'arrowright' || key === 'arrowup') {
+                e.preventDefault();
+                if (currentLayer < 3) {
+                    setLayer(currentLayer + 1);
+                }
+            } else if (key === 'arrowleft' || key === 'arrowdown') {
+                e.preventDefault();
+                if (currentLayer > 1) {
+                    setLayer(currentLayer - 1);
+                }
+            }
+        });
+
+        // ===== MOUSE TRACKING =====
+        let moveThrottle = false;
+        document.addEventListener('mousemove', e => {
+            // Update parallax target position for depth effect
+            targetMouseX = e.clientX;
+            targetMouseY = e.clientY;
+
+            // Always update proximity glow for smooth effect
+            updateProximityGlow(e);
+
+            if (moveThrottle) return;
+            moveThrottle = true;
+            resetActivity();
+            setTimeout(() => moveThrottle = false, 100);
+        }, { passive: true });
+
+        // ===== RIGHT CLICK =====
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            interactionLog.rightClicks++;
+            const whisper = document.createElement('div');
+            whisper.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.8rem;
+                font-style: italic;
+                color: var(--amber-warm);
+                opacity: 0;
+                pointer-events: none;
+                transform: translate(-50%, -50%);
+                transition: opacity 1s ease, transform 2s ease;
+                z-index: 1000;
+                text-shadow: 0 0 10px var(--gold-glow);
+            `;
+            whisper.textContent = WHISPER_KOANS[Math.floor(Math.random() * WHISPER_KOANS.length)];
+            document.body.appendChild(whisper);
+
+            requestAnimationFrame(() => {
+                whisper.style.opacity = '0.7';
+                whisper.style.transform = 'translate(-50%, -50%) translateY(-15px)';
+            });
+
+            setTimeout(() => {
+                whisper.style.opacity = '0';
+                setTimeout(() => whisper.remove(), 1000);
+            }, 2000);
+        });
+
+        // ===== CORE CLICK =====
+        saturnCore.addEventListener('click', () => {
+            if (currentLayer === 3 && hasCompletedCycle) {
+                returnToFear();
+            } else if (currentLayer < 3) {
+                summonMercury();
+            }
+        });
+
+        // ===== INITIALIZE =====
+        createStars();
+        createCosmicDust();
+        createGodRays();
+        createDepthElements();
+        createOrbitingElements();
+        animateOrbits();
+        updateParallax();
+        checkStillness();
+        setLayer(1);
+
+        // Show keyboard hints after delay
+        setTimeout(() => {
+            keyboardHint.classList.add('visible');
+        }, 8000);
+
+        // ===== CONSOLE POETRY =====
+        setTimeout(() => {
+            console.log('%csaturn', 'font-size: 24px; font-family: Georgia, serif; color: #d4a056; font-weight: 100; letter-spacing: 0.4em;');
+            console.log('%cthe sixth day. the day of rest.', 'font-size: 11px; color: #4a5568; font-style: italic;');
+            console.log('%c', 'padding: 0');
+            console.log('%cthree layers await:', 'font-size: 10px; color: #718096;');
+            console.log('%c  fear → understanding → peace', 'font-size: 10px; color: #86b398; font-family: monospace;');
+            console.log('%c', 'padding: 0');
+            console.log('%cmercury carries messages between worlds.', 'font-size: 10px; color: #c0d8e8; font-style: italic;');
+            console.log('%cjanus guards the threshold.', 'font-size: 10px; color: #4d3d2d; font-style: italic;');
+            console.log('%c', 'padding: 0');
+            console.log('%c[m] mercury  [j] janus  [s] sound  [r] return  [space] advance', 'font-size: 9px; font-family: monospace; color: #a0aec0;');
+            console.log('%c', 'padding: 0');
+            console.log('%cstillness reveals. patience transforms.', 'font-size: 10px; color: #d4a056; font-style: italic;');
+            console.log('%c', 'padding: 0');
+            console.log('%cthe curious discover more:', 'font-size: 9px; color: #718096; font-style: italic;');
+            console.log('%c  stars remember being touched', 'font-size: 9px; color: #4a5568;');
+            console.log('%c  three clicks reveal deeper truths', 'font-size: 9px; color: #4a5568;');
+            console.log('%c  holding still creates ripples', 'font-size: 9px; color: #4a5568;');
+            console.log('%c  the rings can be moved', 'font-size: 9px; color: #4a5568;');
+            console.log('%c  scroll to see what saturn hides', 'font-size: 9px; color: #4a5568;');
+            console.log('%c', 'padding: 0');
+            console.log('%cthe stillness is listening.', 'font-size: 10px; color: #d4a056; font-style: italic;');
+            console.log('%cthe patience is watching.', 'font-size: 10px; color: #d4a056; font-style: italic;');
+            console.log('%cthe rings are counting.', 'font-size: 10px; color: #d4a056; font-style: italic;');
+        }, 500);
+
+        // Dynamic console messages based on interactions
+        function logPoetry(message, style = 'default') {
+            const styles = {
+                default: 'font-size: 10px; color: #718096; font-style: italic;',
+                saturn: 'font-size: 10px; color: #d4a056; font-style: italic;',
+                mercury: 'font-size: 10px; color: #c0d8e8; font-style: italic;',
+                janus: 'font-size: 10px; color: #4d3d2d; font-style: italic;',
+                whisper: 'font-size: 9px; color: #4a5568; font-style: italic;',
+                revelation: 'font-size: 11px; color: #86b398; font-style: italic;'
+            };
+            console.log(`%c${message}`, styles[style] || styles.default);
+        }
+
+        // Log poetry on significant interactions
+        window.saturnConsolePoetry = {
+            onMercury: () => {
+                const poems = [
+                    'mercury arrived. he always does.',
+                    'the trickster winks. transformation begins.',
+                    'quicksilver thoughts cross the threshold.'
+                ];
+                logPoetry(poems[interactionLog.mercurySummoned % poems.length], 'mercury');
+            },
+            onJanus: () => {
+                const poems = [
+                    'janus turns. which face did you see?',
+                    'the door opens both ways at once.',
+                    'past and future exchange glances.'
+                ];
+                logPoetry(poems[interactionLog.janusAppeared % poems.length], 'janus');
+            },
+            onLayerChange: (layer) => {
+                const poems = {
+                    1: 'you descend into weight. this is where saturn begins.',
+                    2: 'look: the cage was cradling you all along.',
+                    3: 'rest. the transformation is complete. was it ever otherwise?'
+                };
+                logPoetry(poems[layer], 'saturn');
+            },
+            onCycleComplete: () => {
+                logPoetry('a full cycle. saturn nods. time bows.', 'revelation');
+            },
+            onDeepStillness: () => {
+                logPoetry('you held still long enough for saturn to notice.', 'saturn');
+            }
+        };
+
+        // ===== SATURN'S THOUGHTS - Periodic appearing/fading text =====
+        function showSaturnThought() {
+            if (document.hidden) return;
+
+            const thought = document.createElement('div');
+            thought.className = 'saturn-thought';
+            thought.style.cssText = `
+                position: fixed;
+                left: 50%;
+                bottom: 15%;
+                transform: translateX(-50%);
+                font-family: 'Cormorant Garamond', serif;
+                font-size: 0.9rem;
+                font-style: italic;
+                color: var(--amber-dim);
+                opacity: 0;
+                pointer-events: none;
+                text-align: center;
+                max-width: 80%;
+                transition: opacity 4s ease;
+                z-index: 50;
+                text-shadow: 0 0 20px rgba(0,0,0,0.8);
+            `;
+            thought.textContent = SATURN_THOUGHTS[Math.floor(Math.random() * SATURN_THOUGHTS.length)];
+            document.body.appendChild(thought);
+
+            interactionLog.saturnThoughtsShown++;
+
+            // Fade in
+            requestAnimationFrame(() => {
+                thought.style.opacity = '0.5';
+            });
+
+            // Fade out and remove
+            setTimeout(() => {
+                thought.style.opacity = '0';
+                setTimeout(() => thought.remove(), 4000);
+            }, 8000);
+        }
+
+        // Show Saturn's thoughts periodically (every 45-90 seconds)
+        function scheduleSaturnThought() {
+            const delay = 45000 + Math.random() * 45000;
+            setTimeout(() => {
+                showSaturnThought();
+                scheduleSaturnThought();
+            }, delay);
+        }
+
+        // Start Saturn's thoughts after initial settling
+        setTimeout(scheduleSaturnThought, 30000);
+    })();
+    </script>
+</body>
+</html>
