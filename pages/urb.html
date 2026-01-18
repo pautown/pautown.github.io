@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urb</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bone: #f5f0e6;
+            --bone-dark: #e8e0d0;
+            --amber: #d4a056;
+            --amber-soft: rgba(212, 160, 86, 0.3);
+            --slate: #4a5568;
+            --slate-light: #718096;
+            --ink: #2d3748;
+            --glass: rgba(245, 240, 230, 0.7);
+            --window-bg: #c0c0c0;
+            --window-title: #000080;
+            --ease-gentle: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: var(--bone);
+            overflow: hidden;
+            cursor: default;
+        }
+
+        /* Desktop wallpaper pattern */
+        .desktop {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse at 20% 80%, rgba(212, 160, 86, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(107, 142, 175, 0.1) 0%, transparent 50%);
+        }
+
+        /* Floating desktop icons - move very slowly */
+        .desktop-icon {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.8s var(--ease-gentle);
+            animation: drift 120s ease-in-out infinite;
+        }
+
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .desktop-icon .icon {
+            width: 32px;
+            height: 32px;
+            background: var(--glass);
+            border: 1px solid var(--amber-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .desktop-icon span {
+            font-size: 9px;
+            color: var(--bone);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            max-width: 60px;
+            text-align: center;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(3px, 5px); }
+            50% { transform: translate(-2px, 3px); }
+            75% { transform: translate(4px, -2px); }
+        }
+
+        /* Taskbar */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: linear-gradient(180deg, #c8c8c8 0%, #a0a0a0 100%);
+            border-top: 1px solid #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            gap: 4px;
+            z-index: 1000;
+        }
+
+        .start-button {
+            background: linear-gradient(180deg, #e8e8e8 0%, #b0b0b0 50%, #909090 100%);
+            border: 1px outset #ddd;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .start-button:active {
+            border-style: inset;
+        }
+
+        .taskbar-clock {
+            margin-left: auto;
+            font-size: 10px;
+            color: #000;
+            padding: 0 8px;
+            border: 1px inset #888;
+            background: #d0d0d0;
+        }
+
+        /* Window styles */
+        .window {
+            position: absolute;
+            background: var(--window-bg);
+            border: 2px outset #fff;
+            box-shadow: 4px 4px 12px rgba(0,0,0,0.4);
+            min-width: 200px;
+            transition: opacity 2s var(--ease-gentle), transform 2s var(--ease-gentle);
+        }
+
+        .window-title {
+            background: linear-gradient(90deg, var(--window-title) 0%, #1084d0 100%);
+            color: white;
+            padding: 2px 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 2px;
+        }
+
+        .window-btn {
+            width: 16px;
+            height: 14px;
+            background: #c0c0c0;
+            border: 1px outset #ddd;
+            font-size: 9px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .window-content {
+            padding: 8px;
+            background: #fff;
+            border: 1px inset #888;
+            margin: 4px;
+            min-height: 100px;
+        }
+
+        /* IRC Window */
+        .irc-window {
+            width: 380px;
+            top: 60px;
+            left: 40px;
+        }
+
+        .irc-content {
+            height: 280px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .irc-messages {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 11px;
+            color: #000;
+            background: #fff;
+            padding: 4px;
+            border: 1px inset #888;
+            margin-bottom: 4px;
+        }
+
+        .irc-message {
+            margin: 2px 0;
+            opacity: 0;
+            animation: messageAppear 3s var(--ease-gentle) forwards;
+        }
+
+        @keyframes messageAppear {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .irc-message.system {
+            color: #666;
+            font-style: italic;
+        }
+
+        .irc-message .timestamp {
+            color: #888;
+        }
+
+        .irc-message .nick {
+            font-weight: bold;
+        }
+
+        .irc-input-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .irc-input {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 2px 4px;
+            border: 1px inset #888;
+        }
+
+        .irc-send {
+            background: #c0c0c0;
+            border: 1px outset #ddd;
+            padding: 2px 8px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .irc-users {
+            font-size: 10px;
+            color: #666;
+            padding: 4px;
+            border-top: 1px solid #ccc;
+            margin-top: 4px;
+        }
+
+        /* Status bar at bottom of IRC */
+        .irc-status {
+            font-size: 9px;
+            color: #888;
+            padding: 2px 4px;
+            background: #e8e8e8;
+            border-top: 1px solid #ccc;
+        }
+
+        /* Property popup windows */
+        .property-popup {
+            width: 260px;
+            opacity: 0;
+            transform: scale(0.9);
+            pointer-events: none;
+        }
+
+        .property-popup.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .property-content {
+            text-align: center;
+            padding: 16px 8px;
+        }
+
+        .property-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .property-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .property-price {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .property-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .property-btn {
+            background: #c0c0c0;
+            border: 1px outset #ddd;
+            padding: 4px 16px;
+            font-size: 10px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .property-btn:active {
+            border-style: inset;
+        }
+
+        .property-btn.primary {
+            background: linear-gradient(180deg, #ffe4a0 0%, #d4a056 100%);
+        }
+
+        /* Notification area */
+        .notification-area {
+            position: fixed;
+            bottom: 36px;
+            right: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 999;
+        }
+
+        .notification {
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--amber-soft);
+            padding: 8px 12px;
+            font-size: 10px;
+            color: var(--ink);
+            max-width: 200px;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 1.5s var(--ease-gentle);
+        }
+
+        .notification.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Slow loading indicator */
+        .loading-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 11px;
+            color: var(--bone);
+            opacity: 0;
+            transition: opacity 2s var(--ease-gentle);
+            pointer-events: none;
+        }
+
+        .loading-indicator.visible {
+            opacity: 0.6;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 4s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+
+        /* Social feed window */
+        .feed-window {
+            width: 300px;
+            top: 100px;
+            right: 60px;
+        }
+
+        .feed-content {
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .feed-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 10px;
+            color: #333;
+            opacity: 0;
+            animation: feedAppear 4s var(--ease-gentle) forwards;
+        }
+
+        @keyframes feedAppear {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .feed-user {
+            font-weight: bold;
+            color: var(--window-title);
+        }
+
+        .feed-time {
+            color: #999;
+            font-size: 9px;
+        }
+
+        .feed-empty {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            font-size: 10px;
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 12px;
+            color: var(--bone);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.8s var(--ease-gentle);
+            z-index: 1001;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Cursor trail - very slow */
+        .cursor-trail {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--amber-soft);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 3s var(--ease-gentle);
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop"></div>
+
+    <!-- Desktop Icons -->
+    <div class="desktop-icon" style="top: 20px; left: 20px; animation-delay: 0s;">
+        <div class="icon">~</div>
+        <span>my thoughts</span>
+    </div>
+    <div class="desktop-icon" style="top: 20px; left: 100px; animation-delay: -30s;">
+        <div class="icon">?</div>
+        <span>somewhere</span>
+    </div>
+    <div class="desktop-icon" style="top: 100px; left: 20px; animation-delay: -60s;">
+        <div class="icon">*</div>
+        <span>maybe later</span>
+    </div>
+    <div class="desktop-icon" style="top: 100px; left: 100px; animation-delay: -90s;">
+        <div class="icon">...</div>
+        <span>waiting</span>
+    </div>
+
+    <!-- IRC Window -->
+    <div class="window irc-window" id="ircWindow">
+        <div class="window-title">
+            <span>#quiet_room - nobody here</span>
+            <div class="window-controls">
+                <button class="window-btn">_</button>
+                <button class="window-btn">x</button>
+            </div>
+        </div>
+        <div class="window-content irc-content">
+            <div class="irc-messages" id="ircMessages">
+                <div class="irc-message system" style="animation-delay: 0s;">
+                    <span class="timestamp">[...]</span> * You have joined #quiet_room
+                </div>
+                <div class="irc-message system" style="animation-delay: 2s;">
+                    <span class="timestamp">[...]</span> * Topic: "patience is a room you enter slowly"
+                </div>
+                <div class="irc-message system" style="animation-delay: 5s;">
+                    <span class="timestamp">[...]</span> * Users: just you (for now)
+                </div>
+            </div>
+            <div class="irc-input-row">
+                <input type="text" class="irc-input" id="ircInput" placeholder="say something to the emptiness...">
+                <button class="irc-send" id="ircSend">send</button>
+            </div>
+            <div class="irc-users">0 users online (you are a gentle presence)</div>
+            <div class="irc-status">
+                <span class="loading-dots">connecting to the void</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Feed Window -->
+    <div class="window feed-window" id="feedWindow">
+        <div class="window-title">
+            <span>urb://feed</span>
+            <div class="window-controls">
+                <button class="window-btn">_</button>
+                <button class="window-btn">x</button>
+            </div>
+        </div>
+        <div class="window-content feed-content" id="feedContent">
+            <div class="feed-empty">
+                the feed is resting<br>
+                <span style="font-size: 8px;">check back in a century or two</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Popup (spawns dynamically) -->
+    <div class="window property-popup" id="propertyPopup">
+        <div class="window-title">
+            <span id="propertyWindowTitle">investment opportunity</span>
+            <div class="window-controls">
+                <button class="window-btn" onclick="dismissPopup()">x</button>
+            </div>
+        </div>
+        <div class="window-content property-content">
+            <div class="property-icon" id="propertyIcon"></div>
+            <div class="property-title" id="propertyTitle"></div>
+            <div class="property-price" id="propertyPrice"></div>
+            <div class="property-buttons">
+                <button class="property-btn" onclick="dismissPopup()">not today</button>
+                <button class="property-btn primary" onclick="considerPurchase()">consider</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Area -->
+    <div class="notification-area" id="notificationArea"></div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-indicator" id="loadingIndicator">
+        <span class="loading-dots">something is happening</span>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <button class="start-button">
+            <span>~</span> urb
+        </button>
+        <div class="taskbar-clock" id="taskbarClock">--:--</div>
+    </div>
+
+    <a href="../index.html" class="return-link">return to surface</a>
+
+    <script>
+        // Properties for popup offers
+        const properties = [
+            { icon: '🏰', title: 'A Small Castle', subtitle: 'slightly haunted, good bones', price: '∞ coins' },
+            { icon: '⭐', title: 'A Distant Star', subtitle: 'unnamed, patient, yours', price: '7 wishes' },
+            { icon: '⚓', title: 'An Anchor', subtitle: 'for staying somewhere', price: '3 goodbyes' },
+            { icon: '🌙', title: 'A Piece of Moon', subtitle: 'waning, but sincere', price: '1 secret' },
+            { icon: '🗝️', title: 'A Skeleton Key', subtitle: 'opens most silences', price: '4 questions' },
+            { icon: '🏔️', title: 'A Small Mountain', subtitle: 'very patient', price: '∞ footsteps' },
+            { icon: '⛵', title: 'A Wooden Ship', subtitle: 'knows the way home', price: '12 tides' },
+            { icon: '🌊', title: 'A Particular Wave', subtitle: 'returns eventually', price: '1 memory' },
+            { icon: '🏛️', title: 'Ruins of Something', subtitle: 'unclear what', price: '5 afternoons' },
+            { icon: '🌸', title: 'A Perpetual Spring', subtitle: 'somewhere specific', price: '8 breaths' },
+            { icon: '🔔', title: 'A Bell Tower', subtitle: 'rings at odd hours', price: '∞ silences' },
+            { icon: '🌲', title: 'An Ancient Tree', subtitle: 'remembers more', price: '6 seasons' },
+            { icon: '💫', title: 'A Falling Star', subtitle: 'already fallen, still falling', price: '1 moment' },
+            { icon: '🏺', title: 'An Empty Vessel', subtitle: 'holds exactly enough', price: '2 tears' },
+            { icon: '🌀', title: 'A Small Vortex', subtitle: 'going nowhere specific', price: '9 circles' },
+        ];
+
+        // Feed posts (appear very slowly)
+        const feedPosts = [
+            { user: 'nobody_yet', text: 'thinking about thinking about it', time: 'sometime ago' },
+            { user: 'waiting_still', text: 'the light is different today. or the same.', time: 'recently perhaps' },
+            { user: 'almost_here', text: 'i forgot what i was going to say', time: 'just now (relatively)' },
+            { user: 'somewhere_else', text: '...', time: 'ongoing' },
+            { user: 'gentle_presence', text: 'hello? (this will arrive later)', time: 'eventually' },
+        ];
+
+        // IRC state
+        const pendingMessages = [];
+        let messageDelay = 45000; // 45 seconds minimum delay
+
+        // DOM elements
+        const ircMessages = document.getElementById('ircMessages');
+        const ircInput = document.getElementById('ircInput');
+        const ircSend = document.getElementById('ircSend');
+        const propertyPopup = document.getElementById('propertyPopup');
+        const feedContent = document.getElementById('feedContent');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const notificationArea = document.getElementById('notificationArea');
+        const taskbarClock = document.getElementById('taskbarClock');
+
+        // Slow clock (runs at 1/10 speed)
+        let slowTime = new Date();
+        function updateClock() {
+            slowTime = new Date(slowTime.getTime() + 6000); // 6 seconds per tick (1/10 speed)
+            const h = slowTime.getHours().toString().padStart(2, '0');
+            const m = slowTime.getMinutes().toString().padStart(2, '0');
+            taskbarClock.textContent = `${h}:${m}`;
+        }
+        setInterval(updateClock, 60000); // Update every minute
+        updateClock();
+
+        // Send IRC message (with long delay)
+        function sendMessage() {
+            const text = ircInput.value.trim();
+            if (!text) return;
+
+            ircInput.value = '';
+
+            // Show loading
+            loadingIndicator.classList.add('visible');
+
+            // Add to pending with delay
+            const delay = messageDelay + Math.random() * 30000; // 45-75 seconds
+
+            // Show "sending" notification
+            showNotification('your message is traveling...');
+
+            setTimeout(() => {
+                // Message finally appears
+                const msgEl = document.createElement('div');
+                msgEl.className = 'irc-message';
+                msgEl.innerHTML = `<span class="timestamp">[now]</span> <span class="nick" style="color: var(--amber);">you:</span> ${escapeHtml(text)}`;
+                ircMessages.appendChild(msgEl);
+                ircMessages.scrollTop = ircMessages.scrollHeight;
+
+                loadingIndicator.classList.remove('visible');
+                showNotification('your words arrived (nobody heard)');
+
+                // Sometimes, after a very long time, the void responds
+                if (Math.random() < 0.3) {
+                    setTimeout(() => {
+                        const responses = [
+                            '* the room acknowledges your presence',
+                            '* a gentle echo returns',
+                            '* somewhere, something shifted',
+                            '* the silence noticed',
+                            '* your words found a corner to rest',
+                        ];
+                        const respEl = document.createElement('div');
+                        respEl.className = 'irc-message system';
+                        respEl.innerHTML = `<span class="timestamp">[...]</span> ${responses[Math.floor(Math.random() * responses.length)]}`;
+                        ircMessages.appendChild(respEl);
+                        ircMessages.scrollTop = ircMessages.scrollHeight;
+                    }, 60000 + Math.random() * 60000); // 1-2 minutes later
+                }
+            }, delay);
+        }
+
+        ircSend.addEventListener('click', sendMessage);
+        ircInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Property popup system
+        let popupTimeout;
+        function showPropertyPopup() {
+            const prop = properties[Math.floor(Math.random() * properties.length)];
+
+            document.getElementById('propertyIcon').textContent = prop.icon;
+            document.getElementById('propertyTitle').innerHTML = `${prop.title}<br><span style="font-size: 10px; color: #888;">${prop.subtitle}</span>`;
+            document.getElementById('propertyPrice').textContent = `asking: ${prop.price}`;
+
+            // Random position
+            const maxX = window.innerWidth - 300;
+            const maxY = window.innerHeight - 250;
+            propertyPopup.style.left = (100 + Math.random() * (maxX - 100)) + 'px';
+            propertyPopup.style.top = (50 + Math.random() * (maxY - 100)) + 'px';
+
+            propertyPopup.classList.add('visible');
+
+            // Auto-dismiss after a while
+            popupTimeout = setTimeout(dismissPopup, 20000);
+        }
+
+        function dismissPopup() {
+            clearTimeout(popupTimeout);
+            propertyPopup.classList.remove('visible');
+            scheduleNextPopup();
+        }
+
+        function considerPurchase() {
+            showNotification('your interest has been noted');
+            setTimeout(() => {
+                showNotification('(nothing will come of this)');
+            }, 5000);
+            dismissPopup();
+        }
+
+        function scheduleNextPopup() {
+            // Random interval: 30 seconds to 2 minutes
+            const delay = 30000 + Math.random() * 90000;
+            setTimeout(showPropertyPopup, delay);
+        }
+
+        // Start popup cycle after initial delay
+        setTimeout(showPropertyPopup, 15000);
+
+        // Notification system
+        function showNotification(text) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = text;
+            notificationArea.appendChild(notif);
+
+            setTimeout(() => notif.classList.add('visible'), 100);
+            setTimeout(() => {
+                notif.classList.remove('visible');
+                setTimeout(() => notif.remove(), 1500);
+            }, 8000);
+        }
+
+        // Feed posts appear very slowly
+        let feedIndex = 0;
+        function addFeedPost() {
+            if (feedIndex === 0) {
+                feedContent.innerHTML = '';
+            }
+
+            if (feedIndex < feedPosts.length) {
+                const post = feedPosts[feedIndex];
+                const postEl = document.createElement('div');
+                postEl.className = 'feed-item';
+                postEl.innerHTML = `
+                    <div class="feed-user">@${post.user}</div>
+                    <div>${post.text}</div>
+                    <div class="feed-time">${post.time}</div>
+                `;
+                feedContent.appendChild(postEl);
+                feedIndex++;
+
+                // Next post in 20-40 seconds
+                setTimeout(addFeedPost, 20000 + Math.random() * 20000);
+            }
+        }
+        setTimeout(addFeedPost, 10000);
+
+        // Escape HTML for IRC
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Make windows draggable (slowly)
+        document.querySelectorAll('.window-title').forEach(title => {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            title.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('window-btn')) return;
+                isDragging = true;
+                const win = title.parentElement;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = win.offsetLeft;
+                startTop = win.offsetTop;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const win = title.parentElement;
+                const dx = (e.clientX - startX) * 0.3; // Slow drag
+                const dy = (e.clientY - startY) * 0.3;
+                win.style.left = (startLeft + dx) + 'px';
+                win.style.top = (startTop + dy) + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        });
+
+        // Console poetry
+        console.log('%c~', 'font-size: 24px; color: #d4a056;');
+        console.log('%curb', 'font-family: serif; font-size: 14px; color: #718096;');
+        console.log('%ca place where nothing moves quickly', 'font-style: italic; color: #a0aec0;');
+        console.log('%cand that is fine', 'font-style: italic; color: #a0aec0;');
+
+        // Right-click whisper
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const whispers = [
+                'the bandwidth here is measured in seasons',
+                'everyone left for somewhere slower',
+                'your presence is noted in the logs',
+                'the server is dreaming',
+                'latency is a form of kindness',
+            ];
+            showNotification(whispers[Math.floor(Math.random() * whispers.length)]);
+        });
+
+        // Stillness detection
+        let stillnessTimer;
+        let stillnessLevel = 0;
+
+        function resetStillness() {
+            clearTimeout(stillnessTimer);
+            stillnessLevel = 0;
+            stillnessTimer = setTimeout(stillnessReward, 30000);
+        }
+
+        function stillnessReward() {
+            stillnessLevel++;
+            const rewards = [
+                () => showNotification('you are patient'),
+                () => showNotification('the room appreciates stillness'),
+                () => {
+                    // Secret: a ghost user briefly appears in IRC
+                    const ghostEl = document.createElement('div');
+                    ghostEl.className = 'irc-message system';
+                    ghostEl.innerHTML = '<span class="timestamp">[?]</span> * someone_familiar has joined (briefly)';
+                    ircMessages.appendChild(ghostEl);
+                    setTimeout(() => {
+                        const leaveEl = document.createElement('div');
+                        leaveEl.className = 'irc-message system';
+                        leaveEl.innerHTML = '<span class="timestamp">[?]</span> * someone_familiar has left (they were never really here)';
+                        ircMessages.appendChild(leaveEl);
+                    }, 10000);
+                },
+                () => showNotification('time moves differently when you let it'),
+            ];
+
+            if (stillnessLevel <= rewards.length) {
+                rewards[stillnessLevel - 1]();
+            }
+
+            stillnessTimer = setTimeout(stillnessReward, 30000);
+        }
+
+        document.addEventListener('mousemove', resetStillness);
+        document.addEventListener('keydown', resetStillness);
+        resetStillness();
+
+        // Initial notifications
+        setTimeout(() => showNotification('welcome to urb'), 3000);
+        setTimeout(() => showNotification('everything here takes its time'), 8000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Perfection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --silver: #c0c0c8;
+            --silver-light: #e8e8f0;
+            --pink-gold: #e8b4b8;
+            --pink-gold-soft: rgba(232, 180, 184, 0.3);
+            --rose-gold: #d4a0a8;
+            --void: #1a1a24;
+            --void-soft: #2a2a38;
+            --text: #f0f0f8;
+            --text-dim: rgba(240, 240, 248, 0.5);
+            --ease-quantum: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--void);
+            min-height: 100vh;
+            color: var(--text);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        /* The field - where particles exist */
+        .quantum-field {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 30% 70%, rgba(232, 180, 184, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 30%, rgba(192, 192, 200, 0.08) 0%, transparent 50%),
+                var(--void);
+        }
+
+        /* Particles - exist in superposition until observed */
+        .particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.8s var(--ease-quantum);
+        }
+
+        .particle::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.3;
+            filter: blur(4px);
+            animation: particlePulse 3s ease-in-out infinite;
+        }
+
+        .particle.superposition {
+            animation: superpositionDrift 8s ease-in-out infinite;
+            background: linear-gradient(135deg, var(--silver) 0%, var(--pink-gold) 100%);
+            box-shadow:
+                0 0 20px var(--pink-gold-soft),
+                0 0 40px rgba(192, 192, 200, 0.2);
+        }
+
+        .particle.collapsed {
+            animation: none;
+            transform: scale(1.5);
+        }
+
+        .particle.collapsed.kindness {
+            background: var(--pink-gold);
+            box-shadow: 0 0 30px var(--pink-gold-soft);
+        }
+
+        .particle.collapsed.nothing {
+            background: var(--silver);
+            opacity: 0.4;
+            box-shadow: 0 0 20px rgba(192, 192, 200, 0.3);
+        }
+
+        .particle.collapsed.sock {
+            background: linear-gradient(45deg, var(--rose-gold), var(--silver));
+            border-radius: 40% 60% 60% 40%;
+        }
+
+        .particle.entangled {
+            animation: entangledPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes superpositionDrift {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.8;
+            }
+            25% {
+                transform: translate(5px, -8px) scale(1.1);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-3px, 5px) scale(0.9);
+                opacity: 0.6;
+            }
+            75% {
+                transform: translate(8px, 3px) scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes particlePulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.3); opacity: 0.5; }
+        }
+
+        @keyframes entangledPulse {
+            0%, 100% { box-shadow: 0 0 20px var(--pink-gold-soft); }
+            50% { box-shadow: 0 0 40px var(--pink-gold), 0 0 60px var(--silver); }
+        }
+
+        /* The decision - always in superposition */
+        .decision-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .decision {
+            font-size: 1.4rem;
+            font-style: italic;
+            color: var(--text-dim);
+            opacity: 0;
+            transition: opacity 2s var(--ease-quantum);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .decision.visible {
+            opacity: 1;
+        }
+
+        .decision .highlight {
+            color: var(--pink-gold);
+        }
+
+        /* Kindness counter */
+        .kindness-meter {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .kindness-count {
+            color: var(--pink-gold);
+            min-width: 2ch;
+            text-align: right;
+        }
+
+        .kindness-unit {
+            opacity: 0.5;
+        }
+
+        /* Observation feedback */
+        .observation {
+            position: fixed;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--text);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s var(--ease-quantum);
+            white-space: nowrap;
+        }
+
+        .observation.visible {
+            opacity: 0.7;
+            animation: observationFade 3s var(--ease-quantum) forwards;
+        }
+
+        @keyframes observationFade {
+            0% { opacity: 0; transform: translateY(0); }
+            20% { opacity: 0.7; }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* Stillness revelation */
+        .stillness-revelation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--silver-light);
+            opacity: 0;
+            transition: opacity 3s var(--ease-quantum);
+            pointer-events: none;
+            z-index: 200;
+            max-width: 500px;
+            line-height: 1.8;
+        }
+
+        .stillness-revelation.visible {
+            opacity: 1;
+        }
+
+        .stillness-revelation .solution {
+            display: block;
+            margin-top: 1rem;
+            font-size: 1.3rem;
+            color: var(--pink-gold);
+            font-style: italic;
+        }
+
+        /* Entanglement line */
+        .entanglement-line {
+            position: fixed;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--pink-gold-soft), transparent);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s var(--ease-quantum);
+            transform-origin: left center;
+            z-index: 50;
+        }
+
+        .entanglement-line.visible {
+            opacity: 1;
+            animation: entanglementPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes entanglementPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Wave function visualization */
+        .wave-function {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 40px;
+            opacity: 0.3;
+        }
+
+        .wave-function svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .wave-function path {
+            fill: none;
+            stroke: var(--silver);
+            stroke-width: 1;
+            animation: waveOscillate 4s ease-in-out infinite;
+        }
+
+        @keyframes waveOscillate {
+            0%, 100% { d: path('M0,20 Q25,5 50,20 T100,20 T150,20 T200,20'); }
+            50% { d: path('M0,20 Q25,35 50,20 T100,20 T150,20 T200,20'); }
+        }
+
+        /* Instructions - fade with interaction */
+        .instructions {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-align: center;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            opacity: 0.5;
+            transition: opacity 2s var(--ease-quantum);
+        }
+
+        .instructions.faded {
+            opacity: 0.15;
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            opacity: 0.3;
+            transition: opacity 0.8s var(--ease-quantum);
+            z-index: 1000;
+        }
+
+        .return-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Sock pair indicator */
+        .sock-pair {
+            position: fixed;
+            top: 2rem;
+            right: 3rem;
+            font-size: 0.75rem;
+            color: var(--rose-gold);
+            opacity: 0;
+            transition: opacity 1s var(--ease-quantum);
+        }
+
+        .sock-pair.found {
+            opacity: 0.7;
+        }
+
+        /* The click before the click */
+        .preclick {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--pink-gold-soft);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0);
+            z-index: 300;
+        }
+
+        .preclick.anticipate {
+            animation: preclickPulse 0.3s var(--ease-quantum) forwards;
+        }
+
+        @keyframes preclickPulse {
+            0% { opacity: 0; transform: scale(0); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+
+        /* Reality label */
+        .reality-label {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--text-dim);
+            opacity: 0.2;
+            letter-spacing: 0.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="quantum-field" id="field"></div>
+
+    <div class="decision-container">
+        <div class="decision" id="decision"></div>
+    </div>
+
+    <div class="stillness-revelation" id="stillnessRevelation">
+        <span class="prompt"></span>
+        <span class="solution"></span>
+    </div>
+
+    <div class="instructions" id="instructions">
+        observe particles to collapse their state / be still to see solutions
+    </div>
+
+    <div class="kindness-meter">
+        <span class="kindness-count" id="kindnessCount">0</span>
+        <span class="kindness-unit">small kindnesses</span>
+    </div>
+
+    <div class="sock-pair" id="sockPair">socks: entangled</div>
+
+    <div class="preclick" id="preclick"></div>
+
+    <svg class="wave-function" viewBox="0 0 200 40">
+        <path d="M0,20 Q25,5 50,20 T100,20 T150,20 T200,20" />
+    </svg>
+
+    <div class="reality-label">quantum perfection: our reality</div>
+
+    <a href="../index.html" class="return-link">uncollapse</a>
+
+    <script>
+        // State
+        let particles = [];
+        let kindnessCount = 0;
+        let sockParticles = [];
+        let lastActivity = Date.now();
+        let stillnessLevel = 0;
+        let hasInteracted = false;
+
+        // DOM
+        const field = document.getElementById('field');
+        const decision = document.getElementById('decision');
+        const instructions = document.getElementById('instructions');
+        const kindnessCountEl = document.getElementById('kindnessCount');
+        const sockPairEl = document.getElementById('sockPair');
+        const stillnessRevelation = document.getElementById('stillnessRevelation');
+        const preclick = document.getElementById('preclick');
+
+        // Decisions in superposition
+        const decisions = [
+            'your next decision exists in all states',
+            'already made and never made',
+            'the choice chose you first',
+            'every path taken, none walked',
+            'the answer arrived before the question',
+            'you decided this yesterday, tomorrow',
+            'the decision is also deciding',
+            'both doors lead to the same room',
+            'choosing not to choose is the choice',
+            'the fork in the road is the road'
+        ];
+
+        // Observations when collapsing particles
+        const observations = {
+            kindness: [
+                'a small kindness, measured',
+                'grace in milligrams',
+                'gentleness observed',
+                'the weight of softness',
+                'kindness collapsed into being'
+            ],
+            nothing: [
+                'nothing, pretending to be something',
+                'it was quite good at it',
+                'emptiness with presence',
+                'the void waved back',
+                'something that wasn\'t'
+            ],
+            sock: [
+                'a sock, seeking its pair',
+                'entanglement pending',
+                'one half of a whole',
+                'the lost, waiting to find',
+                'quantum footwear'
+            ]
+        };
+
+        // Stillness solutions - revealed when perfectly still
+        const solutions = [
+            { prompt: 'you sat still and focused', solution: 'the perfect way appeared' },
+            { prompt: 'half a second of stillness', solution: 'perspective shifted' },
+            { prompt: 'in the pause between thoughts', solution: 'everything became clear' },
+            { prompt: 'the answer was always here', solution: 'you just stopped moving long enough to see it' },
+            { prompt: 'stillness is the computation', solution: 'ambiguity resolved itself' },
+            { prompt: 'who observes the observer?', solution: 'yourself, except to yourself' },
+            { prompt: 'mastery over nothing', solution: 'which masters everything' }
+        ];
+
+        // Create initial particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle superposition';
+
+            // Random position
+            particle.style.left = (10 + Math.random() * 80) + '%';
+            particle.style.top = (10 + Math.random() * 80) + '%';
+
+            // Random animation offset
+            particle.style.animationDelay = (Math.random() * 8) + 's';
+
+            // Determine what it will collapse into
+            const rand = Math.random();
+            if (rand < 0.4) {
+                particle.dataset.type = 'kindness';
+            } else if (rand < 0.7) {
+                particle.dataset.type = 'nothing';
+            } else {
+                particle.dataset.type = 'sock';
+            }
+
+            particle.addEventListener('click', (e) => observeParticle(particle, e));
+
+            field.appendChild(particle);
+            particles.push(particle);
+
+            return particle;
+        }
+
+        // Initialize particles
+        for (let i = 0; i < 12; i++) {
+            setTimeout(() => createParticle(), i * 200);
+        }
+
+        // Observe (collapse) a particle
+        function observeParticle(particle, e) {
+            if (particle.classList.contains('collapsed')) return;
+
+            hasInteracted = true;
+            instructions.classList.add('faded');
+            resetStillness();
+
+            const type = particle.dataset.type;
+            particle.classList.remove('superposition');
+            particle.classList.add('collapsed', type);
+
+            // Show observation text
+            const obs = observations[type];
+            showObservation(obs[Math.floor(Math.random() * obs.length)], e.clientX, e.clientY);
+
+            // Handle type-specific effects
+            if (type === 'kindness') {
+                kindnessCount++;
+                kindnessCountEl.textContent = kindnessCount;
+                kindnessCountEl.style.transform = 'scale(1.3)';
+                setTimeout(() => kindnessCountEl.style.transform = 'scale(1)', 300);
+            } else if (type === 'sock') {
+                sockParticles.push(particle);
+                if (sockParticles.length >= 2) {
+                    entangleSocks();
+                }
+            }
+
+            // Spawn new particle after delay
+            setTimeout(() => {
+                if (particles.length < 15) {
+                    createParticle();
+                }
+            }, 2000);
+
+            // Update decision text
+            updateDecision();
+        }
+
+        // Show observation text near click
+        function showObservation(text, x, y) {
+            const obs = document.createElement('div');
+            obs.className = 'observation';
+            obs.textContent = text;
+            obs.style.left = (x + 20) + 'px';
+            obs.style.top = (y - 10) + 'px';
+            document.body.appendChild(obs);
+
+            requestAnimationFrame(() => obs.classList.add('visible'));
+
+            setTimeout(() => obs.remove(), 3000);
+        }
+
+        // Entangle two socks
+        function entangleSocks() {
+            const [sock1, sock2] = sockParticles.slice(-2);
+
+            sock1.classList.add('entangled');
+            sock2.classList.add('entangled');
+
+            sockPairEl.classList.add('found');
+
+            // Draw entanglement line
+            const line = document.createElement('div');
+            line.className = 'entanglement-line';
+
+            const rect1 = sock1.getBoundingClientRect();
+            const rect2 = sock2.getBoundingClientRect();
+
+            const x1 = rect1.left + rect1.width / 2;
+            const y1 = rect1.top + rect1.height / 2;
+            const x2 = rect2.left + rect2.width / 2;
+            const y2 = rect2.top + rect2.height / 2;
+
+            const length = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+            const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+
+            line.style.left = x1 + 'px';
+            line.style.top = y1 + 'px';
+            line.style.width = length + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+
+            document.body.appendChild(line);
+            requestAnimationFrame(() => line.classList.add('visible'));
+
+            // Make them affect each other
+            sock1.addEventListener('click', () => {
+                sock2.style.transform = 'scale(1.8)';
+                setTimeout(() => sock2.style.transform = 'scale(1.5)', 300);
+            });
+            sock2.addEventListener('click', () => {
+                sock1.style.transform = 'scale(1.8)';
+                setTimeout(() => sock1.style.transform = 'scale(1.5)', 300);
+            });
+
+            showObservation('losing one means finding both', (x1+x2)/2, (y1+y2)/2);
+        }
+
+        // Update decision text
+        function updateDecision() {
+            decision.classList.remove('visible');
+
+            setTimeout(() => {
+                decision.textContent = decisions[Math.floor(Math.random() * decisions.length)];
+                decision.classList.add('visible');
+            }, 500);
+
+            setTimeout(() => {
+                decision.classList.remove('visible');
+            }, 5000);
+        }
+
+        // Stillness detection - reveals perfect solutions
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 500 && stillnessLevel < 1) {
+                // The click before the click - anticipation
+                stillnessLevel = 1;
+            }
+
+            if (elapsed > 3000 && stillnessLevel < 2 && hasInteracted) {
+                // Show a hint
+                decision.innerHTML = '<span class="highlight">be still</span> to see the perfect way';
+                decision.classList.add('visible');
+                stillnessLevel = 2;
+            }
+
+            if (elapsed > 6000 && stillnessLevel < 3 && hasInteracted) {
+                // Reveal a solution
+                const sol = solutions[Math.floor(Math.random() * solutions.length)];
+                stillnessRevelation.querySelector('.prompt').textContent = sol.prompt;
+                stillnessRevelation.querySelector('.solution').textContent = sol.solution;
+                stillnessRevelation.classList.add('visible');
+                decision.classList.remove('visible');
+                stillnessLevel = 3;
+
+                // Bonus kindness for stillness
+                kindnessCount += 0.5;
+                kindnessCountEl.textContent = kindnessCount % 1 === 0 ? kindnessCount : kindnessCount.toFixed(1);
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessLevel > 0) {
+                stillnessRevelation.classList.remove('visible');
+                if (stillnessLevel >= 2) {
+                    decision.classList.remove('visible');
+                }
+                stillnessLevel = 0;
+            }
+        }
+
+        // The click before the click
+        document.addEventListener('mousedown', (e) => {
+            preclick.style.left = (e.clientX - 15) + 'px';
+            preclick.style.top = (e.clientY - 15) + 'px';
+            preclick.classList.remove('anticipate');
+            void preclick.offsetWidth; // Reflow
+            preclick.classList.add('anticipate');
+        });
+
+        // Track activity
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+
+        // Start stillness checking
+        checkStillness();
+
+        // Show initial decision after delay
+        setTimeout(() => {
+            updateDecision();
+        }, 2000);
+
+        // Periodically add particles if too few
+        setInterval(() => {
+            const superpositionCount = particles.filter(p => p.classList.contains('superposition')).length;
+            if (superpositionCount < 5) {
+                createParticle();
+            }
+        }, 5000);
+
+        // Console poetry
+        console.log('%c◐', 'font-size: 24px; color: #e8b4b8;');
+        console.log('%cquantum perfection', 'font-family: serif; font-size: 14px; color: #c0c0c8;');
+        console.log('%cyou are the observer', 'font-style: italic; color: #808088;');
+        console.log('%cand the observed', 'font-style: italic; color: #808088;');
+
+        // Right-click wisdom
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const wisdoms = [
+                'the particle chose to be seen',
+                'who knows what observation feels like?',
+                'nothing is quite good at pretending',
+                'the wave function never really collapses',
+                'you are both the experiment and the result'
+            ];
+            showObservation(wisdoms[Math.floor(Math.random() * wisdoms.length)], e.clientX, e.clientY);
+        });
+
+        // Retroactive revelation - sometimes particles were always collapsed
+        setTimeout(() => {
+            const uncollapsed = particles.filter(p => p.classList.contains('superposition'));
+            if (uncollapsed.length > 0 && Math.random() < 0.3) {
+                const p = uncollapsed[Math.floor(Math.random() * uncollapsed.length)];
+                const rect = p.getBoundingClientRect();
+                showObservation('this one was always decided', rect.left, rect.top - 20);
+                p.classList.remove('superposition');
+                p.classList.add('collapsed', p.dataset.type);
+                if (p.dataset.type === 'kindness') {
+                    kindnessCount++;
+                    kindnessCountEl.textContent = kindnessCount;
+                }
+            }
+        }, 15000);
+    </script>
+</body>
+</html>

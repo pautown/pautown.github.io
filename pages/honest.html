@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Honest Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --void: #0a0a0f;
+            --void-soft: #12121a;
+            --glow: #f0e6d3;
+            --glow-soft: rgba(240, 230, 211, 0.3);
+            --pool: #1a2a3a;
+            --pool-light: #2a4a6a;
+            --attention: #e8d4b8;
+            --honest: #a0c0d0;
+            --earned: #d4a056;
+            --warm: #e8a080;
+            --cool: #80a0e8;
+            --ease-ice: cubic-bezier(0.1, 0.9, 0.2, 1);
+            --ease-float: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--void);
+            min-height: 100vh;
+            color: var(--glow);
+            overflow: hidden;
+        }
+
+        /* Game arena */
+        .game-arena {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* The cursor host */
+        .host {
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--glow-soft);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            z-index: 100;
+        }
+
+        .cursor-host {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: var(--glow);
+            animation: cursorBlink 1s step-end infinite;
+        }
+
+        @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .host-message {
+            opacity: 0;
+            transition: opacity 0.5s var(--ease-float);
+        }
+
+        .host-message.visible { opacity: 1; }
+
+        /* Challenge area - main game space */
+        .challenge-area {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+        }
+
+        /* Current question */
+        .question-display {
+            font-size: 1.5rem;
+            font-style: italic;
+            color: var(--honest);
+            text-align: center;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.5s var(--ease-float);
+        }
+
+        .question-display.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Falling letters container */
+        .letter-field {
+            position: absolute;
+            inset: 60px 0 100px 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .falling-letter {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--glow);
+            pointer-events: auto;
+            cursor: grab;
+            user-select: none;
+            transition: color 0.2s, transform 0.1s;
+            text-shadow: 0 0 10px var(--glow-soft);
+        }
+
+        .falling-letter:hover {
+            color: var(--earned);
+            transform: scale(1.2);
+        }
+
+        .falling-letter.caught {
+            color: var(--earned);
+            animation: letterCatch 0.3s var(--ease-float);
+        }
+
+        .falling-letter.heavy {
+            font-weight: bold;
+            font-size: 1.8rem;
+        }
+
+        .falling-letter.light {
+            font-size: 1.2rem;
+            opacity: 0.7;
+        }
+
+        @keyframes letterCatch {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Word building area */
+        .word-builder {
+            display: flex;
+            gap: 4px;
+            min-height: 50px;
+            padding: 1rem 2rem;
+            border: 1px dashed var(--glow-soft);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            min-width: 200px;
+            justify-content: center;
+            align-items: center;
+            background: rgba(240, 230, 211, 0.02);
+        }
+
+        .word-slot {
+            width: 30px;
+            height: 40px;
+            border-bottom: 2px solid var(--glow-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.3rem;
+            color: var(--earned);
+            transition: all 0.2s;
+        }
+
+        .word-slot.filled {
+            border-color: var(--earned);
+        }
+
+        .word-slot.correct {
+            border-color: var(--cool);
+            color: var(--cool);
+        }
+
+        /* Number equation area */
+        .equation-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .equation-side {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(240, 230, 211, 0.05);
+            border-radius: 4px;
+        }
+
+        .equation-equals {
+            font-size: 1.5rem;
+            color: var(--glow-soft);
+        }
+
+        .number-drop-zone {
+            width: 50px;
+            height: 50px;
+            border: 2px dashed var(--glow-soft);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .number-drop-zone.highlight {
+            border-color: var(--earned);
+            background: rgba(212, 160, 86, 0.1);
+        }
+
+        .number-drop-zone.filled {
+            border-style: solid;
+            background: rgba(212, 160, 86, 0.2);
+        }
+
+        /* Draggable numbers */
+        .number-pool {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .draggable-number {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--void-soft), var(--void));
+            border: 1px solid var(--glow-soft);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            cursor: grab;
+            transition: all 0.2s var(--ease-ice);
+            user-select: none;
+        }
+
+        .draggable-number:hover {
+            transform: scale(1.15);
+            border-color: var(--earned);
+            box-shadow: 0 0 15px var(--glow-soft);
+        }
+
+        .draggable-number.dragging {
+            cursor: grabbing;
+            transform: scale(1.2);
+            opacity: 0.8;
+            z-index: 100;
+        }
+
+        .draggable-number::after {
+            content: attr(data-feeling);
+            position: absolute;
+            bottom: -16px;
+            font-size: 0.45rem;
+            color: var(--glow-soft);
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .draggable-number:hover::after {
+            opacity: 1;
+        }
+
+        /* Typing input */
+        .type-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--glow-soft);
+            color: var(--glow);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            width: 280px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .type-input:focus {
+            border-color: var(--attention);
+        }
+
+        .type-input.warm {
+            border-color: var(--warm);
+            text-shadow: 0 0 10px var(--warm);
+        }
+
+        .type-input.cool {
+            border-color: var(--cool);
+        }
+
+        /* Live letter preview - letters fall as you type */
+        .live-letters {
+            position: absolute;
+            top: 100px;
+            left: 0;
+            right: 0;
+            height: 200px;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .typed-letter {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            color: var(--earned);
+            animation: typedFall 2s var(--ease-float) forwards;
+            text-shadow: 0 0 20px var(--earned);
+        }
+
+        @keyframes typedFall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(150px) rotate(var(--rot, 15deg));
+            }
+        }
+
+        /* Scale for emotional arithmetic */
+        .emotion-scale {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .scale-beam {
+            width: 200px;
+            height: 4px;
+            background: var(--glow-soft);
+            position: relative;
+            transition: transform 0.5s var(--ease-ice);
+            transform-origin: center;
+        }
+
+        .scale-beam::before,
+        .scale-beam::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            width: 60px;
+            height: 40px;
+            border: 1px solid var(--glow-soft);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .scale-beam::before { left: 10px; }
+        .scale-beam::after { right: 10px; }
+
+        .scale-fulcrum {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 20px solid var(--glow-soft);
+        }
+
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 200px;
+            font-size: 0.7rem;
+            color: var(--glow-soft);
+            margin-top: 0.5rem;
+        }
+
+        /* The pool */
+        .pool {
+            height: 80px;
+            background: linear-gradient(to bottom, var(--void) 0%, var(--pool) 50%, var(--pool-light) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pool-surface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--glow-soft);
+        }
+
+        .pool-letter {
+            position: absolute;
+            bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--earned);
+            opacity: 0.6;
+            animation: poolFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes poolFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .ripple {
+            position: absolute;
+            border: 1px solid var(--glow-soft);
+            border-radius: 50%;
+            animation: rippleExpand 2s var(--ease-float) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes rippleExpand {
+            0% { width: 0; height: 0; opacity: 0.8; }
+            100% { width: 150px; height: 60px; opacity: 0; margin-left: -75px; margin-top: -10px; }
+        }
+
+        /* Progress */
+        .progress-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .progress-dot {
+            width: 10px;
+            height: 10px;
+            border: 1px solid var(--glow-soft);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.complete {
+            background: var(--earned);
+            border-color: var(--earned);
+        }
+
+        .progress-dot.current {
+            border-color: var(--honest);
+            box-shadow: 0 0 10px var(--honest);
+        }
+
+        /* Score */
+        .score-display {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--glow-soft);
+        }
+
+        .score-display span {
+            color: var(--earned);
+        }
+
+        /* Hint */
+        .hint {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--glow-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.5;
+            text-align: center;
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--glow-soft);
+            text-decoration: none;
+            opacity: 0.3;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .return-link:hover { opacity: 0.7; }
+
+        /* Success flash */
+        .success-flash {
+            position: fixed;
+            inset: 0;
+            background: var(--earned);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+            z-index: 1000;
+        }
+
+        .success-flash.flash {
+            animation: flashPulse 0.3s ease-out;
+        }
+
+        @keyframes flashPulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        /* Completion message */
+        .completion {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+            z-index: 200;
+        }
+
+        .completion.visible {
+            opacity: 1;
+        }
+
+        .completion h2 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            color: var(--earned);
+        }
+
+        .completion p {
+            font-style: italic;
+            color: var(--glow-soft);
+        }
+
+        .collected-word {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            letter-spacing: 0.3em;
+            color: var(--earned);
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-arena">
+        <div class="host">
+            <span class="cursor-host"></span>
+            <span class="host-message" id="hostMessage"></span>
+        </div>
+
+        <div class="challenge-area" id="challengeArea">
+            <div class="question-display" id="questionDisplay"></div>
+            <div id="challengeContent"></div>
+        </div>
+
+        <div class="letter-field" id="letterField"></div>
+        <div class="live-letters" id="liveLetters"></div>
+
+        <div class="pool" id="pool">
+            <div class="pool-surface"></div>
+        </div>
+    </div>
+
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="score-display">letters: <span id="scoreDisplay">0</span></div>
+    <div class="hint" id="hint"></div>
+    <div class="success-flash" id="successFlash"></div>
+
+    <div class="completion" id="completion">
+        <h2>dissolved into understanding</h2>
+        <div class="collected-word" id="collectedWord"></div>
+        <p>the honest game continues</p>
+    </div>
+
+    <a href="../index.html" class="return-link">surface</a>
+
+    <script>
+        // Game configuration
+        const challenges = [
+            {
+                type: 'catch-letters',
+                question: 'Ready?',
+                hint: 'catch the letters that feel right',
+                target: 'yes',
+                letters: 'yesnomaybeperhaps'.split('')
+            },
+            {
+                type: 'equation',
+                question: 'What do you notice?',
+                hint: 'balance the equation with feelings',
+                equation: { left: ['hope', '+', '?'], right: ['progress'], answer: 3 },
+                numbers: [
+                    { val: 1, feeling: 'hesitant' },
+                    { val: 3, feeling: 'curious' },
+                    { val: 5, feeling: 'balanced' },
+                    { val: 7, feeling: 'confident' }
+                ]
+            },
+            {
+                type: 'type-warm',
+                question: 'What matters here?',
+                hint: 'type until it feels warm',
+                targets: ['truth', 'care', 'time', 'love', 'self', 'calm', 'hope'],
+                maxAttempts: 5
+            },
+            {
+                type: 'scale',
+                question: 'What do you actually want?',
+                hint: 'balance what you want against what you need',
+                leftLabel: 'want',
+                rightLabel: 'need',
+                targetBalance: 0,
+                numbers: [
+                    { val: -3, feeling: 'desire' },
+                    { val: -1, feeling: 'wish' },
+                    { val: 1, feeling: 'require' },
+                    { val: 3, feeling: 'must' },
+                    { val: 0, feeling: 'peace' }
+                ]
+            },
+            {
+                type: 'spell-fall',
+                question: 'Was that true?',
+                hint: 'type your answer and watch it fall',
+                validAnswers: ['yes', 'no', 'maybe', 'partly', 'mostly', 'almost', 'enough']
+            }
+        ];
+
+        // State
+        let currentChallenge = 0;
+        let score = 0;
+        let collectedLetters = [];
+        const rewardLetters = ['t', 'r', 'u', 't', 'h'];
+
+        // DOM
+        const challengeArea = document.getElementById('challengeArea');
+        const challengeContent = document.getElementById('challengeContent');
+        const questionDisplay = document.getElementById('questionDisplay');
+        const letterField = document.getElementById('letterField');
+        const liveLetters = document.getElementById('liveLetters');
+        const pool = document.getElementById('pool');
+        const progressBar = document.getElementById('progressBar');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const hint = document.getElementById('hint');
+        const hostMessage = document.getElementById('hostMessage');
+        const successFlash = document.getElementById('successFlash');
+        const completion = document.getElementById('completion');
+        const collectedWord = document.getElementById('collectedWord');
+
+        // Initialize progress dots
+        challenges.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'progress-dot' + (i === 0 ? ' current' : '');
+            progressBar.appendChild(dot);
+        });
+
+        // Show host message
+        function showHost(msg) {
+            hostMessage.textContent = msg;
+            hostMessage.classList.add('visible');
+            setTimeout(() => hostMessage.classList.remove('visible'), 2500);
+        }
+
+        // Success effect
+        function showSuccess() {
+            successFlash.classList.add('flash');
+            setTimeout(() => successFlash.classList.remove('flash'), 300);
+        }
+
+        // Add letter to pool
+        function addToPool(letter) {
+            collectedLetters.push(letter);
+            score++;
+            scoreDisplay.textContent = score;
+
+            const poolLetter = document.createElement('div');
+            poolLetter.className = 'pool-letter';
+            poolLetter.textContent = letter;
+            poolLetter.style.left = (10 + (collectedLetters.length - 1) * 25) + 'px';
+            poolLetter.style.animationDelay = (Math.random() * 2) + 's';
+            pool.appendChild(poolLetter);
+
+            // Ripple
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = poolLetter.style.left;
+            ripple.style.top = '5px';
+            pool.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 2000);
+        }
+
+        // Load challenge
+        function loadChallenge(index) {
+            if (index >= challenges.length) {
+                showCompletion();
+                return;
+            }
+
+            const challenge = challenges[index];
+            currentChallenge = index;
+
+            // Update progress
+            document.querySelectorAll('.progress-dot').forEach((dot, i) => {
+                dot.classList.remove('current', 'complete');
+                if (i < index) dot.classList.add('complete');
+                if (i === index) dot.classList.add('current');
+            });
+
+            // Show question
+            questionDisplay.textContent = challenge.question;
+            questionDisplay.classList.remove('visible');
+            setTimeout(() => questionDisplay.classList.add('visible'), 100);
+
+            hint.textContent = challenge.hint;
+            letterField.innerHTML = '';
+            liveLetters.innerHTML = '';
+            challengeContent.innerHTML = '';
+
+            // Load specific challenge type
+            switch (challenge.type) {
+                case 'catch-letters':
+                    loadCatchLetters(challenge);
+                    break;
+                case 'equation':
+                    loadEquation(challenge);
+                    break;
+                case 'type-warm':
+                    loadTypeWarm(challenge);
+                    break;
+                case 'scale':
+                    loadScale(challenge);
+                    break;
+                case 'spell-fall':
+                    loadSpellFall(challenge);
+                    break;
+            }
+
+            showHost(index === 0 ? '' : 'next.');
+        }
+
+        // Challenge: Catch falling letters
+        function loadCatchLetters(challenge) {
+            const target = challenge.target;
+            let caught = [];
+
+            // Word builder
+            const builder = document.createElement('div');
+            builder.className = 'word-builder';
+            target.split('').forEach(() => {
+                const slot = document.createElement('div');
+                slot.className = 'word-slot';
+                builder.appendChild(slot);
+            });
+            challengeContent.appendChild(builder);
+
+            // Spawn falling letters
+            let letterIndex = 0;
+            const spawnInterval = setInterval(() => {
+                if (letterIndex >= challenge.letters.length * 2) {
+                    letterIndex = 0;
+                }
+
+                const char = challenge.letters[letterIndex % challenge.letters.length];
+                const letter = document.createElement('div');
+                letter.className = 'falling-letter';
+                letter.textContent = char;
+                letter.style.left = (10 + Math.random() * 80) + '%';
+                letter.style.top = '-30px';
+
+                // Weight affects fall speed
+                const isHeavy = 'mwbdpq'.includes(char);
+                const isLight = 'ijtl'.includes(char);
+                if (isHeavy) letter.classList.add('heavy');
+                if (isLight) letter.classList.add('light');
+
+                const fallSpeed = isHeavy ? 2.5 : (isLight ? 1.2 : 1.8);
+
+                letterField.appendChild(letter);
+
+                // Animate fall
+                let y = -30;
+                const fall = () => {
+                    y += fallSpeed;
+                    letter.style.top = y + 'px';
+
+                    if (y > letterField.clientHeight) {
+                        letter.remove();
+                    } else if (!letter.classList.contains('caught')) {
+                        requestAnimationFrame(fall);
+                    }
+                };
+                requestAnimationFrame(fall);
+
+                // Click to catch
+                letter.addEventListener('click', () => {
+                    if (letter.classList.contains('caught')) return;
+
+                    const nextNeeded = target[caught.length];
+                    if (char === nextNeeded) {
+                        letter.classList.add('caught');
+                        caught.push(char);
+
+                        // Fill slot
+                        const slots = builder.querySelectorAll('.word-slot');
+                        slots[caught.length - 1].textContent = char;
+                        slots[caught.length - 1].classList.add('filled');
+
+                        setTimeout(() => letter.remove(), 300);
+
+                        // Check completion
+                        if (caught.length === target.length) {
+                            clearInterval(spawnInterval);
+                            showSuccess();
+                            addToPool(rewardLetters[currentChallenge] || 'x');
+                            setTimeout(() => loadChallenge(currentChallenge + 1), 1500);
+                        }
+                    } else {
+                        // Wrong letter - shake
+                        letter.style.animation = 'none';
+                        letter.offsetHeight;
+                        letter.style.color = 'var(--warm)';
+                        setTimeout(() => letter.style.color = '', 200);
+                    }
+                });
+
+                letterIndex++;
+            }, 600);
+        }
+
+        // Challenge: Balance equation
+        function loadEquation(challenge) {
+            const eq = challenge.equation;
+
+            const area = document.createElement('div');
+            area.className = 'equation-area';
+
+            // Left side
+            const leftSide = document.createElement('div');
+            leftSide.className = 'equation-side';
+            eq.left.forEach(item => {
+                if (item === '?') {
+                    const dropZone = document.createElement('div');
+                    dropZone.className = 'number-drop-zone';
+                    dropZone.id = 'equationDrop';
+                    leftSide.appendChild(dropZone);
+                } else {
+                    const span = document.createElement('span');
+                    span.textContent = item;
+                    span.style.fontStyle = 'italic';
+                    leftSide.appendChild(span);
+                }
+            });
+
+            const equals = document.createElement('span');
+            equals.className = 'equation-equals';
+            equals.textContent = '=';
+
+            const rightSide = document.createElement('div');
+            rightSide.className = 'equation-side';
+            eq.right.forEach(item => {
+                const span = document.createElement('span');
+                span.textContent = item;
+                span.style.fontStyle = 'italic';
+                rightSide.appendChild(span);
+            });
+
+            area.appendChild(leftSide);
+            area.appendChild(equals);
+            area.appendChild(rightSide);
+            challengeContent.appendChild(area);
+
+            // Number pool
+            const numPool = document.createElement('div');
+            numPool.className = 'number-pool';
+
+            challenge.numbers.forEach(num => {
+                const btn = document.createElement('div');
+                btn.className = 'draggable-number';
+                btn.textContent = num.val;
+                btn.dataset.value = num.val;
+                btn.dataset.feeling = num.feeling;
+                btn.draggable = true;
+
+                btn.addEventListener('dragstart', (e) => {
+                    btn.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', num.val);
+                });
+
+                btn.addEventListener('dragend', () => {
+                    btn.classList.remove('dragging');
+                });
+
+                // Click also works
+                btn.addEventListener('click', () => {
+                    const dropZone = document.getElementById('equationDrop');
+                    if (!dropZone.classList.contains('filled')) {
+                        dropZone.textContent = num.val;
+                        dropZone.classList.add('filled');
+
+                        if (parseInt(num.val) === eq.answer) {
+                            showSuccess();
+                            showHost('correct feeling.');
+                            addToPool(rewardLetters[currentChallenge] || 'x');
+                            setTimeout(() => loadChallenge(currentChallenge + 1), 1500);
+                        } else {
+                            dropZone.style.borderColor = 'var(--warm)';
+                            setTimeout(() => {
+                                dropZone.textContent = '';
+                                dropZone.classList.remove('filled');
+                                dropZone.style.borderColor = '';
+                            }, 800);
+                        }
+                    }
+                });
+
+                numPool.appendChild(btn);
+            });
+
+            challengeContent.appendChild(numPool);
+
+            // Drop zone events
+            const dropZone = document.getElementById('equationDrop');
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('highlight');
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('highlight');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('highlight');
+                const val = parseInt(e.dataTransfer.getData('text/plain'));
+                dropZone.textContent = val;
+                dropZone.classList.add('filled');
+
+                if (val === eq.answer) {
+                    showSuccess();
+                    showHost('correct feeling.');
+                    addToPool(rewardLetters[currentChallenge] || 'x');
+                    setTimeout(() => loadChallenge(currentChallenge + 1), 1500);
+                } else {
+                    dropZone.style.borderColor = 'var(--warm)';
+                    setTimeout(() => {
+                        dropZone.textContent = '';
+                        dropZone.classList.remove('filled');
+                        dropZone.style.borderColor = '';
+                    }, 800);
+                }
+            });
+        }
+
+        // Challenge: Type until warm
+        function loadTypeWarm(challenge) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'type-input';
+            input.placeholder = 'type what matters...';
+            input.autocomplete = 'off';
+            challengeContent.appendChild(input);
+
+            let attempts = 0;
+
+            input.addEventListener('input', () => {
+                const val = input.value.toLowerCase().trim();
+
+                // Check warmth
+                let warmth = 0;
+                challenge.targets.forEach(target => {
+                    if (val === target) warmth = 3;
+                    else if (target.startsWith(val) && val.length > 0) warmth = Math.max(warmth, 1);
+                    else if (target.includes(val) && val.length > 2) warmth = Math.max(warmth, 2);
+                });
+
+                input.classList.remove('warm', 'cool');
+                if (warmth >= 2) input.classList.add('warm');
+                else if (val.length > 3 && warmth === 0) input.classList.add('cool');
+
+                // Spawn falling letters as you type
+                if (val.length > 0) {
+                    const lastChar = val[val.length - 1];
+                    const typedLetter = document.createElement('div');
+                    typedLetter.className = 'typed-letter';
+                    typedLetter.textContent = lastChar;
+                    typedLetter.style.left = (40 + Math.random() * 20) + '%';
+                    typedLetter.style.setProperty('--rot', (Math.random() * 30 - 15) + 'deg');
+                    liveLetters.appendChild(typedLetter);
+                    setTimeout(() => typedLetter.remove(), 2000);
+                }
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const val = input.value.toLowerCase().trim();
+                    if (challenge.targets.includes(val)) {
+                        showSuccess();
+                        showHost('that felt right.');
+                        addToPool(rewardLetters[currentChallenge] || 'x');
+                        setTimeout(() => loadChallenge(currentChallenge + 1), 1500);
+                    } else {
+                        attempts++;
+                        input.value = '';
+                        input.placeholder = attempts >= challenge.maxAttempts - 1 ? 'try: truth, care, hope...' : 'not quite...';
+                        input.classList.remove('warm');
+                    }
+                }
+            });
+
+            setTimeout(() => input.focus(), 500);
+        }
+
+        // Challenge: Balance scale
+        function loadScale(challenge) {
+            let balance = 0;
+            let numbersAdded = [];
+
+            const scaleContainer = document.createElement('div');
+            scaleContainer.className = 'emotion-scale';
+
+            const beam = document.createElement('div');
+            beam.className = 'scale-beam';
+            beam.id = 'scaleBeam';
+
+            const fulcrum = document.createElement('div');
+            fulcrum.className = 'scale-fulcrum';
+
+            const labels = document.createElement('div');
+            labels.className = 'scale-labels';
+            labels.innerHTML = `<span>${challenge.leftLabel}</span><span>${challenge.rightLabel}</span>`;
+
+            scaleContainer.appendChild(beam);
+            scaleContainer.appendChild(fulcrum);
+            scaleContainer.appendChild(labels);
+            challengeContent.appendChild(scaleContainer);
+
+            // Number pool
+            const numPool = document.createElement('div');
+            numPool.className = 'number-pool';
+
+            challenge.numbers.forEach(num => {
+                const btn = document.createElement('div');
+                btn.className = 'draggable-number';
+                btn.textContent = num.val === 0 ? '=' : (num.val > 0 ? '+' + num.val : num.val);
+                btn.dataset.value = num.val;
+                btn.dataset.feeling = num.feeling;
+
+                btn.addEventListener('click', () => {
+                    if (numbersAdded.includes(num.val)) return;
+                    numbersAdded.push(num.val);
+                    balance += num.val;
+
+                    btn.style.opacity = '0.3';
+                    btn.style.pointerEvents = 'none';
+
+                    // Tilt beam
+                    const tilt = Math.max(-20, Math.min(20, balance * 5));
+                    beam.style.transform = `rotate(${tilt}deg)`;
+
+                    if (balance === challenge.targetBalance) {
+                        showSuccess();
+                        showHost('balanced.');
+                        addToPool(rewardLetters[currentChallenge] || 'x');
+                        setTimeout(() => loadChallenge(currentChallenge + 1), 1500);
+                    }
+                });
+
+                numPool.appendChild(btn);
+            });
+
+            challengeContent.appendChild(numPool);
+        }
+
+        // Challenge: Spell and watch fall
+        function loadSpellFall(challenge) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'type-input';
+            input.placeholder = 'your honest answer...';
+            input.autocomplete = 'off';
+            challengeContent.appendChild(input);
+
+            input.addEventListener('input', () => {
+                const val = input.value;
+                if (val.length > 0) {
+                    const lastChar = val[val.length - 1];
+                    const typedLetter = document.createElement('div');
+                    typedLetter.className = 'typed-letter';
+                    typedLetter.textContent = lastChar;
+                    typedLetter.style.left = (30 + Math.random() * 40) + '%';
+                    typedLetter.style.setProperty('--rot', (Math.random() * 40 - 20) + 'deg');
+                    liveLetters.appendChild(typedLetter);
+                    setTimeout(() => typedLetter.remove(), 2000);
+                }
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const val = input.value.toLowerCase().trim();
+                    if (challenge.validAnswers.includes(val) || val.length >= 2) {
+                        // Any honest answer is valid for the final question
+                        showSuccess();
+                        showHost('honest enough.');
+
+                        // Make all letters fall dramatically
+                        val.split('').forEach((char, i) => {
+                            setTimeout(() => {
+                                const letter = document.createElement('div');
+                                letter.className = 'typed-letter';
+                                letter.textContent = char;
+                                letter.style.left = (20 + i * 8) + '%';
+                                letter.style.fontSize = '3rem';
+                                letter.style.animationDuration = '3s';
+                                liveLetters.appendChild(letter);
+                                addToPool(char);
+                            }, i * 150);
+                        });
+
+                        addToPool(rewardLetters[currentChallenge] || 'x');
+                        setTimeout(() => loadChallenge(currentChallenge + 1), 2500);
+                    }
+                }
+            });
+
+            setTimeout(() => input.focus(), 500);
+        }
+
+        // Show completion
+        function showCompletion() {
+            questionDisplay.classList.remove('visible');
+            challengeContent.innerHTML = '';
+            hint.textContent = '';
+
+            collectedWord.textContent = rewardLetters.join('');
+            completion.classList.add('visible');
+
+            showHost('dissolved into understanding.');
+
+            // Reset after delay
+            setTimeout(() => {
+                completion.classList.remove('visible');
+                score = 0;
+                collectedLetters = [];
+                scoreDisplay.textContent = '0';
+                pool.querySelectorAll('.pool-letter').forEach(l => l.remove());
+                loadChallenge(0);
+            }, 6000);
+        }
+
+        // Start
+        loadChallenge(0);
+        showHost('begin.');
+
+        // Console poetry
+        console.log('%c|', 'font-size: 20px; color: #f0e6d3;');
+        console.log('%cthe honest game', 'font-family: serif; font-size: 14px; color: #a0c0d0;');
+        console.log('%ctype, drag, catch, balance', 'font-style: italic; color: #606068;');
+        console.log('%cthe cursor is always watching', 'font-style: italic; color: #606068;');
+
+        // Right-click wisdom
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const wisdoms = [
+                'every letter has weight',
+                'numbers carry feelings',
+                'warmth means you\'re close',
+                'balance is temporary',
+                'honesty is always valid'
+            ];
+            showHost(wisdoms[Math.floor(Math.random() * wisdoms.length)]);
+        });
+    </script>
+</body>
+</html>
