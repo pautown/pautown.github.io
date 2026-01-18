@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>castle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --stone: #6a6875;
+            --stone-light: #8a8895;
+            --stone-dark: #4a4855;
+            --shadow-purple: #3a3045;
+            --torch-amber: #e8a040;
+            --torch-glow: rgba(232, 160, 64, 0.15);
+            --night-deep: #0a0a18;
+            --moat-still: #12121a;
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.6);
+            --ink: #2d2a24;
+            --ease-castle: cubic-bezier(0.23, 0.1, 0.1, 0.98);
+            --ease-breath: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--night-deep);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow: hidden;
+            cursor: default;
+        }
+
+        /* The grain of ancient stone */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* The threshold - the only place you can be */
+        .threshold {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(106, 104, 117, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 30% 70%, rgba(58, 48, 69, 0.15) 0%, transparent 40%),
+                radial-gradient(ellipse at 70% 60%, rgba(58, 48, 69, 0.1) 0%, transparent 45%),
+                var(--night-deep);
+            transition: background 3s var(--ease-castle);
+        }
+
+        .threshold.aware {
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(232, 160, 64, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 30% 70%, rgba(58, 48, 69, 0.2) 0%, transparent 40%),
+                radial-gradient(ellipse at 70% 60%, rgba(58, 48, 69, 0.15) 0%, transparent 45%),
+                var(--night-deep);
+        }
+
+        /* Stone walls - suggested, not drawn */
+        .walls {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            transition: opacity 2s var(--ease-breath);
+        }
+
+        .wall {
+            position: absolute;
+            background: linear-gradient(to right, transparent, var(--stone-dark), transparent);
+            opacity: 0.3;
+        }
+
+        .wall-left {
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            background: linear-gradient(to bottom, transparent, var(--stone), transparent);
+        }
+
+        .wall-right {
+            right: 0;
+            top: 15%;
+            bottom: 25%;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--stone-light), transparent);
+        }
+
+        /* Doorways at the edges - rooms that exist only when unobserved */
+        .doorway {
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 1.5s var(--ease-castle), filter 1s var(--ease-breath);
+            pointer-events: none;
+        }
+
+        .doorway.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .doorway.retreating {
+            opacity: 0.2;
+            filter: blur(2px);
+        }
+
+        .doorway-frame {
+            width: 40px;
+            height: 70px;
+            border: 1px solid var(--stone);
+            border-bottom: none;
+            border-radius: 20px 20px 0 0;
+            background: radial-gradient(ellipse at 50% 100%, var(--shadow-purple) 0%, var(--night-deep) 80%);
+            position: relative;
+            transition: all 1s var(--ease-castle);
+        }
+
+        .doorway:hover .doorway-frame {
+            box-shadow: inset 0 0 20px var(--torch-glow);
+        }
+
+        .doorway-glow {
+            position: absolute;
+            inset: 5px;
+            background: radial-gradient(ellipse at 50% 80%, var(--torch-glow) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 2s var(--ease-breath);
+        }
+
+        .doorway.visible:not(.retreating) .doorway-glow {
+            opacity: 0.5;
+        }
+
+        .doorway-name {
+            font-size: 0.65rem;
+            font-style: italic;
+            color: var(--stone-light);
+            opacity: 0;
+            transition: opacity 1s var(--ease-breath);
+            text-align: center;
+            max-width: 100px;
+            white-space: nowrap;
+        }
+
+        .doorway:hover .doorway-name {
+            opacity: 0.7;
+        }
+
+        /* Doorway positions */
+        .doorway-1 { top: 25%; left: 8%; }
+        .doorway-2 { top: 40%; left: 5%; }
+        .doorway-3 { top: 60%; left: 10%; }
+        .doorway-4 { top: 20%; right: 8%; }
+        .doorway-5 { top: 50%; right: 6%; }
+        .doorway-6 { top: 70%; right: 12%; }
+        .doorway-7 { bottom: 15%; left: 50%; transform: translateX(-50%); }
+
+        /* Windows of impossible views */
+        .window {
+            position: fixed;
+            width: 30px;
+            height: 50px;
+            border: 1px solid var(--stone-light);
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 2s var(--ease-castle);
+            cursor: default;
+        }
+
+        .window.visible {
+            opacity: 0.7;
+        }
+
+        .window-view {
+            position: absolute;
+            inset: 2px;
+            border-radius: 13px 13px 0 0;
+            background: var(--night-deep);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            font-style: italic;
+            color: var(--bone-dim);
+            text-align: center;
+            padding: 4px;
+            opacity: 0.6;
+            transition: opacity 1s, background 2s;
+        }
+
+        .window:hover .window-view {
+            opacity: 1;
+        }
+
+        .window-view.sea { background: linear-gradient(to top, #1a3a5a, #0a1a2a); }
+        .window-view.sky { background: linear-gradient(to bottom, #0a0a20, #1a1a40); }
+        .window-view.garden { background: linear-gradient(to top, #1a2a1a, #0a150a); }
+        .window-view.moon { background: radial-gradient(circle at 50% 40%, #d0d0e0 0%, #2a2a40 30%, #0a0a20 100%); }
+
+        .window-1 { top: 15%; left: 25%; }
+        .window-2 { top: 25%; right: 22%; }
+        .window-3 { top: 55%; left: 20%; }
+        .window-4 { top: 45%; right: 25%; }
+
+        /* The throne - empty, always */
+        .throne-area {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .throne {
+            width: 60px;
+            height: 80px;
+            position: relative;
+            cursor: pointer;
+            transition: all 1s var(--ease-castle);
+        }
+
+        .throne-back {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 55px;
+            border: 1px solid var(--stone);
+            border-bottom: none;
+            border-radius: 25px 25px 0 0;
+            background: linear-gradient(to bottom, var(--shadow-purple), var(--night-deep));
+            transition: all 1s var(--ease-castle);
+        }
+
+        .throne-seat {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55px;
+            height: 25px;
+            border: 1px solid var(--stone);
+            border-top: none;
+            background: var(--night-deep);
+        }
+
+        .throne-glow {
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(ellipse at 50% 50%, var(--torch-glow) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 2s var(--ease-breath);
+            pointer-events: none;
+        }
+
+        .throne.warm .throne-glow {
+            opacity: 1;
+        }
+
+        .throne.warm .throne-back {
+            border-color: var(--torch-amber);
+            box-shadow: inset 0 0 15px var(--torch-glow);
+        }
+
+        .throne-inscription {
+            font-size: 0.6rem;
+            font-style: italic;
+            color: var(--stone-light);
+            text-align: center;
+            max-width: 180px;
+            line-height: 1.6;
+            opacity: 0;
+            transition: opacity 2s var(--ease-breath);
+        }
+
+        .throne-inscription.visible {
+            opacity: 0.6;
+        }
+
+        /* Crown that appears briefly */
+        .crown {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            color: var(--torch-amber);
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
+        /* The moat of stillness */
+        .moat {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to top, var(--moat-still), transparent);
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .moat-ripple {
+            position: absolute;
+            border: 1px solid var(--stone-light);
+            border-radius: 50%;
+            opacity: 0;
+            animation: moatRipple 4s var(--ease-breath) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes moatRipple {
+            0% { width: 0; height: 0; opacity: 0.4; }
+            100% { width: 120px; height: 40px; opacity: 0; margin-left: -60px; margin-top: -10px; }
+        }
+
+        /* Rising presence from the moat */
+        .moat-presence {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            color: var(--stone-light);
+            opacity: 0;
+            transition: opacity 3s var(--ease-castle), transform 3s var(--ease-castle);
+        }
+
+        .moat-presence.rising {
+            opacity: 0.3;
+            transform: translateX(-50%) translateY(-20px);
+        }
+
+        /* Towers that grow with patience */
+        .tower {
+            position: fixed;
+            bottom: 60px;
+            width: 15px;
+            background: linear-gradient(to top, var(--stone-dark), transparent);
+            opacity: 0.3;
+            transition: height 3s var(--ease-castle), opacity 2s;
+        }
+
+        .tower-left { left: 3%; }
+        .tower-right { right: 3%; }
+
+        .tower-window {
+            position: absolute;
+            width: 5px;
+            height: 8px;
+            background: var(--torch-glow);
+            border-radius: 2px 2px 0 0;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 2s;
+        }
+
+        /* Tapestries */
+        .tapestry {
+            position: fixed;
+            width: 25px;
+            height: 60px;
+            background: linear-gradient(to bottom, var(--shadow-purple), var(--stone-dark));
+            border-radius: 3px;
+            opacity: 0;
+            transition: opacity 2s var(--ease-castle);
+            cursor: default;
+        }
+
+        .tapestry.visible {
+            opacity: 0.5;
+        }
+
+        .tapestry-text {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.5rem;
+            font-style: italic;
+            color: var(--stone-light);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .tapestry:hover .tapestry-text {
+            opacity: 0.7;
+        }
+
+        .tapestry-1 { top: 30%; left: 15%; }
+        .tapestry-2 { top: 35%; right: 18%; }
+
+        /* Stillness messages */
+        .stillness-message {
+            position: fixed;
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--bone-dim);
+            opacity: 0;
+            transition: opacity 2s var(--ease-breath);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.6;
+        }
+
+        /* Edge whispers */
+        .edge-whisper {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--stone-light);
+            opacity: 0;
+            letter-spacing: 0.1em;
+            text-transform: lowercase;
+            transition: opacity 1.5s var(--ease-breath);
+            pointer-events: none;
+        }
+
+        .edge-whisper.visible {
+            opacity: 0.3;
+        }
+
+        .edge-whisper-left {
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            transform-origin: left center;
+        }
+
+        .edge-whisper-right {
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            transform-origin: right center;
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            font-size: 0.75rem;
+            color: var(--stone-light);
+            text-decoration: none;
+            opacity: 0.3;
+            transition: opacity 0.8s var(--ease-breath);
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Breathing animation for castle awareness */
+        @keyframes castleBreathe {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+
+        .walls.breathing .wall {
+            animation: castleBreathe 8s var(--ease-breath) infinite;
+        }
+
+        /* Wall marks from visitors */
+        .wall-mark {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: var(--stone-light);
+            border-radius: 50%;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div class="threshold" id="threshold">
+        <div class="walls" id="walls">
+            <div class="wall wall-left"></div>
+            <div class="wall wall-right"></div>
+        </div>
+
+        <!-- Doorways to unobserved rooms -->
+        <div class="doorway doorway-1" data-name="the room of what was">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the room of what was</span>
+        </div>
+        <div class="doorway doorway-2" data-name="the tower of eventually">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the tower of eventually</span>
+        </div>
+        <div class="doorway doorway-3" data-name="the hall of almost">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the hall of almost</span>
+        </div>
+        <div class="doorway doorway-4" data-name="the chamber of held breath">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the chamber of held breath</span>
+        </div>
+        <div class="doorway doorway-5" data-name="the gallery of unfinished portraits">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the gallery of unfinished portraits</span>
+        </div>
+        <div class="doorway doorway-6" data-name="the antechamber of arriving">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the antechamber of arriving</span>
+        </div>
+        <div class="doorway doorway-7" data-name="the room where echoes wait">
+            <div class="doorway-frame"><div class="doorway-glow"></div></div>
+            <span class="doorway-name">the room where echoes wait</span>
+        </div>
+
+        <!-- Windows of impossible views -->
+        <div class="window window-1">
+            <div class="window-view sea">the sea, but vertical</div>
+        </div>
+        <div class="window window-2">
+            <div class="window-view sky">yesterday's weather</div>
+        </div>
+        <div class="window window-3">
+            <div class="window-view garden">a garden growing downward</div>
+        </div>
+        <div class="window window-4">
+            <div class="window-view moon">the moon, too close</div>
+        </div>
+
+        <!-- Tapestries of future memory -->
+        <div class="tapestry tapestry-1">
+            <span class="tapestry-text">someone celebrated here, or will</span>
+        </div>
+        <div class="tapestry tapestry-2">
+            <span class="tapestry-text">the banquet that hasn't happened yet</span>
+        </div>
+
+        <!-- The throne -->
+        <div class="throne-area">
+            <div class="throne" id="throne">
+                <div class="throne-glow"></div>
+                <div class="throne-back"></div>
+                <div class="throne-seat"></div>
+                <div class="crown" id="crown">&#9670;</div>
+            </div>
+            <div class="throne-inscription" id="throneInscription">
+                this seat waits for no one<br>
+                all who sit here have already left<br>
+                the kingdom is the waiting itself
+            </div>
+        </div>
+
+        <!-- Towers -->
+        <div class="tower tower-left" id="towerLeft">
+            <div class="tower-window" style="top: 20%;"></div>
+            <div class="tower-window" style="top: 50%;"></div>
+        </div>
+        <div class="tower tower-right" id="towerRight">
+            <div class="tower-window" style="top: 30%;"></div>
+        </div>
+    </div>
+
+    <!-- The moat of stillness -->
+    <div class="moat" id="moat">
+        <div class="moat-presence" id="moatPresence">?</div>
+    </div>
+
+    <!-- Stillness message -->
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <!-- Edge whispers -->
+    <div class="edge-whisper edge-whisper-left" id="edgeLeft">the stones notice</div>
+    <div class="edge-whisper edge-whisper-right" id="edgeRight">someone was expected</div>
+
+    <a href="../index.html" class="return-link">return</a>
+
+    <script>
+        // State
+        let lastActivity = Date.now();
+        let stillnessLevel = 0;
+        let visitCount = parseInt(localStorage.getItem('castle-visits') || '0') + 1;
+        let wallMarks = JSON.parse(localStorage.getItem('castle-marks') || '[]');
+        let throneClicked = localStorage.getItem('castle-throne') === 'true';
+
+        localStorage.setItem('castle-visits', visitCount);
+
+        // DOM
+        const threshold = document.getElementById('threshold');
+        const walls = document.getElementById('walls');
+        const throne = document.getElementById('throne');
+        const crown = document.getElementById('crown');
+        const throneInscription = document.getElementById('throneInscription');
+        const moat = document.getElementById('moat');
+        const moatPresence = document.getElementById('moatPresence');
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const edgeLeft = document.getElementById('edgeLeft');
+        const edgeRight = document.getElementById('edgeRight');
+        const doorways = document.querySelectorAll('.doorway');
+        const windows = document.querySelectorAll('.window');
+        const tapestries = document.querySelectorAll('.tapestry');
+        const towerLeft = document.getElementById('towerLeft');
+        const towerRight = document.getElementById('towerRight');
+
+        // Stillness messages
+        const stillnessMessages = [
+            'the stones notice',
+            'someone was expected',
+            'the tapestry watches back',
+            'you have been here before, somehow',
+            'the dust settles into patterns it knows'
+        ];
+
+        // Deep stillness messages
+        const deepMessages = [
+            'the castle has no outside. you entered by being.',
+            'built by no one, for someone who never arrived',
+            'the throne has always been empty. the crown was never made.'
+        ];
+
+        // Right-click whispers
+        const whispers = [
+            'the walls lean in',
+            'a door closes, elsewhere',
+            'this stone was placed with intention',
+            'someone left this for you to find'
+        ];
+
+        // Initialize towers based on visit count
+        const towerHeight = Math.min(30 + visitCount * 5, 200);
+        towerLeft.style.height = towerHeight + 'px';
+        towerRight.style.height = (towerHeight * 0.8) + 'px';
+
+        if (visitCount > 5) {
+            towerLeft.querySelectorAll('.tower-window').forEach(w => w.style.opacity = '0.5');
+        }
+        if (visitCount > 10) {
+            towerRight.querySelectorAll('.tower-window').forEach(w => w.style.opacity = '0.5');
+        }
+
+        // Restore wall marks
+        wallMarks.forEach(mark => {
+            createMark(mark.x, mark.y, false);
+        });
+
+        // Create a wall mark
+        function createMark(x, y, save = true) {
+            const mark = document.createElement('div');
+            mark.className = 'wall-mark';
+            mark.style.left = x + 'px';
+            mark.style.top = y + 'px';
+            document.body.appendChild(mark);
+
+            if (save) {
+                wallMarks.push({ x, y });
+                localStorage.setItem('castle-marks', JSON.stringify(wallMarks.slice(-50))); // Keep last 50
+            }
+        }
+
+        // Doorway retreat behavior
+        doorways.forEach(doorway => {
+            doorway.addEventListener('mouseenter', () => {
+                doorway.classList.add('retreating');
+            });
+            doorway.addEventListener('mouseleave', () => {
+                doorway.classList.remove('retreating');
+            });
+        });
+
+        // Throne interaction
+        throne.addEventListener('click', () => {
+            if (!throneClicked) {
+                throneClicked = true;
+                localStorage.setItem('castle-throne', 'true');
+            }
+            throneInscription.classList.add('visible');
+
+            // Brief crown appearance
+            crown.style.opacity = '0.6';
+            setTimeout(() => {
+                crown.style.opacity = '0';
+            }, 2000);
+        });
+
+        // Stillness detection
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            // Level 1: 5 seconds - edges appear
+            if (elapsed > 5000 && stillnessLevel < 1) {
+                edgeLeft.classList.add('visible');
+                edgeRight.classList.add('visible');
+                doorways.forEach(d => d.classList.add('visible'));
+                stillnessLevel = 1;
+            }
+
+            // Level 2: 10 seconds - windows and tapestries
+            if (elapsed > 10000 && stillnessLevel < 2) {
+                windows.forEach(w => w.classList.add('visible'));
+                tapestries.forEach(t => t.classList.add('visible'));
+                stillnessLevel = 2;
+            }
+
+            // Level 3: 15 seconds - stillness message
+            if (elapsed > 15000 && stillnessLevel < 3) {
+                stillnessMessage.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessLevel = 3;
+            }
+
+            // Level 4: 25 seconds - castle breathes, throne warms
+            if (elapsed > 25000 && stillnessLevel < 4) {
+                walls.classList.add('breathing');
+                throne.classList.add('warm');
+                threshold.classList.add('aware');
+                stillnessLevel = 4;
+            }
+
+            // Level 5: 40 seconds - moat stirs
+            if (elapsed > 40000 && stillnessLevel < 5) {
+                moatPresence.classList.add('rising');
+                stillnessMessage.textContent = deepMessages[Math.floor(Math.random() * deepMessages.length)];
+                stillnessLevel = 5;
+            }
+
+            // Level 6: 60 seconds - all doorways glow
+            if (elapsed > 60000 && stillnessLevel < 6) {
+                doorways.forEach(d => {
+                    d.classList.remove('retreating');
+                    d.querySelector('.doorway-glow').style.opacity = '1';
+                });
+                stillnessLevel = 6;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+
+            if (stillnessLevel > 0) {
+                // Gentle fade rather than instant removal
+                if (stillnessLevel >= 5) {
+                    moatPresence.classList.remove('rising');
+                }
+                if (stillnessLevel >= 4) {
+                    threshold.classList.remove('aware');
+                }
+                if (stillnessLevel >= 3) {
+                    stillnessMessage.classList.remove('visible');
+                }
+
+                // Keep some things visible once revealed
+                stillnessLevel = Math.min(stillnessLevel, 2);
+            }
+        }
+
+        // Moat ripples on stillness (not movement)
+        let lastRipple = 0;
+        function createMoatRipple() {
+            const elapsed = Date.now() - lastActivity;
+            if (elapsed > 8000 && Date.now() - lastRipple > 3000) {
+                const ripple = document.createElement('div');
+                ripple.className = 'moat-ripple';
+                ripple.style.left = (30 + Math.random() * 40) + '%';
+                ripple.style.bottom = '20px';
+                moat.appendChild(ripple);
+                lastRipple = Date.now();
+                setTimeout(() => ripple.remove(), 4000);
+            }
+        }
+        setInterval(createMoatRipple, 2000);
+
+        // Track movement
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+
+        // Right-click whispers
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            createMark(e.clientX, e.clientY);
+
+            stillnessMessage.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => {
+                if (stillnessLevel < 3) {
+                    stillnessMessage.classList.remove('visible');
+                }
+            }, 3000);
+        });
+
+        // Keyboard secrets
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 't') {
+                throne.click();
+            }
+            if (e.key === 'r') {
+                // Illuminate all marks briefly
+                document.querySelectorAll('.wall-mark').forEach(mark => {
+                    mark.style.opacity = '0.5';
+                    setTimeout(() => mark.style.opacity = '0.1', 2000);
+                });
+            }
+        });
+
+        // Start stillness detection
+        checkStillness();
+
+        // Console poetry
+        console.log('%ccastle', 'font-size: 22px; color: #6a6875; font-weight: 300; letter-spacing: 0.5em;');
+        console.log('');
+        console.log('%cbuilt by no one', 'font-size: 10px; color: #8a8895; font-style: italic;');
+        console.log('%cfor someone who never arrived', 'font-size: 10px; color: #8a8895; font-style: italic;');
+        console.log('');
+        console.log('%cthe throne has always been empty', 'font-size: 9px; color: #a0a0a8; font-style: italic;');
+        console.log('%cthe crown was never made', 'font-size: 9px; color: #a0a0a8; font-style: italic;');
+
+        if (visitCount > 1) {
+            console.log('');
+            console.log('%cthe towers remember you (' + visitCount + ' visits)', 'font-size: 8px; color: #6a6875;');
+        }
+    </script>
+</body>
+</html>

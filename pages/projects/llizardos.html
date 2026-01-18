@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LlizardOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --llizard-dark: #0a150a;
+            --llizard-mid: #1a2a1a;
+            --llizard-green: #4a7c59;
+            --llizard-light: #86b398;
+            --llizard-glow: rgba(134, 179, 152, 0.2);
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.7);
+            --slate: #4a5568;
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--llizard-dark);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow-x: hidden;
+        }
+
+        /* Grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            color: var(--llizard-green);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--llizard-light);
+            opacity: 0.7;
+        }
+
+        /* Car screen mockup */
+        .screen-container {
+            display: flex;
+            justify-content: center;
+            margin: 3rem 0;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.3s forwards;
+        }
+
+        .car-screen {
+            width: 320px;
+            height: 180px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%);
+            border: 2px solid #2a2a2a;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 0 30px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .screen-content {
+            position: absolute;
+            inset: 4px;
+            background: var(--llizard-dark);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+        }
+
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--llizard-green);
+            opacity: 0.6;
+        }
+
+        .screen-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--llizard-light);
+        }
+
+        .screen-status {
+            display: flex;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--llizard-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .screen-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .now-playing {
+            text-align: center;
+        }
+
+        .track-title {
+            font-size: 0.8rem;
+            color: var(--bone-dim);
+            margin-bottom: 4px;
+        }
+
+        .track-artist {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--llizard-light);
+            opacity: 0.7;
+        }
+
+        .screen-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding-top: 8px;
+        }
+
+        .control-btn {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--llizard-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            color: var(--llizard-light);
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .control-btn:hover {
+            opacity: 1;
+        }
+
+        /* Content sections */
+        .section {
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        .section:nth-child(3) { animation-delay: 0.5s; }
+        .section:nth-child(4) { animation-delay: 0.7s; }
+        .section:nth-child(5) { animation-delay: 0.9s; }
+
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--llizard-green);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--llizard-mid);
+        }
+
+        .section-content {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--bone-dim);
+            opacity: 0.8;
+        }
+
+        .section-content p {
+            margin-bottom: 1rem;
+        }
+
+        /* Feature list */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature {
+            padding: 1rem;
+            background: var(--llizard-mid);
+            border-left: 2px solid var(--llizard-green);
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .feature:hover {
+            background: rgba(74, 124, 89, 0.1);
+            transform: translateX(4px);
+        }
+
+        .feature-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--llizard-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            font-size: 0.8rem;
+            color: var(--bone-dim);
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+
+        /* Tech stack */
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .tech-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--llizard-light);
+            background: var(--llizard-mid);
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--llizard-green);
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .tech-tag:hover {
+            opacity: 1;
+        }
+
+        /* Companion link */
+        .companion-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--llizard-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--llizard-green);
+            margin-top: 1rem;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .companion-link:hover {
+            background: var(--llizard-green);
+            color: var(--llizard-dark);
+        }
+
+        .companion-link .arrow {
+            transition: transform 0.3s;
+        }
+
+        .companion-link:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--llizard-light);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--llizard-light);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Decorative elements */
+        .circuit-line {
+            position: fixed;
+            background: var(--llizard-green);
+            opacity: 0.1;
+        }
+
+        .circuit-h {
+            height: 1px;
+            width: 100px;
+        }
+
+        .circuit-v {
+            width: 1px;
+            height: 80px;
+        }
+
+        .circuit-1 { top: 20%; left: 5%; }
+        .circuit-2 { bottom: 30%; right: 8%; }
+        .circuit-3 { top: 60%; left: 3%; }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div class="circuit-line circuit-h circuit-1"></div>
+    <div class="circuit-line circuit-v circuit-2"></div>
+    <div class="circuit-line circuit-h circuit-3"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">LlizardOS</div>
+            <p class="tagline">a carthing operating system</p>
+        </header>
+
+        <div class="screen-container">
+            <div class="car-screen">
+                <div class="screen-content">
+                    <div class="screen-header">
+                        <span class="screen-time">14:32</span>
+                        <div class="screen-status">
+                            <div class="status-dot"></div>
+                            <div class="status-dot" style="animation-delay: 0.3s;"></div>
+                            <div class="status-dot" style="animation-delay: 0.6s;"></div>
+                        </div>
+                    </div>
+                    <div class="screen-main">
+                        <div class="now-playing">
+                            <div class="track-title">Waiting for connection...</div>
+                            <div class="track-artist">via Janus</div>
+                        </div>
+                    </div>
+                    <div class="screen-controls">
+                        <div class="control-btn">&#9664;</div>
+                        <div class="control-btn">&#9654;</div>
+                        <div class="control-btn">&#9654;&#9654;</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2 class="section-title">what it is</h2>
+            <div class="section-content">
+                <p>LlizardOS is a custom operating system designed for the Spotify Car Thing hardware. When Spotify discontinued the device, the small touchscreen became an orphan - a screen without purpose.</p>
+                <p>This gives it new purpose: a dedicated media display that connects to your phone via Bluetooth, showing what's playing, providing tactile controls, and staying out of the way until needed. Cold-blooded efficiency.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-name">media display</div>
+                    <div class="feature-desc">album art, track info, playback status - all at a glance</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-name">physical controls</div>
+                    <div class="feature-desc">the dial and buttons work - skip, pause, volume</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-name">bluetooth sync</div>
+                    <div class="feature-desc">connects to Janus on android via GATT</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-name">minimal interface</div>
+                    <div class="feature-desc">shows only what matters, nothing more</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">built with</h2>
+            <div class="tech-stack">
+                <span class="tech-tag">buildroot</span>
+                <span class="tech-tag">linux</span>
+                <span class="tech-tag">flutter</span>
+                <span class="tech-tag">bluetooth le</span>
+                <span class="tech-tag">gatt</span>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">the ecosystem</h2>
+            <div class="section-content">
+                <p>LlizardOS doesn't work alone. Mercury is the BLE client that runs on the device, connecting to Janus on your phone. Salamanders are plugins that extend the system's capabilities.</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+                    <a href="mercury.html" class="companion-link">
+                        <span>see Mercury</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                    <a href="janus.html" class="companion-link">
+                        <span>see Janus</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                    <a href="salamanders/index.html" class="companion-link">
+                        <span>see Salamanders</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <a href="index.html" class="return-link">return to projects</a>
+
+    <script>
+        // Stillness messages
+        const messages = [
+            'the screen waits patiently',
+            'cold blooded, warm purpose',
+            'small screen, focused function',
+            'the car thing lives again'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 8000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cLlizardOS', 'font-size: 16px; color: #4a7c59; font-weight: 300;');
+        console.log('%ca carthing reborn', 'font-size: 10px; color: #86b398; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            stillnessMessage.textContent = 'the hardware finds new purpose';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>

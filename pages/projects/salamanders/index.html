@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salamanders</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --salamander-dark: #12100a;
+            --salamander-mid: #1f1c14;
+            --salamander-orange: #c4622a;
+            --salamander-ember: #e88a4c;
+            --salamander-glow: rgba(228, 138, 76, 0.15);
+            --salamander-ash: #3a3630;
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.7);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--salamander-dark);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow-x: hidden;
+        }
+
+        /* Grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Ember particles */
+        .ember {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: var(--salamander-ember);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: emberRise var(--dur, 8s) ease-out infinite;
+            animation-delay: var(--del, 0s);
+            left: var(--x, 50%);
+            bottom: 0;
+        }
+
+        @keyframes emberRise {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            10% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+            100% { transform: translateY(-100vh) scale(0.3); opacity: 0; }
+        }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--salamander-ember);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--salamander-orange);
+            opacity: 0.8;
+        }
+
+        /* Description */
+        .description {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--bone-dim);
+            opacity: 0.8;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.3s forwards;
+            opacity: 0;
+        }
+
+        /* Plugins grid */
+        .plugins-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem 0;
+        }
+
+        .plugin {
+            aspect-ratio: 3/2;
+            background: var(--salamander-mid);
+            border: 1px solid var(--salamander-ash);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--bone-dim);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+            opacity: 0;
+            animation: pluginAppear 0.8s ease forwards;
+            animation-delay: var(--delay, 0s);
+            padding: 1.5rem;
+        }
+
+        @keyframes pluginAppear {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .plugin:hover {
+            border-color: var(--salamander-orange);
+            box-shadow: 0 8px 30px var(--salamander-glow);
+            transform: translateY(-4px);
+        }
+
+        .plugin-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.8;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .plugin:hover .plugin-icon {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .plugin-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--salamander-ember);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .plugin-desc {
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--bone-dim);
+            text-align: center;
+            max-width: 90%;
+            line-height: 1.4;
+            opacity: 0.6;
+        }
+
+        .plugin-status {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .plugin-status.ready {
+            background: rgba(74, 124, 89, 0.3);
+            color: #86b398;
+        }
+
+        .plugin-status.planned {
+            background: rgba(196, 98, 42, 0.2);
+            color: var(--salamander-orange);
+        }
+
+        /* Empty state for future plugins */
+        .plugin.coming-soon {
+            border-style: dashed;
+            opacity: 0.5;
+        }
+
+        .plugin.coming-soon:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: var(--salamander-ash);
+            cursor: default;
+        }
+
+        /* How it works */
+        .section {
+            margin: 3rem 0;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.6s forwards;
+        }
+
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--salamander-orange);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--salamander-ash);
+        }
+
+        .section-content {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--bone-dim);
+            opacity: 0.8;
+        }
+
+        .section-content p {
+            margin-bottom: 1rem;
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--salamander-mid);
+            border-left: 2px solid var(--salamander-orange);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--salamander-ember);
+            overflow-x: auto;
+        }
+
+        .code-comment {
+            color: var(--salamander-orange);
+            opacity: 0.5;
+        }
+
+        /* Companion link */
+        .companion-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--salamander-ember);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--salamander-orange);
+            margin-top: 1rem;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .companion-link:hover {
+            background: var(--salamander-orange);
+            color: var(--salamander-dark);
+        }
+
+        .companion-link .arrow {
+            transition: transform 0.3s;
+        }
+
+        .companion-link:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--salamander-ember);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--salamander-ember);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <!-- Ember particles -->
+    <div class="ember" style="--x: 10%; --dur: 6s; --del: 0s;"></div>
+    <div class="ember" style="--x: 25%; --dur: 8s; --del: 2s;"></div>
+    <div class="ember" style="--x: 45%; --dur: 7s; --del: 4s;"></div>
+    <div class="ember" style="--x: 70%; --dur: 9s; --del: 1s;"></div>
+    <div class="ember" style="--x: 85%; --dur: 6.5s; --del: 3s;"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">Salamanders</div>
+            <p class="tagline">plugins that live in the fire</p>
+        </header>
+
+        <p class="description">
+            Salamanders are plugins for LlizardOS - small creatures that add functionality without changing the core. They load at boot, listen for events, and extend what the system can do. Named for the mythical creatures said to live in flames.
+        </p>
+
+        <div class="plugins-container" id="plugins">
+            <!-- Plugins will be listed here as they're created -->
+            <div class="plugin coming-soon" style="--delay: 0.1s;">
+                <span class="plugin-status planned">planned</span>
+                <span class="plugin-icon">~</span>
+                <span class="plugin-name">your plugin here</span>
+                <span class="plugin-desc">salamanders await their purpose</span>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2 class="section-title">how plugins work</h2>
+            <div class="section-content">
+                <p>Each salamander is a shared library that implements a simple interface. LlizardOS discovers them at boot, loads them, and calls their hooks when events occur - media changes, button presses, connection events.</p>
+                <div class="code-block">
+<span class="code-comment">// salamander interface</span>
+type Salamander interface {
+    Name() string
+    OnLoad(ctx Context)
+    OnMediaUpdate(state MediaState)
+    OnButtonPress(button Button)
+    OnUnload()
+}
+                </div>
+                <p>Drop a .so file in /usr/lib/salamanders, and it wakes up with the system.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">the host</h2>
+            <div class="section-content">
+                <p>Salamanders exist within LlizardOS - the operating system that gives them a home and purpose.</p>
+                <a href="../llizardos.html" class="companion-link">
+                    <span>see LlizardOS</span>
+                    <span class="arrow">&rarr;</span>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <a href="../index.html" class="return-link">return to projects</a>
+
+    <script>
+        // Stillness messages
+        const messages = [
+            'small creatures, patient purpose',
+            'the embers remember',
+            'plugins dream of events',
+            'waiting in the warmth'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 8000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cSalamanders', 'font-size: 16px; color: #c4622a; font-weight: 300;');
+        console.log('%ccreatures of the fire', 'font-size: 10px; color: #e88a4c; font-style: italic;');
+        console.log('%cthey live where others cannot', 'font-size: 10px; color: #e88a4c; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            stillnessMessage.textContent = 'ls /usr/lib/salamanders/*.so';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>

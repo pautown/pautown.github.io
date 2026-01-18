@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercury</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mercury-dark: #0f0f12;
+            --mercury-mid: #1a1a20;
+            --mercury-silver: #8a9cae;
+            --mercury-light: #c4d0dc;
+            --mercury-quicksilver: #d4dce4;
+            --mercury-glow: rgba(196, 208, 220, 0.1);
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.7);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--mercury-dark);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow-x: hidden;
+        }
+
+        /* Grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Liquid mercury droplets */
+        .droplet {
+            position: fixed;
+            background: radial-gradient(ellipse at 30% 30%, var(--mercury-quicksilver) 0%, var(--mercury-silver) 50%, var(--mercury-mid) 100%);
+            border-radius: 50%;
+            opacity: 0.15;
+            pointer-events: none;
+            animation: float var(--dur, 20s) ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .droplet-1 { width: 60px; height: 60px; top: 15%; left: 8%; --dur: 18s; }
+        .droplet-2 { width: 40px; height: 40px; bottom: 25%; right: 12%; --dur: 22s; animation-delay: -5s; }
+        .droplet-3 { width: 25px; height: 25px; top: 60%; left: 5%; --dur: 15s; animation-delay: -10s; }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            color: var(--mercury-light);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 30px var(--mercury-glow);
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--mercury-silver);
+            opacity: 0.8;
+        }
+
+        /* Flow visualization */
+        .flow-container {
+            display: flex;
+            justify-content: center;
+            margin: 3rem 0;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.3s forwards;
+        }
+
+        .flow-visual {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flow-node {
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--mercury-silver);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--mercury-light);
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .flow-node.active {
+            opacity: 1;
+            background: var(--mercury-mid);
+            box-shadow: 0 0 20px var(--mercury-glow);
+        }
+
+        .flow-arrow {
+            color: var(--mercury-silver);
+            opacity: 0.5;
+            font-size: 0.8rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Content sections */
+        .section {
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        .section:nth-child(3) { animation-delay: 0.5s; }
+        .section:nth-child(4) { animation-delay: 0.7s; }
+        .section:nth-child(5) { animation-delay: 0.9s; }
+        .section:nth-child(6) { animation-delay: 1.1s; }
+
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--mercury-silver);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--mercury-mid);
+        }
+
+        .section-content {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--bone-dim);
+            opacity: 0.8;
+        }
+
+        .section-content p {
+            margin-bottom: 1rem;
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--mercury-mid);
+            border-left: 2px solid var(--mercury-silver);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--mercury-light);
+            overflow-x: auto;
+        }
+
+        .code-comment {
+            color: var(--mercury-silver);
+            opacity: 0.6;
+        }
+
+        .code-keyword {
+            color: var(--mercury-quicksilver);
+        }
+
+        .code-string {
+            color: #a8b8a8;
+        }
+
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature {
+            padding: 1rem;
+            background: var(--mercury-mid);
+            border-left: 2px solid var(--mercury-silver);
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .feature:hover {
+            background: rgba(138, 156, 174, 0.1);
+            transform: translateX(4px);
+        }
+
+        .feature-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--mercury-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            font-size: 0.8rem;
+            color: var(--bone-dim);
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+
+        /* Tech stack */
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .tech-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--mercury-light);
+            background: var(--mercury-mid);
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--mercury-silver);
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .tech-tag:hover {
+            opacity: 1;
+        }
+
+        /* Companion links */
+        .companion-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .companion-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--mercury-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--mercury-silver);
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .companion-link:hover {
+            background: var(--mercury-silver);
+            color: var(--mercury-dark);
+        }
+
+        .companion-link .arrow {
+            transition: transform 0.3s;
+        }
+
+        .companion-link:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--mercury-light);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--mercury-light);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div class="droplet droplet-1"></div>
+    <div class="droplet droplet-2"></div>
+    <div class="droplet droplet-3"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">Mercury</div>
+            <p class="tagline">the messenger between devices</p>
+        </header>
+
+        <div class="flow-container">
+            <div class="flow-visual">
+                <div class="flow-node">janus</div>
+                <span class="flow-arrow">&larr; ble &rarr;</span>
+                <div class="flow-node active">mercury</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-node">llizardos</div>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2 class="section-title">what it is</h2>
+            <div class="section-content">
+                <p>Mercury is the BLE client that runs on LlizardOS, connecting to Janus on your phone. Named for the swift messenger god - fleet-footed, carrying information between realms.</p>
+                <p>Written in Go for efficiency on embedded hardware. It discovers, connects, subscribes to notifications, and relays media state to the UI. Quick and light, like liquid metal.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">how it flows</h2>
+            <div class="code-block">
+<span class="code-comment">// mercury scans, connects, listens</span>
+<span class="code-keyword">func</span> (m *Mercury) <span class="code-keyword">Connect</span>(addr string) {
+    device := m.adapter.Connect(addr)
+    services := device.DiscoverServices()
+
+    <span class="code-comment">// subscribe to media characteristics</span>
+    <span class="code-keyword">for</span> _, char := <span class="code-keyword">range</span> services.Characteristics {
+        char.EnableNotifications(m.onUpdate)
+    }
+}
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-name">auto discovery</div>
+                    <div class="feature-desc">scans for janus advertisements, reconnects on drop</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-name">gatt client</div>
+                    <div class="feature-desc">subscribes to notifications, reads characteristics on demand</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-name">command relay</div>
+                    <div class="feature-desc">writes play/pause/skip to control characteristic</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-name">state broadcast</div>
+                    <div class="feature-desc">publishes media updates to the flutter ui via dbus</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">built with</h2>
+            <div class="tech-stack">
+                <span class="tech-tag">golang</span>
+                <span class="tech-tag">tinygo bluetooth</span>
+                <span class="tech-tag">bluez</span>
+                <span class="tech-tag">dbus</span>
+                <span class="tech-tag">gatt client</span>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">the triad</h2>
+            <div class="section-content">
+                <p>Mercury is one part of the connection. Janus serves, Mercury listens, LlizardOS displays.</p>
+                <div class="companion-links">
+                    <a href="janus.html" class="companion-link">
+                        <span>see Janus</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                    <a href="llizardos.html" class="companion-link">
+                        <span>see LlizardOS</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <a href="index.html" class="return-link">return to projects</a>
+
+    <script>
+        // Stillness messages
+        const messages = [
+            'quicksilver thoughts',
+            'the messenger waits',
+            'bytes flow like liquid metal',
+            'swift and silent'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 8000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cMercury', 'font-size: 16px; color: #8a9cae; font-weight: 300;');
+        console.log('%cthe swift messenger', 'font-size: 10px; color: #c4d0dc; font-style: italic;');
+        console.log('%cfleet-footed, carrying bytes between realms', 'font-size: 10px; color: #c4d0dc; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            stillnessMessage.textContent = 'go run ./cmd/mercury';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>

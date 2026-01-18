@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --janus-dark: #0a0a15;
+            --janus-mid: #1a1a2a;
+            --janus-blue: #5868a0;
+            --janus-light: #98a8c8;
+            --janus-glow: rgba(152, 168, 200, 0.15);
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.7);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--janus-dark);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow-x: hidden;
+        }
+
+        /* Grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            color: var(--janus-light);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.15em;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--janus-blue);
+            opacity: 0.8;
+        }
+
+        /* Two faces illustration */
+        .faces-container {
+            display: flex;
+            justify-content: center;
+            margin: 3rem 0;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.3s forwards;
+        }
+
+        .faces {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .face {
+            width: 80px;
+            height: 100px;
+            border: 1px solid var(--janus-blue);
+            border-radius: 40px 40px 30px 30px;
+            position: relative;
+            opacity: 0.5;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        .face:hover {
+            opacity: 0.8;
+        }
+
+        .face-left {
+            transform: scaleX(-1);
+        }
+
+        .face::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 25%;
+            width: 8px;
+            height: 8px;
+            border: 1px solid var(--janus-light);
+            border-radius: 50%;
+        }
+
+        .face-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--janus-blue);
+            white-space: nowrap;
+        }
+
+        .face-left .face-label {
+            transform: translateX(-50%) scaleX(-1);
+        }
+
+        .connection-line {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--janus-blue), var(--janus-light), var(--janus-blue));
+            position: relative;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        .connection-line::before,
+        .connection-line::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            background: var(--janus-light);
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        .connection-line::before { left: -3px; }
+        .connection-line::after { right: -3px; }
+
+        /* Content sections */
+        .section {
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        .section:nth-child(3) { animation-delay: 0.5s; }
+        .section:nth-child(4) { animation-delay: 0.7s; }
+        .section:nth-child(5) { animation-delay: 0.9s; }
+
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--janus-blue);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--janus-mid);
+        }
+
+        .section-content {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--bone-dim);
+            opacity: 0.8;
+        }
+
+        .section-content p {
+            margin-bottom: 1rem;
+        }
+
+        /* How it works */
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--janus-mid);
+            border-left: 2px solid var(--janus-blue);
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flow-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--janus-light);
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--janus-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .flow-text {
+            font-size: 0.85rem;
+            color: var(--bone-dim);
+            opacity: 0.8;
+        }
+
+        .flow-arrow {
+            margin-left: 9px;
+            width: 1px;
+            height: 15px;
+            background: var(--janus-blue);
+            opacity: 0.5;
+        }
+
+        /* GATT characteristics */
+        .characteristics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .characteristic {
+            padding: 1rem;
+            background: var(--janus-mid);
+            border: 1px solid transparent;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .characteristic:hover {
+            border-color: var(--janus-blue);
+            transform: translateY(-2px);
+        }
+
+        .char-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--janus-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .char-uuid {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--janus-blue);
+            opacity: 0.6;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .char-desc {
+            font-size: 0.75rem;
+            color: var(--bone-dim);
+            opacity: 0.7;
+        }
+
+        /* Tech stack */
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .tech-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--janus-light);
+            background: var(--janus-mid);
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--janus-blue);
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .tech-tag:hover {
+            opacity: 1;
+        }
+
+        /* Companion link */
+        .companion-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--janus-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--janus-blue);
+            margin-top: 1rem;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .companion-link:hover {
+            background: var(--janus-blue);
+            color: var(--janus-dark);
+        }
+
+        .companion-link .arrow {
+            transition: transform 0.3s;
+        }
+
+        .companion-link:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--janus-light);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--janus-light);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Bluetooth waves decoration */
+        .bt-wave {
+            position: fixed;
+            border: 1px solid var(--janus-blue);
+            border-radius: 50%;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .bt-wave-1 { width: 200px; height: 200px; top: 10%; right: -50px; }
+        .bt-wave-2 { width: 150px; height: 150px; bottom: 20%; left: -30px; }
+        .bt-wave-3 { width: 100px; height: 100px; top: 50%; right: 10%; }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div class="bt-wave bt-wave-1"></div>
+    <div class="bt-wave bt-wave-2"></div>
+    <div class="bt-wave bt-wave-3"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">Janus</div>
+            <p class="tagline">two faces, one connection</p>
+        </header>
+
+        <div class="faces-container">
+            <div class="faces">
+                <div class="face face-left">
+                    <span class="face-label">phone</span>
+                </div>
+                <div class="connection-line"></div>
+                <div class="face">
+                    <span class="face-label">llizard</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2 class="section-title">what it is</h2>
+            <div class="section-content">
+                <p>Janus is an Android app that bridges your phone's media to LlizardOS. Named for the Roman god of doorways and transitions - the deity with two faces looking in opposite directions - it serves as the gateway between devices.</p>
+                <p>It runs a Bluetooth GATT server, exposing media information and accepting control commands. The phone becomes the source, the car thing becomes the display.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">how it works</h2>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="flow-number">1</span>
+                    <span class="flow-text">Janus starts a GATT server on your phone</span>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-step">
+                    <span class="flow-number">2</span>
+                    <span class="flow-text">LlizardOS connects as a GATT client</span>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-step">
+                    <span class="flow-number">3</span>
+                    <span class="flow-text">Media metadata flows to the car thing</span>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="flow-step">
+                    <span class="flow-number">4</span>
+                    <span class="flow-text">Control commands flow back to the phone</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">gatt characteristics</h2>
+            <div class="characteristics">
+                <div class="characteristic">
+                    <div class="char-name">track title</div>
+                    <div class="char-uuid">0x2001</div>
+                    <div class="char-desc">current track name, read/notify</div>
+                </div>
+                <div class="characteristic">
+                    <div class="char-name">artist</div>
+                    <div class="char-uuid">0x2002</div>
+                    <div class="char-desc">artist name, read/notify</div>
+                </div>
+                <div class="characteristic">
+                    <div class="char-name">album art</div>
+                    <div class="char-uuid">0x2003</div>
+                    <div class="char-desc">compressed image data, read</div>
+                </div>
+                <div class="characteristic">
+                    <div class="char-name">playback state</div>
+                    <div class="char-uuid">0x2004</div>
+                    <div class="char-desc">play/pause/position, read/notify</div>
+                </div>
+                <div class="characteristic">
+                    <div class="char-name">controls</div>
+                    <div class="char-uuid">0x2010</div>
+                    <div class="char-desc">play, pause, skip, write</div>
+                </div>
+                <div class="characteristic">
+                    <div class="char-name">volume</div>
+                    <div class="char-uuid">0x2011</div>
+                    <div class="char-desc">volume level, read/write</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">built with</h2>
+            <div class="tech-stack">
+                <span class="tech-tag">kotlin</span>
+                <span class="tech-tag">android</span>
+                <span class="tech-tag">bluetooth le</span>
+                <span class="tech-tag">gatt server</span>
+                <span class="tech-tag">mediasession</span>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">the other faces</h2>
+            <div class="section-content">
+                <p>Janus serves LlizardOS through Mercury - the BLE client written in Go that runs on the car thing and connects to Janus.</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+                    <a href="mercury.html" class="companion-link">
+                        <span>see Mercury</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                    <a href="llizardos.html" class="companion-link">
+                        <span>see LlizardOS</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <a href="index.html" class="return-link">return to projects</a>
+
+    <script>
+        // Stillness messages
+        const messages = [
+            'the doorway opens both ways',
+            'two faces, synchronized',
+            'bluetooth whispers carry far',
+            'the connection persists'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 8000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cJanus', 'font-size: 16px; color: #5868a0; font-weight: 300;');
+        console.log('%cthe god of doorways', 'font-size: 10px; color: #98a8c8; font-style: italic;');
+        console.log('%clooking both directions at once', 'font-size: 10px; color: #98a8c8; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            stillnessMessage.textContent = 'GATT: Generic Attribute Profile';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>

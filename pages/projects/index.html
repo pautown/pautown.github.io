@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>projects</title>
+    <link rel="stylesheet" href="../../shared.css">
+    <style>
+        body {
+            background: var(--bone);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Static grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.025;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Particles */
+        .particle {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: var(--amber);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: particleFloat var(--dur, 25s) linear infinite;
+            animation-delay: var(--del, 0s);
+            left: var(--x, 50%);
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh); opacity: 0; }
+            5% { opacity: 0.2; }
+            95% { opacity: 0.1; }
+            100% { transform: translateY(-5vh); opacity: 0; }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.3s forwards;
+            z-index: 10;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.4em;
+            color: var(--slate-deep);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0.6;
+        }
+
+        .projects-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            width: 100%;
+            padding: 1rem;
+            z-index: 10;
+        }
+
+        .project {
+            aspect-ratio: 4/3;
+            background: var(--paper);
+            border: 1px solid var(--bone-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--ink);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+            opacity: 0;
+            animation: projectAppear 0.8s ease forwards;
+            animation-delay: var(--delay, 0s);
+            padding: 1.5rem;
+        }
+
+        @keyframes projectAppear {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .project:hover {
+            border-color: var(--amber);
+            box-shadow: 0 8px 30px var(--shadow);
+            transform: translateY(-4px);
+        }
+
+        .project-glyph {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.7;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .project:hover .project-glyph {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .project-name {
+            font-size: 1.1rem;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: var(--slate-deep);
+            margin-bottom: 0.5rem;
+        }
+
+        .project-description {
+            font-size: 0.7rem;
+            font-style: italic;
+            color: var(--slate);
+            text-align: center;
+            max-width: 90%;
+            line-height: 1.5;
+            opacity: 0.7;
+        }
+
+        .project-whisper {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: var(--slate);
+            text-align: center;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            background: linear-gradient(transparent, var(--paper));
+        }
+
+        .project:hover .project-whisper {
+            opacity: 0.6;
+            transform: translateY(0);
+        }
+
+        /* LlizardOS styling */
+        .project[data-project="llizardos"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #1a2a1a 40%, #0a150a 100%);
+        }
+
+        .project[data-project="llizardos"] .project-glyph {
+            color: #4a7c59;
+        }
+
+        .project[data-project="llizardos"] .project-name {
+            color: #86b398;
+        }
+
+        .project[data-project="llizardos"] .project-description {
+            color: #6a9a78;
+        }
+
+        .project[data-project="llizardos"] .project-whisper {
+            color: #4a7c59;
+            background: linear-gradient(transparent, #0a150a);
+        }
+
+        /* Janus styling */
+        .project[data-project="janus"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #1a1a2a 40%, #0a0a15 100%);
+        }
+
+        .project[data-project="janus"] .project-glyph {
+            color: #7080a0;
+        }
+
+        .project[data-project="janus"] .project-name {
+            color: #98a8c8;
+        }
+
+        .project[data-project="janus"] .project-description {
+            color: #7888a8;
+        }
+
+        .project[data-project="janus"] .project-whisper {
+            color: #5868a0;
+            background: linear-gradient(transparent, #0a0a15);
+        }
+
+        /* Mercury styling */
+        .project[data-project="mercury"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #1a1a20 40%, #0f0f12 100%);
+        }
+
+        .project[data-project="mercury"] .project-glyph {
+            color: #8a9cae;
+        }
+
+        .project[data-project="mercury"] .project-name {
+            color: #c4d0dc;
+        }
+
+        .project[data-project="mercury"] .project-description {
+            color: #9aacbc;
+        }
+
+        .project[data-project="mercury"] .project-whisper {
+            color: #8a9cae;
+            background: linear-gradient(transparent, #0f0f12);
+        }
+
+        /* Salamanders styling */
+        .project[data-project="salamanders"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #1f1c14 40%, #12100a 100%);
+        }
+
+        .project[data-project="salamanders"] .project-glyph {
+            color: #c4622a;
+        }
+
+        .project[data-project="salamanders"] .project-name {
+            color: #e88a4c;
+        }
+
+        .project[data-project="salamanders"] .project-description {
+            color: #d4723c;
+        }
+
+        .project[data-project="salamanders"] .project-whisper {
+            color: #c4622a;
+            background: linear-gradient(transparent, #12100a);
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--slate);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.5s ease;
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--slate);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: opacity 2s ease;
+        }
+
+        .stillness-message.visible { opacity: 0.5; }
+
+        /* Edge hints */
+        .edge-hint {
+            position: fixed;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.45rem;
+            color: var(--slate);
+            opacity: 0;
+            letter-spacing: 0.1em;
+            text-transform: lowercase;
+            pointer-events: none;
+            transition: opacity 1.5s ease;
+            z-index: 50;
+        }
+
+        .edge-hint.visible { opacity: 0.2; }
+        .edge-hint.left { left: 0.5rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .edge-hint.right { right: 0.5rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+        @media (max-width: 600px) {
+            .projects-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <!-- Particles -->
+    <div class="particle" style="--x: 15%; --dur: 22s; --del: 0s;"></div>
+    <div class="particle" style="--x: 45%; --dur: 28s; --del: 3s;"></div>
+    <div class="particle" style="--x: 75%; --dur: 25s; --del: 7s;"></div>
+    <div class="particle" style="--x: 30%; --dur: 30s; --del: 12s;"></div>
+    <div class="particle" style="--x: 85%; --dur: 24s; --del: 5s;"></div>
+
+    <header class="header">
+        <h1 class="title">projects</h1>
+        <p class="subtitle">things that were built</p>
+    </header>
+
+    <div class="projects-container" id="projects">
+        <a href="llizardos.html" class="project" data-project="llizardos" style="--delay: 0.1s;">
+            <span class="project-glyph">&#9638;</span>
+            <span class="project-name">LlizardOS</span>
+            <span class="project-description">a carthing operating system<br>for the small screen in the car</span>
+            <span class="project-whisper">cold blooded efficiency</span>
+        </a>
+        <a href="janus.html" class="project" data-project="janus" style="--delay: 0.2s;">
+            <span class="project-glyph">&#9683;</span>
+            <span class="project-name">Janus</span>
+            <span class="project-description">android media companion<br>bluetooth gatt server for llizard</span>
+            <span class="project-whisper">two faces, one purpose</span>
+        </a>
+        <a href="mercury.html" class="project" data-project="mercury" style="--delay: 0.3s;">
+            <span class="project-glyph">&#9676;</span>
+            <span class="project-name">Mercury</span>
+            <span class="project-description">ble client for llizardos<br>written in golang</span>
+            <span class="project-whisper">swift messenger</span>
+        </a>
+        <a href="salamanders/index.html" class="project" data-project="salamanders" style="--delay: 0.4s;">
+            <span class="project-glyph">&#10047;</span>
+            <span class="project-name">Salamanders</span>
+            <span class="project-description">plugins for llizardos<br>small creatures in the fire</span>
+            <span class="project-whisper">they live where others cannot</span>
+        </a>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+    <div class="edge-hint left" id="edgeLeft">things made</div>
+    <div class="edge-hint right" id="edgeRight">with intention</div>
+
+    <a href="../../index.html" class="return-link">return to townhaus</a>
+
+    <script>
+        // Stillness detection
+        const stillnessMessages = [
+            'software as craft',
+            'the code compiles in silence',
+            'systems within systems',
+            'built to run, running to build'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessLevel = 0;
+
+        const stillnessMessage = document.getElementById('stillnessMessage');
+        const edgeLeft = document.getElementById('edgeLeft');
+        const edgeRight = document.getElementById('edgeRight');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 5000 && stillnessLevel < 1) {
+                edgeLeft.classList.add('visible');
+                edgeRight.classList.add('visible');
+                stillnessLevel = 1;
+            }
+
+            if (elapsed > 10000 && stillnessLevel < 2) {
+                stillnessMessage.textContent = stillnessMessages[Math.floor(Math.random() * stillnessMessages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessLevel = 2;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessLevel > 0) {
+                stillnessMessage.classList.remove('visible');
+                edgeLeft.classList.remove('visible');
+                edgeRight.classList.remove('visible');
+                stillnessLevel = 0;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+
+        checkStillness();
+
+        // Console poetry
+        console.log('%cprojects', 'font-size: 18px; color: #4a5568; font-weight: 300; letter-spacing: 0.3em;');
+        console.log('%cthings built with care', 'font-size: 10px; color: #718096; font-style: italic;');
+        console.log('%cfor purposes quiet and specific', 'font-size: 10px; color: #718096; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const whispers = [
+                'code is poetry compiled',
+                'every function has a home',
+                'the machine dreams in logic',
+                'built by hand, run by silicon'
+            ];
+            stillnessMessage.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => {
+                if (stillnessLevel < 2) stillnessMessage.classList.remove('visible');
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
