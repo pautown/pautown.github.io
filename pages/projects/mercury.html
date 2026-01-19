@@ -343,8 +343,8 @@
                 <div class="flow-node">janus</div>
                 <span class="flow-arrow">&larr; ble &rarr;</span>
                 <div class="flow-node active">mercury</div>
-                <span class="flow-arrow">&rarr;</span>
-                <div class="flow-node">llizardos</div>
+                <span class="flow-arrow">&rarr; redis &rarr;</span>
+                <div class="flow-node">llizard</div>
             </div>
         </div>
 
@@ -388,8 +388,8 @@
                     <div class="feature-desc">writes play/pause/skip to control characteristic</div>
                 </div>
                 <div class="feature">
-                    <div class="feature-name">state broadcast</div>
-                    <div class="feature-desc">publishes media updates to the flutter ui via dbus</div>
+                    <div class="feature-name">redis bridge</div>
+                    <div class="feature-desc">publishes media state to redis for llizard to consume</div>
                 </div>
             </div>
         </section>
@@ -399,19 +399,27 @@
             <div class="tech-stack">
                 <span class="tech-tag">golang</span>
                 <span class="tech-tag">tinygo bluetooth</span>
+                <span class="tech-tag">redis</span>
                 <span class="tech-tag">bluez</span>
-                <span class="tech-tag">dbus</span>
                 <span class="tech-tag">gatt client</span>
             </div>
+            <a href="https://github.com/pautown/mercury" class="companion-link" target="_blank" style="margin-top: 1.5rem;">
+                <span>view on github</span>
+                <span class="arrow">&rarr;</span>
+            </a>
         </section>
 
         <section class="section">
-            <h2 class="section-title">the triad</h2>
+            <h2 class="section-title">the flow</h2>
             <div class="section-content">
-                <p>Mercury is one part of the connection. Janus serves, Mercury listens, LlizardOS displays.</p>
+                <p>Mercury is the messenger. Janus serves media from your phone, Mercury carries it to Redis, and Llizard reads it to render the display.</p>
                 <div class="companion-links">
                     <a href="janus.html" class="companion-link">
                         <span>see Janus</span>
+                        <span class="arrow">&rarr;</span>
+                    </a>
+                    <a href="llizard.html" class="companion-link">
+                        <span>see Llizard</span>
                         <span class="arrow">&rarr;</span>
                     </a>
                     <a href="llizardos.html" class="companion-link">

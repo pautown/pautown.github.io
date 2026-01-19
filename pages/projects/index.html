@@ -234,24 +234,46 @@
             background: linear-gradient(transparent, #0f0f12);
         }
 
-        /* Salamanders styling */
-        .project[data-project="salamanders"] {
+        /* Llizard styling */
+        .project[data-project="llizard"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #152215 40%, #0a120a 100%);
+        }
+
+        .project[data-project="llizard"] .project-glyph {
+            color: #3d6b4a;
+        }
+
+        .project[data-project="llizard"] .project-name {
+            color: #8fc49e;
+        }
+
+        .project[data-project="llizard"] .project-description {
+            color: #6b9d7a;
+        }
+
+        .project[data-project="llizard"] .project-whisper {
+            color: #3d6b4a;
+            background: linear-gradient(transparent, #0a120a);
+        }
+
+        /* Salamander styling */
+        .project[data-project="salamander"] {
             background: linear-gradient(135deg, var(--paper) 0%, #1f1c14 40%, #12100a 100%);
         }
 
-        .project[data-project="salamanders"] .project-glyph {
+        .project[data-project="salamander"] .project-glyph {
             color: #c4622a;
         }
 
-        .project[data-project="salamanders"] .project-name {
+        .project[data-project="salamander"] .project-name {
             color: #e88a4c;
         }
 
-        .project[data-project="salamanders"] .project-description {
+        .project[data-project="salamander"] .project-description {
             color: #d4723c;
         }
 
-        .project[data-project="salamanders"] .project-whisper {
+        .project[data-project="salamander"] .project-whisper {
             color: #c4622a;
             background: linear-gradient(transparent, #12100a);
         }
@@ -335,25 +357,31 @@
         <a href="llizardos.html" class="project" data-project="llizardos" style="--delay: 0.1s;">
             <span class="project-glyph">&#9638;</span>
             <span class="project-name">LlizardOS</span>
-            <span class="project-description">a carthing operating system<br>for the small screen in the car</span>
+            <span class="project-description">custom firmware for carthing<br>void linux on the small screen</span>
             <span class="project-whisper">cold blooded efficiency</span>
         </a>
-        <a href="janus.html" class="project" data-project="janus" style="--delay: 0.2s;">
+        <a href="llizard.html" class="project" data-project="llizard" style="--delay: 0.2s;">
+            <span class="project-glyph">&#10070;</span>
+            <span class="project-name">Llizard</span>
+            <span class="project-description">raylib gui host<br>where salamanders render</span>
+            <span class="project-whisper">800 by 480 pixels</span>
+        </a>
+        <a href="janus.html" class="project" data-project="janus" style="--delay: 0.3s;">
             <span class="project-glyph">&#9683;</span>
             <span class="project-name">Janus</span>
-            <span class="project-description">android media companion<br>bluetooth gatt server for llizard</span>
+            <span class="project-description">android ble gatt server<br>media gateway to your phone</span>
             <span class="project-whisper">two faces, one purpose</span>
         </a>
-        <a href="mercury.html" class="project" data-project="mercury" style="--delay: 0.3s;">
+        <a href="mercury.html" class="project" data-project="mercury" style="--delay: 0.4s;">
             <span class="project-glyph">&#9676;</span>
             <span class="project-name">Mercury</span>
-            <span class="project-description">ble client for llizardos<br>written in golang</span>
+            <span class="project-description">go ble client daemon<br>carries bytes to redis</span>
             <span class="project-whisper">swift messenger</span>
         </a>
-        <a href="salamanders/index.html" class="project" data-project="salamanders" style="--delay: 0.4s;">
+        <a href="salamander.html" class="project" data-project="salamander" style="--delay: 0.5s;">
             <span class="project-glyph">&#10047;</span>
-            <span class="project-name">Salamanders</span>
-            <span class="project-description">plugins for llizardos<br>small creatures in the fire</span>
+            <span class="project-name">Salamander</span>
+            <span class="project-description">the plugin system<br>small creatures in the fire</span>
             <span class="project-whisper">they live where others cannot</span>
         </a>
     </div>
