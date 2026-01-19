@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salamanders</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --salamander-dark: #12100a;
+            --salamander-mid: #1f1c14;
+            --salamander-orange: #c4622a;
+            --salamander-ember: #e88a4c;
+            --salamander-glow: rgba(228, 138, 76, 0.15);
+            --salamander-ash: #3a3630;
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.7);
+            --media-color: #5a8f6a;
+            --game-color: #8a5a9f;
+            --utility-color: #5a7a9f;
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--salamander-dark);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow-x: hidden;
+        }
+
+        /* Grain */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Ember particles */
+        .ember {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: var(--salamander-ember);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: emberRise var(--dur, 8s) ease-out infinite;
+            animation-delay: var(--del, 0s);
+            left: var(--x, 50%);
+            bottom: 0;
+        }
+
+        @keyframes emberRise {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            10% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+            100% { transform: translateY(-100vh) scale(0.3); opacity: 0; }
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--salamander-ember);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--salamander-orange);
+            opacity: 0.8;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.2s forwards;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--salamander-ember);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--salamander-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.7;
+        }
+
+        /* Category filters */
+        .category-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.3s forwards;
+        }
+
+        .category-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--salamander-ash);
+            color: var(--bone-dim);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            border-color: var(--salamander-orange);
+            color: var(--salamander-ember);
+        }
+
+        .category-btn[data-category="media"].active { border-color: var(--media-color); color: var(--media-color); }
+        .category-btn[data-category="game"].active { border-color: var(--game-color); color: var(--game-color); }
+        .category-btn[data-category="utility"].active { border-color: var(--utility-color); color: var(--utility-color); }
+
+        /* Plugins grid */
+        .plugins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .plugin-card {
+            background: var(--salamander-mid);
+            border: 1px solid var(--salamander-ash);
+            padding: 1.5rem;
+            position: relative;
+            opacity: 0;
+            animation: cardAppear 0.6s ease forwards;
+            animation-delay: var(--delay, 0s);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .plugin-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .plugin-card[data-category="media"] { border-left: 3px solid var(--media-color); }
+        .plugin-card[data-category="media"]:hover { border-color: var(--media-color); }
+
+        .plugin-card[data-category="game"] { border-left: 3px solid var(--game-color); }
+        .plugin-card[data-category="game"]:hover { border-color: var(--game-color); }
+
+        .plugin-card[data-category="utility"] { border-left: 3px solid var(--utility-color); }
+        .plugin-card[data-category="utility"]:hover { border-color: var(--utility-color); }
+
+        .plugin-card.hidden {
+            display: none;
+        }
+
+        .plugin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .plugin-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--salamander-ember);
+            letter-spacing: 0.05em;
+        }
+
+        .plugin-category {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-radius: 2px;
+        }
+
+        .plugin-category.media { background: rgba(90, 143, 106, 0.2); color: var(--media-color); }
+        .plugin-category.game { background: rgba(138, 90, 159, 0.2); color: var(--game-color); }
+        .plugin-category.utility { background: rgba(90, 122, 159, 0.2); color: var(--utility-color); }
+
+        .plugin-description {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--bone-dim);
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .plugin-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .plugin-feature {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--salamander-dark);
+            color: var(--salamander-orange);
+            opacity: 0.7;
+        }
+
+        /* Section dividers */
+        .section-divider {
+            text-align: center;
+            margin: 3rem 0 2rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.4s forwards;
+        }
+
+        .section-divider h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--salamander-orange);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .section-divider p {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--bone-dim);
+            opacity: 0.6;
+            margin-top: 0.5rem;
+        }
+
+        /* Companion links */
+        .links-section {
+            margin-top: 3rem;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) 0.5s forwards;
+        }
+
+        .companion-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--salamander-ember);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--salamander-orange);
+            margin: 0.5rem;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .companion-link:hover {
+            background: var(--salamander-orange);
+            color: var(--salamander-dark);
+        }
+
+        .companion-link .arrow {
+            transition: transform 0.3s;
+        }
+
+        .companion-link:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--salamander-ember);
+            text-decoration: none;
+            opacity: 0.4;
+            transition: opacity 0.5s;
+            z-index: 100;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--salamander-ember);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        @media (max-width: 600px) {
+            .plugins-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-bar {
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <!-- Ember particles -->
+    <div class="ember" style="--x: 8%; --dur: 7s; --del: 0s;"></div>
+    <div class="ember" style="--x: 22%; --dur: 9s; --del: 2s;"></div>
+    <div class="ember" style="--x: 38%; --dur: 6s; --del: 4s;"></div>
+    <div class="ember" style="--x: 55%; --dur: 8s; --del: 1s;"></div>
+    <div class="ember" style="--x: 72%; --dur: 7.5s; --del: 3s;"></div>
+    <div class="ember" style="--x: 88%; --dur: 6.5s; --del: 5s;"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">Salamanders</div>
+            <p class="tagline">the creatures that live in llizard</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-number">13</div>
+                <div class="stat-label">plugins</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">4</div>
+                <div class="stat-label">media</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">5</div>
+                <div class="stat-label">games</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">4</div>
+                <div class="stat-label">utility</div>
+            </div>
+        </div>
+
+        <div class="category-filters">
+            <button class="category-btn active" data-category="all">All</button>
+            <button class="category-btn" data-category="media">Media</button>
+            <button class="category-btn" data-category="game">Games</button>
+            <button class="category-btn" data-category="utility">Utility</button>
+        </div>
+
+        <div class="plugins-grid" id="pluginsGrid">
+            <!-- Media Plugins -->
+            <div class="plugin-card" data-category="media" style="--delay: 0.1s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Now Playing</span>
+                    <span class="plugin-category media">media</span>
+                </div>
+                <p class="plugin-description">The main music interface. Displays album art, track info, playback controls, and progress scrubbing. Multiple themes and display modes available.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">themes</span>
+                    <span class="plugin-feature">scrubbing</span>
+                    <span class="plugin-feature">volume</span>
+                    <span class="plugin-feature">overlays</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="media" style="--delay: 0.15s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Lyrics</span>
+                    <span class="plugin-category media">media</span>
+                </div>
+                <p class="plugin-description">Apple Music-inspired synced lyrics display. Supports drag-to-seek, multiple display styles, dynamic album art coloring, and karaoke mode.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">synced</span>
+                    <span class="plugin-feature">seek</span>
+                    <span class="plugin-feature">karaoke</span>
+                    <span class="plugin-feature">styles</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="media" style="--delay: 0.2s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Podcast</span>
+                    <span class="plugin-category media">media</span>
+                </div>
+                <p class="plugin-description">Browse and play podcasts with hierarchical navigation. Recent episodes, A-Z podcast list, and per-show episode browsing with lazy loading.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">browse</span>
+                    <span class="plugin-feature">episodes</span>
+                    <span class="plugin-feature">lazy-load</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="media" style="--delay: 0.25s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Album Art Viewer</span>
+                    <span class="plugin-category media">media</span>
+                </div>
+                <p class="plugin-description">Browse cached album art in a carousel. Swipe through covers, request new art from the companion app, and view full-screen with fit-to-screen scaling.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">carousel</span>
+                    <span class="plugin-feature">swipe</span>
+                    <span class="plugin-feature">cache</span>
+                </div>
+            </div>
+
+            <!-- Game Plugins -->
+            <div class="plugin-card" data-category="game" style="--delay: 0.3s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Swipe 2048</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Touch-friendly 2048 puzzle with swipe and rotary encoder controls. Tile merge animations, score tracking, and now-playing notifications.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">swipe</span>
+                    <span class="plugin-feature">rotary</span>
+                    <span class="plugin-feature">persist</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="game" style="--delay: 0.35s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">LLZBlocks</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Tetris-style falling blocks with touch and hardware button controls. Features gravity rotation, smooth animations, and configurable difficulty.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">tetris</span>
+                    <span class="plugin-feature">touch</span>
+                    <span class="plugin-feature">buttons</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="game" style="--delay: 0.4s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Solipskier</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Downhill skiing arcade game. Navigate obstacles and gates with physics-based movement, procedural terrain, and increasing difficulty.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">physics</span>
+                    <span class="plugin-feature">procedural</span>
+                    <span class="plugin-feature">score</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="game" style="--delay: 0.45s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Alchemy</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Philosophical merge puzzle with 170+ alchemical elements. Match and transmute from basic elements to the Philosopher's Stone using real alchemical principles.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">merge</span>
+                    <span class="plugin-feature">170+ elements</span>
+                    <span class="plugin-feature">transmute</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="game" style="--delay: 0.5s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Millionaire</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Who Wants to Be a Millionaire trivia game. Progressive difficulty, multiple choice answers, lifelines (50:50, audience, phone), and progressive scoring.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">trivia</span>
+                    <span class="plugin-feature">lifelines</span>
+                    <span class="plugin-feature">difficulty</span>
+                </div>
+            </div>
+
+            <!-- Utility Plugins -->
+            <div class="plugin-card" data-category="utility" style="--delay: 0.55s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Clock</span>
+                    <span class="plugin-category utility">utility</span>
+                </div>
+                <p class="plugin-description">Modern clock with multiple styles: digital, analog, minimal, and flip-card. Includes stopwatch mode, color schemes, and blurred album art backgrounds.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">styles</span>
+                    <span class="plugin-feature">stopwatch</span>
+                    <span class="plugin-feature">themes</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="utility" style="--delay: 0.6s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Settings</span>
+                    <span class="plugin-category utility">utility</span>
+                </div>
+                <p class="plugin-description">System preferences for brightness (auto/manual), lyrics toggle, and feature configuration. Persistent storage with ambient light sensor support.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">brightness</span>
+                    <span class="plugin-feature">config</span>
+                    <span class="plugin-feature">persist</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="utility" style="--delay: 0.65s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Redis Status</span>
+                    <span class="plugin-category utility">utility</span>
+                </div>
+                <p class="plugin-description">System monitor showing Redis/MediaDash health, BLE connection state, device info, and playback status. Reconnection controls for troubleshooting.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">health</span>
+                    <span class="plugin-feature">ble</span>
+                    <span class="plugin-feature">debug</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="utility" style="--delay: 0.7s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Flashcards</span>
+                    <span class="plugin-category utility">utility</span>
+                </div>
+                <p class="plugin-description">Study tool with swipeable flashcard interface. Questions on front, answers on back, progress tracking, and deck management for learning.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">swipe</span>
+                    <span class="plugin-feature">decks</span>
+                    <span class="plugin-feature">progress</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="links-section">
+            <a href="salamander.html" class="companion-link">
+                <span>how plugins work</span>
+                <span class="arrow">&rarr;</span>
+            </a>
+            <a href="llizard.html" class="companion-link">
+                <span>see Llizard</span>
+                <span class="arrow">&rarr;</span>
+            </a>
+            <a href="llizardos.html" class="companion-link">
+                <span>see LlizardOS</span>
+                <span class="arrow">&rarr;</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <a href="index.html" class="return-link">return to projects</a>
+
+    <script>
+        // Category filtering
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const pluginCards = document.querySelectorAll('.plugin-card');
+
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+
+                categoryBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                pluginCards.forEach(card => {
+                    if (category === 'all' || card.dataset.category === category) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        // Stillness messages
+        const messages = [
+            '13 small creatures, each with purpose',
+            'the fire holds many forms',
+            'plugins dream of render loops',
+            'from blocks to bytes, they live'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 10000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cSalamanders', 'font-size: 16px; color: #c4622a; font-weight: 300;');
+        console.log('%c13 plugins for llizard', 'font-size: 10px; color: #e88a4c; font-style: italic;');
+        console.log('%cmedia, games, utilities', 'font-size: 10px; color: #e88a4c; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const pluginNames = ['nowplaying', 'lyrics', 'clock', 'alchemy', '2048', 'blocks'];
+            stillnessMessage.textContent = pluginNames[Math.floor(Math.random() * pluginNames.length)] + '.so';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>
