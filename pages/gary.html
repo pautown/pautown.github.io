@@ -164,6 +164,22 @@
             background: var(--amber);
         }
 
+        .secondary-number {
+            color: var(--slate-deep);
+        }
+
+        .secondary-number.master {
+            color: var(--slate);
+        }
+
+        .impact-number {
+            color: #6b8e6b;
+        }
+
+        .impact-number.master {
+            color: #4a7c59;
+        }
+
         /* Reduction process visualization */
         .reduction-steps {
             font-family: 'JetBrains Mono', monospace;
@@ -475,14 +491,51 @@
             <button class="calculate-btn" id="calcLifePath">calculate essence</button>
             <div class="result-container" id="lifePathResult">
                 <div class="reduction-steps" id="lifePathSteps"></div>
-                <div class="result-number" id="lifePathNumber"></div>
+
+                <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem; margin: 2rem 0;">
+                    <!-- Life Path (Primary) -->
+                    <div style="text-align: center; flex: 1; min-width: 150px;">
+                        <div class="interpretation-header">life path</div>
+                        <div class="result-number" id="lifePathNumber" style="font-size: 3rem;"></div>
+                        <p class="destiny-note" style="margin-top: 0.5rem; font-size: 0.6rem;">your core essence</p>
+                    </div>
+
+                    <!-- Birthday Number (Secondary) -->
+                    <div style="text-align: center; flex: 1; min-width: 150px;">
+                        <div class="interpretation-header">birthday number</div>
+                        <div class="result-number secondary-number" id="birthdayNumber" style="font-size: 3rem;"></div>
+                        <p class="destiny-note" style="margin-top: 0.5rem; font-size: 0.6rem;">your inner gift</p>
+                    </div>
+
+                    <!-- External Impact -->
+                    <div style="text-align: center; flex: 1; min-width: 150px;">
+                        <div class="interpretation-header">external impact</div>
+                        <div class="result-number impact-number" id="impactNumber" style="font-size: 3rem;"></div>
+                        <p class="destiny-note" style="margin-top: 0.5rem; font-size: 0.6rem;">how you move through the world</p>
+                    </div>
+                </div>
+
+                <div class="reduction-steps" id="impactSteps" style="margin-bottom: 1rem;"></div>
+
                 <div class="calc-time" id="lifePathTime"></div>
+
                 <div class="personality" id="lifePathPersonality">
-                    <div class="interpretation-header">interpretation</div>
+                    <div class="interpretation-header">life path interpretation</div>
                     <p class="personality-text" id="lifePathText"></p>
                 </div>
+
+                <div class="personality" id="birthdayPersonality" style="margin-top: 1rem; border-left-color: var(--slate);">
+                    <div class="interpretation-header">birthday number meaning</div>
+                    <p class="personality-text" id="birthdayText"></p>
+                </div>
+
+                <div class="personality" id="impactPersonality" style="margin-top: 1rem; border-left-color: var(--green-orb, #6b8e6b);">
+                    <div class="interpretation-header">external impact meaning</div>
+                    <p class="personality-text" id="impactText"></p>
+                </div>
+
                 <div class="destiny-choice" id="lifePathChoice">
-                    <p class="destiny-note">your number is <span id="lifePathCalc"></span>. unless you'd prefer it wasn't.</p>
+                    <p class="destiny-note">your life path is <span id="lifePathCalc"></span>. unless you'd prefer it wasn't.</p>
                     <div class="destiny-options" id="lifePathOptions"></div>
                     <p class="destiny-adjusted" id="lifePathAdjusted"></p>
                 </div>
@@ -637,6 +690,38 @@
             33: "Your soul urges healing. Teaching. Lifting others up. It is not content with small kindnesses. It wants to transform."
         };
 
+        // Birthday Number descriptions - the gift you were born with
+        const BIRTHDAY_DESC = {
+            1: "You were born with the gift of initiative. The day itself marked you as one who begins things. Independence is not learned but innate. You came into this world ready to lead, possibly before you could walk.",
+            2: "Your birth gifted you with sensitivity to others. Partnership is coded into your arrival date. You sense what others need before they speak it. This is useful and also exhausting.",
+            3: "Creativity was your birthright. The day you arrived, expression became your native tongue. Words, images, sounds - they flow from you because they were always meant to.",
+            4: "Stability was written into your birth. You arrived with the gift of building, of making things solid. Foundations form beneath you naturally. Others may find this boring. They are wrong.",
+            5: "Change was your first gift. You arrived restless, curious, already looking toward the next horizon. Adaptability is not something you learned - you brought it with you.",
+            6: "Nurturing was encoded in your arrival. You were born to care, to create harmony, to make spaces feel like home. Responsibility found you in the crib.",
+            7: "Wisdom arrived with you. Your birth date marked you as a seeker, someone who would always look beneath surfaces. Questions are your inheritance.",
+            8: "Power was your birth gift. You arrived with the ability to manifest, to command resources, to make reality bend slightly in your direction. This came standard.",
+            9: "Compassion was written into your arrival. You were born old, somehow. Understanding came early. The world's pain registers with you in ways others don't quite grasp.",
+            11: "Illumination was your first gift. A master number at birth means heightened intuition from day one. You arrived already tuned to frequencies others can't hear.",
+            22: "The master builder's gift was yours at birth. Grand vision came standard. You arrived with blueprints the universe hadn't authorized yet.",
+            33: "Healing was your birthright. A master teacher from the start. You came into this world already radiating something that makes others feel better. It's a lot."
+        };
+
+        // External Impact descriptions - how you move through the world
+        const EXTERNAL_IMPACT = {
+            1: "You move through the world as a pioneer. Others feel your presence as a force that initiates, that clears paths. You push forward, and the world makes room. Sometimes reluctantly.",
+            2: "Your impact on the world is gentle but persistent. You move through it as a mediator, a bridge-builder. Where you go, connections form. Relationships follow in your wake.",
+            3: "You move through the world as a spark. Your impact is creative, expressive - others encounter you as brightness, as possibility. You leave things more colorful than you found them.",
+            4: "Your passage through the world is structural. You impact reality by building, by making things more solid. Others experience you as reliability, as ground beneath their feet.",
+            5: "You move through the world like weather - changing, unpredictable, refreshing. Your impact is transformation. Things are different after you pass through. Usually better, occasionally more complicated.",
+            6: "Your impact on the world is nurturing. You move through it creating sanctuaries, fixing what's broken, caring for what's neglected. Others feel safer when you've been there.",
+            7: "You move through the world as a seeker, and your impact is revelation. Where you go, depths are plumbed, truths surface. Others find themselves examined after encountering you.",
+            8: "Your passage through the world is powerful. You impact reality through authority, through material mastery. Others experience you as force, as capability. Things get done in your wake.",
+            9: "You move through the world as a healer, a completer. Your impact is finishing, forgiving, releasing. Others feel lighter after you've passed. Cycles close behind you.",
+            11: "Your impact on the world is illuminating. You move through it like a searchlight, revealing what was hidden. Others encounter you as insight, as sudden understanding. It can be intense.",
+            22: "You move through the world as an architect of reality. Your impact is construction on a grand scale. Others experience you as ambitious, as building something they can barely see.",
+            33: "Your passage through the world is transformative in the deepest way. You move through it healing, teaching, elevating. Others don't just feel your impact - they're changed by it."
+        };
+
         // Personality (consonant) descriptions
         const PERSONALITY_DESC = {
             1: "You present as confident. Perhaps too confident. Others see a leader before they see anything else.",
@@ -729,13 +814,20 @@
             const dayReduced = reduceNumber(day);
             const yearReduced = reduceNumber(year);
 
-            // Sum and reduce
+            // Sum and reduce for Life Path
             const sum = monthReduced.result + dayReduced.result + yearReduced.result;
             const final = reduceNumber(sum);
 
+            // Birthday Number - just the day reduced
+            const birthdayNumber = reduceNumber(day);
+
+            // External Impact - Life Path + Birthday Number, reduced
+            const impactSum = final.result + birthdayNumber.result;
+            const impactNumber = reduceNumber(impactSum);
+
             const elapsed = performance.now() - start;
 
-            // Build detailed steps
+            // Build detailed steps for life path
             const detailSteps = [];
             detailSteps.push(`(${month}=${monthReduced.result}) + (${day}→${dayReduced.steps.join('→')}) + (${year}→${yearReduced.steps.join('→')})`);
             detailSteps.push(`${monthReduced.result} + ${dayReduced.result} + ${yearReduced.result} = ${sum}`);
@@ -743,9 +835,26 @@
                 detailSteps.push(final.steps.join(' → '));
             }
 
+            // Build impact calculation steps
+            const impactSteps = [];
+            impactSteps.push(`life path (${final.result}) + birthday (${birthdayNumber.result}) = ${impactSum}`);
+            if (impactNumber.steps.length > 1) {
+                impactSteps.push(impactNumber.steps.join(' → '));
+            }
+
             return {
                 result: final.result,
                 steps: detailSteps,
+                birthday: {
+                    result: birthdayNumber.result,
+                    day: day,
+                    steps: birthdayNumber.steps
+                },
+                impact: {
+                    result: impactNumber.result,
+                    sum: impactSum,
+                    steps: impactSteps
+                },
                 elapsed: elapsed.toFixed(3)
             };
         }
@@ -815,8 +924,13 @@
             const container = document.getElementById('lifePathResult');
             const stepsEl = document.getElementById('lifePathSteps');
             const numberEl = document.getElementById('lifePathNumber');
+            const birthdayEl = document.getElementById('birthdayNumber');
+            const impactEl = document.getElementById('impactNumber');
+            const impactStepsEl = document.getElementById('impactSteps');
             const timeEl = document.getElementById('lifePathTime');
             const textEl = document.getElementById('lifePathText');
+            const birthdayTextEl = document.getElementById('birthdayText');
+            const impactTextEl = document.getElementById('impactText');
             const calcEl = document.getElementById('lifePathCalc');
             const optionsEl = document.getElementById('lifePathOptions');
             const adjustedEl = document.getElementById('lifePathAdjusted');
@@ -825,16 +939,35 @@
             document.body.classList.add('calculating');
             setTimeout(() => document.body.classList.remove('calculating'), 2000);
 
+            // Life path steps
             stepsEl.innerHTML = result.steps.map((step, i) =>
                 `<span class="reduction-step" style="animation-delay: ${i * 0.4}s">${step}</span><br>`
             ).join('');
 
+            // Life Path Number
             numberEl.textContent = result.result;
             numberEl.className = 'result-number' + ([11, 22, 33].includes(result.result) ? ' master' : '');
 
-            timeEl.textContent = `the universe has calculated your essence. it took ${result.elapsed} seconds.`;
+            // Birthday Number
+            birthdayEl.textContent = result.birthday.result;
+            birthdayEl.className = 'result-number secondary-number' + ([11, 22, 33].includes(result.birthday.result) ? ' master' : '');
 
+            // External Impact Number
+            impactEl.textContent = result.impact.result;
+            impactEl.className = 'result-number impact-number' + ([11, 22, 33].includes(result.impact.result) ? ' master' : '');
+
+            // Impact calculation steps
+            impactStepsEl.innerHTML = result.impact.steps.map((step, i) =>
+                `<span class="reduction-step" style="animation-delay: ${(i + 3) * 0.4}s">${step}</span>`
+            ).join('<span class="reduction-arrow">→</span>');
+
+            timeEl.textContent = `three numbers calculated in ${result.elapsed} seconds. the universe is thorough.`;
+
+            // Descriptions
             textEl.textContent = PERSONALITIES[result.result];
+            birthdayTextEl.textContent = BIRTHDAY_DESC[result.birthday.result];
+            impactTextEl.textContent = EXTERNAL_IMPACT[result.impact.result];
+
             calcEl.textContent = result.result;
 
             // Generate alternatives
@@ -849,7 +982,17 @@
                     numberEl.textContent = newNum;
                     numberEl.className = 'result-number' + ([11, 22, 33].includes(newNum) ? ' master' : '');
                     textEl.textContent = PERSONALITIES[newNum];
-                    adjustedEl.textContent = 'excellent choice. the numbers have been... adjusted.';
+
+                    // Recalculate impact with new life path
+                    const newImpactSum = newNum + result.birthday.result;
+                    const newImpact = reduceNumber(newImpactSum);
+                    impactEl.textContent = newImpact.result;
+                    impactEl.className = 'result-number impact-number' + ([11, 22, 33].includes(newImpact.result) ? ' master' : '');
+                    impactTextEl.textContent = EXTERNAL_IMPACT[newImpact.result];
+                    impactStepsEl.innerHTML = `<span class="reduction-step">life path (${newNum}) + birthday (${result.birthday.result}) = ${newImpactSum}</span>` +
+                        (newImpact.steps.length > 1 ? `<span class="reduction-arrow">→</span><span class="reduction-step">${newImpact.result}</span>` : '');
+
+                    adjustedEl.textContent = 'excellent choice. the numbers have been... adjusted. your impact shifts accordingly.';
                     adjustedEl.classList.add('visible');
                 });
             });
