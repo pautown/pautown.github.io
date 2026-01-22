@@ -377,19 +377,19 @@
 
         <div class="stats-bar">
             <div class="stat">
-                <div class="stat-number">13</div>
+                <div class="stat-number">18</div>
                 <div class="stat-label">plugins</div>
             </div>
             <div class="stat">
-                <div class="stat-number">4</div>
+                <div class="stat-number">5</div>
                 <div class="stat-label">media</div>
             </div>
             <div class="stat">
-                <div class="stat-number">5</div>
+                <div class="stat-number">7</div>
                 <div class="stat-label">games</div>
             </div>
             <div class="stat">
-                <div class="stat-number">4</div>
+                <div class="stat-number">6</div>
                 <div class="stat-label">utility</div>
             </div>
         </div>
@@ -408,12 +408,12 @@
                     <span class="plugin-name">Now Playing</span>
                     <span class="plugin-category media">media</span>
                 </div>
-                <p class="plugin-description">The main music interface. Displays album art, track info, playback controls, and progress scrubbing. Multiple themes and display modes available.</p>
+                <p class="plugin-description">The main music interface. Displays album art, track info, playback controls, and progress scrubbing. Four display modes (Advanced, Normal, Barebones, Album Art) with multiple color themes.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">themes</span>
                     <span class="plugin-feature">scrubbing</span>
                     <span class="plugin-feature">volume</span>
-                    <span class="plugin-feature">overlays</span>
+                    <span class="plugin-feature">clock overlay</span>
                 </div>
             </div>
 
@@ -422,7 +422,7 @@
                     <span class="plugin-name">Lyrics</span>
                     <span class="plugin-category media">media</span>
                 </div>
-                <p class="plugin-description">Apple Music-inspired synced lyrics display. Supports drag-to-seek, multiple display styles, dynamic album art coloring, and karaoke mode.</p>
+                <p class="plugin-description">Apple Music-inspired synced lyrics display. Supports drag-to-seek through lyrics, multiple visual styles, dynamic album art coloring, and karaoke highlight mode.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">synced</span>
                     <span class="plugin-feature">seek</span>
@@ -436,7 +436,7 @@
                     <span class="plugin-name">Podcast</span>
                     <span class="plugin-category media">media</span>
                 </div>
-                <p class="plugin-description">Browse and play podcasts with hierarchical navigation. Recent episodes, A-Z podcast list, and per-show episode browsing with lazy loading.</p>
+                <p class="plugin-description">Browse and play podcasts with hierarchical navigation. Recent episodes view, A-Z podcast list, and per-show episode browsing with lazy loading from Janus companion app.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">browse</span>
                     <span class="plugin-feature">episodes</span>
@@ -449,7 +449,7 @@
                     <span class="plugin-name">Album Art Viewer</span>
                     <span class="plugin-category media">media</span>
                 </div>
-                <p class="plugin-description">Browse cached album art in a carousel. Swipe through covers, request new art from the companion app, and view full-screen with fit-to-screen scaling.</p>
+                <p class="plugin-description">Browse cached album art in a swipeable carousel. View full-screen covers with fit-to-screen scaling, request new art from the companion app, and navigate your collection.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">carousel</span>
                     <span class="plugin-feature">swipe</span>
@@ -457,13 +457,54 @@
                 </div>
             </div>
 
+            <div class="plugin-card" data-category="media" style="--delay: 0.3s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Media Channels</span>
+                    <span class="plugin-category media">media</span>
+                </div>
+                <p class="plugin-description">Switch between active media sources on your phone. Lists Spotify, YouTube Music, Podcasts, and other apps currently playing. Auto-pauses the previous source on switch.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">sources</span>
+                    <span class="plugin-feature">auto-pause</span>
+                    <span class="plugin-feature">refresh</span>
+                </div>
+            </div>
+
             <!-- Game Plugins -->
-            <div class="plugin-card" data-category="game" style="--delay: 0.3s;">
+            <div class="plugin-card" data-category="game" style="--delay: 0.35s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Bejeweled</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Classic match-3 puzzle with flashy particle effects. Swap adjacent gems to create matches, trigger cascades, and build combos. Level progression with animated backgrounds and celebrations.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">match-3</span>
+                    <span class="plugin-feature">cascades</span>
+                    <span class="plugin-feature">particles</span>
+                    <span class="plugin-feature">levels</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="game" style="--delay: 0.4s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">LLZ Survivors</span>
+                    <span class="plugin-category game">game</span>
+                </div>
+                <p class="plugin-description">Vampire Survivors-style arena survival. Auto-fire weapons while dodging waves of enemies. Collect XP gems, level up, and choose from 5 weapons with 3 skill branches each. Potions and buffs included.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">arena</span>
+                    <span class="plugin-feature">skill trees</span>
+                    <span class="plugin-feature">5 weapons</span>
+                    <span class="plugin-feature">potions</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="game" style="--delay: 0.45s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Swipe 2048</span>
                     <span class="plugin-category game">game</span>
                 </div>
-                <p class="plugin-description">Touch-friendly 2048 puzzle with swipe and rotary encoder controls. Tile merge animations, score tracking, and now-playing notifications.</p>
+                <p class="plugin-description">Touch-friendly 2048 puzzle with swipe and rotary encoder controls. Smooth tile merge animations, score tracking, and now-playing track notifications during gameplay.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">swipe</span>
                     <span class="plugin-feature">rotary</span>
@@ -471,12 +512,12 @@
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="game" style="--delay: 0.35s;">
+            <div class="plugin-card" data-category="game" style="--delay: 0.5s;">
                 <div class="plugin-header">
                     <span class="plugin-name">LLZBlocks</span>
                     <span class="plugin-category game">game</span>
                 </div>
-                <p class="plugin-description">Tetris-style falling blocks with touch and hardware button controls. Features gravity rotation, smooth animations, and configurable difficulty.</p>
+                <p class="plugin-description">Tetris-style falling blocks with touch and hardware button controls. Features piece rotation, gravity, smooth drop animations, and configurable difficulty levels.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">tetris</span>
                     <span class="plugin-feature">touch</span>
@@ -484,110 +525,132 @@
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="game" style="--delay: 0.4s;">
+            <div class="plugin-card" data-category="game" style="--delay: 0.55s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Solipskier</span>
                     <span class="plugin-category game">game</span>
                 </div>
-                <p class="plugin-description">Downhill skiing arcade game. Navigate obstacles and gates with physics-based movement, procedural terrain, and increasing difficulty.</p>
+                <p class="plugin-description">Downhill skiing arcade game. Draw terrain with your finger to guide the skier through gates and over jumps. Physics-based movement with procedural terrain generation.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">physics</span>
                     <span class="plugin-feature">procedural</span>
-                    <span class="plugin-feature">score</span>
+                    <span class="plugin-feature">draw</span>
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="game" style="--delay: 0.45s;">
+            <div class="plugin-card" data-category="game" style="--delay: 0.6s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Alchemy</span>
                     <span class="plugin-category game">game</span>
                 </div>
-                <p class="plugin-description">Philosophical merge puzzle with 170+ alchemical elements. Match and transmute from basic elements to the Philosopher's Stone using real alchemical principles.</p>
+                <p class="plugin-description">Philosophical merge puzzle with 170+ alchemical elements. Combine basic elements (earth, water, fire, air) to discover new substances and work toward the Philosopher's Stone.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">merge</span>
                     <span class="plugin-feature">170+ elements</span>
-                    <span class="plugin-feature">transmute</span>
+                    <span class="plugin-feature">discovery</span>
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="game" style="--delay: 0.5s;">
+            <div class="plugin-card" data-category="game" style="--delay: 0.65s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Millionaire</span>
                     <span class="plugin-category game">game</span>
                 </div>
-                <p class="plugin-description">Who Wants to Be a Millionaire trivia game. Progressive difficulty, multiple choice answers, lifelines (50:50, audience, phone), and progressive scoring.</p>
+                <p class="plugin-description">Who Wants to Be a Millionaire trivia game. 15 questions of increasing difficulty with three lifelines: 50:50, Ask the Audience, and Phone a Friend. Question bank from OpenTDB.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">trivia</span>
                     <span class="plugin-feature">lifelines</span>
-                    <span class="plugin-feature">difficulty</span>
+                    <span class="plugin-feature">15 levels</span>
                 </div>
             </div>
 
             <!-- Utility Plugins -->
-            <div class="plugin-card" data-category="utility" style="--delay: 0.55s;">
+            <div class="plugin-card" data-category="utility" style="--delay: 0.7s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Clock</span>
                     <span class="plugin-category utility">utility</span>
                 </div>
-                <p class="plugin-description">Modern clock with multiple styles: digital, analog, minimal, and flip-card. Includes stopwatch mode, color schemes, and blurred album art backgrounds.</p>
+                <p class="plugin-description">Modern clock with multiple visual styles: digital, analog, minimal, and flip-card. Includes stopwatch mode, customizable color schemes, and optional blurred album art backgrounds.</p>
                 <div class="plugin-features">
-                    <span class="plugin-feature">styles</span>
+                    <span class="plugin-feature">4 styles</span>
                     <span class="plugin-feature">stopwatch</span>
                     <span class="plugin-feature">themes</span>
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="utility" style="--delay: 0.6s;">
+            <div class="plugin-card" data-category="utility" style="--delay: 0.75s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Settings</span>
                     <span class="plugin-category utility">utility</span>
                 </div>
-                <p class="plugin-description">System preferences for brightness (auto/manual), lyrics toggle, and feature configuration. Persistent storage with ambient light sensor support.</p>
+                <p class="plugin-description">System preferences hub. Configure display brightness (auto via ambient sensor or manual), enable/disable lyrics fetching, choose menu style, and access media channel selection.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">brightness</span>
-                    <span class="plugin-feature">config</span>
+                    <span class="plugin-feature">menu style</span>
                     <span class="plugin-feature">persist</span>
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="utility" style="--delay: 0.65s;">
+            <div class="plugin-card" data-category="utility" style="--delay: 0.8s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Redis Status</span>
                     <span class="plugin-category utility">utility</span>
                 </div>
-                <p class="plugin-description">System monitor showing Redis/MediaDash health, BLE connection state, device info, and playback status. Reconnection controls for troubleshooting.</p>
+                <p class="plugin-description">Developer debug panel showing Redis/MediaDash health, BLE connection state, device info, and live playback data. Useful for troubleshooting Mercury connection issues.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">health</span>
-                    <span class="plugin-feature">ble</span>
+                    <span class="plugin-feature">ble status</span>
                     <span class="plugin-feature">debug</span>
                 </div>
             </div>
 
-            <div class="plugin-card" data-category="utility" style="--delay: 0.7s;">
+            <div class="plugin-card" data-category="utility" style="--delay: 0.85s;">
                 <div class="plugin-header">
                     <span class="plugin-name">Flashcards</span>
                     <span class="plugin-category utility">utility</span>
                 </div>
-                <p class="plugin-description">Study tool with swipeable flashcard interface. Questions on front, answers on back, progress tracking, and deck management for learning.</p>
+                <p class="plugin-description">Study tool with swipeable flashcard interface. Tap to flip between question and answer. Multiple decks with progress tracking. Great for learning while commuting.</p>
                 <div class="plugin-features">
                     <span class="plugin-feature">swipe</span>
                     <span class="plugin-feature">decks</span>
-                    <span class="plugin-feature">progress</span>
+                    <span class="plugin-feature">flip</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="utility" style="--delay: 0.9s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Menu Sorter</span>
+                    <span class="plugin-category utility">utility</span>
+                </div>
+                <p class="plugin-description">Organize your plugin menu. Drag and drop to reorder plugins, create folders, hide unused plugins, and customize the main menu layout to your preferences.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">reorder</span>
+                    <span class="plugin-feature">folders</span>
+                    <span class="plugin-feature">hide</span>
+                </div>
+            </div>
+
+            <div class="plugin-card" data-category="utility" style="--delay: 0.95s;">
+                <div class="plugin-header">
+                    <span class="plugin-name">Plugin Manager</span>
+                    <span class="plugin-category utility">utility</span>
+                </div>
+                <p class="plugin-description">View and manage installed plugins. See plugin details, version info, and category. Enable or disable individual plugins. System administration for your salamander collection.</p>
+                <div class="plugin-features">
+                    <span class="plugin-feature">info</span>
+                    <span class="plugin-feature">enable/disable</span>
+                    <span class="plugin-feature">admin</span>
                 </div>
             </div>
         </div>
 
         <div class="links-section">
-            <a href="salamander.html" class="companion-link">
-                <span>how plugins work</span>
-                <span class="arrow">&rarr;</span>
-            </a>
-            <a href="llizard.html" class="companion-link">
-                <span>see Llizard</span>
-                <span class="arrow">&rarr;</span>
-            </a>
             <a href="llizardos.html" class="companion-link">
                 <span>see LlizardOS</span>
+                <span class="arrow">&rarr;</span>
+            </a>
+            <a href="fieldnotes.html" class="companion-link">
+                <span>development log</span>
                 <span class="arrow">&rarr;</span>
             </a>
         </div>
@@ -621,10 +684,11 @@
 
         // Stillness messages
         const messages = [
-            '13 small creatures, each with purpose',
+            '18 small creatures, each with purpose',
             'the fire holds many forms',
             'plugins dream of render loops',
-            'from blocks to bytes, they live'
+            'from blocks to bytes, they live',
+            'survivors and puzzles, side by side'
         ];
 
         let lastActivity = Date.now();
@@ -657,13 +721,13 @@
 
         // Console
         console.log('%cSalamanders', 'font-size: 16px; color: #c4622a; font-weight: 300;');
-        console.log('%c13 plugins for llizard', 'font-size: 10px; color: #e88a4c; font-style: italic;');
+        console.log('%c18 plugins for llizard', 'font-size: 10px; color: #e88a4c; font-style: italic;');
         console.log('%cmedia, games, utilities', 'font-size: 10px; color: #e88a4c; font-style: italic;');
 
         // Right-click
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            const pluginNames = ['nowplaying', 'lyrics', 'clock', 'alchemy', '2048', 'blocks'];
+            const pluginNames = ['nowplaying', 'lyrics', 'bejeweled', 'survivors', 'clock', 'alchemy', '2048', 'blocks'];
             stillnessMessage.textContent = pluginNames[Math.floor(Math.random() * pluginNames.length)] + '.so';
             stillnessMessage.classList.add('visible');
             setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
