@@ -300,6 +300,28 @@
             background: linear-gradient(transparent, #0f0c08);
         }
 
+        /* Field Notes (dev blog) styling */
+        .project[data-project="fieldnotes"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #12181a 40%, #0a0f10 100%);
+        }
+
+        .project[data-project="fieldnotes"] .project-glyph {
+            color: #d4a056;
+        }
+
+        .project[data-project="fieldnotes"] .project-name {
+            color: #e8c080;
+        }
+
+        .project[data-project="fieldnotes"] .project-description {
+            color: #c8a060;
+        }
+
+        .project[data-project="fieldnotes"] .project-whisper {
+            color: #d4a056;
+            background: linear-gradient(transparent, #0a0f10);
+        }
+
         /* Return link */
         .return-link {
             position: fixed;
@@ -409,8 +431,14 @@
         <a href="salamanders.html" class="project" data-project="salamanders" style="--delay: 0.6s;">
             <span class="project-glyph">&#10053;</span>
             <span class="project-name">Salamanders</span>
-            <span class="project-description">13 plugins for llizard<br>media, games, utilities</span>
+            <span class="project-description">15 plugins for llizard<br>media, games, utilities</span>
             <span class="project-whisper">they live where others cannot</span>
+        </a>
+        <a href="fieldnotes.html" class="project" data-project="fieldnotes" style="--delay: 0.7s;">
+            <span class="project-glyph">&#9998;</span>
+            <span class="project-name">Field Notes</span>
+            <span class="project-description">development log<br>daily observations from the ecosystem</span>
+            <span class="project-whisper">the code grows in the quiet</span>
         </a>
     </div>
 

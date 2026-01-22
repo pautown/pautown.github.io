@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Notes - llizard development log</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --llizard-dark: #0a150a;
+            --llizard-mid: #1a2a1a;
+            --llizard-green: #4a7c59;
+            --llizard-light: #86b398;
+            --llizard-glow: rgba(134, 179, 152, 0.15);
+            --bone: #f5f0e6;
+            --bone-dim: rgba(245, 240, 230, 0.7);
+            --amber: #d4a056;
+            --amber-dim: rgba(212, 160, 86, 0.6);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--llizard-dark);
+            min-height: 100vh;
+            color: var(--bone-dim);
+            overflow-x: hidden;
+        }
+
+        /* Grain texture */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Container */
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 3rem 2rem 6rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            color: var(--llizard-green);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.15em;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--llizard-light);
+            opacity: 0.6;
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--bone-dim);
+            opacity: 0.4;
+            margin-top: 1rem;
+            letter-spacing: 0.2em;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(
+                to bottom,
+                transparent,
+                var(--llizard-green) 5%,
+                var(--llizard-green) 95%,
+                transparent
+            );
+            opacity: 0.3;
+        }
+
+        /* Day entry */
+        .day-entry {
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 1s var(--ease-smooth) forwards;
+            position: relative;
+        }
+
+        .day-entry::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0.5rem;
+            width: 7px;
+            height: 7px;
+            background: var(--llizard-green);
+            border-radius: 50%;
+            transform: translateX(-3px);
+        }
+
+        .day-entry:nth-child(1) { animation-delay: 0.2s; }
+        .day-entry:nth-child(2) { animation-delay: 0.3s; }
+        .day-entry:nth-child(3) { animation-delay: 0.4s; }
+        .day-entry:nth-child(4) { animation-delay: 0.5s; }
+        .day-entry:nth-child(5) { animation-delay: 0.6s; }
+
+        .day-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .day-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--amber);
+            letter-spacing: 0.1em;
+        }
+
+        .day-title {
+            font-size: 1.3rem;
+            color: var(--bone-dim);
+            font-weight: 400;
+        }
+
+        .day-content {
+            font-size: 0.95rem;
+            line-height: 1.9;
+            color: var(--bone-dim);
+            opacity: 0.8;
+        }
+
+        .day-content p {
+            margin-bottom: 1rem;
+        }
+
+        /* Update items */
+        .updates {
+            margin-top: 1rem;
+        }
+
+        .update-item {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--llizard-mid);
+            border-left: 2px solid var(--llizard-green);
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .update-item:hover {
+            background: var(--llizard-glow);
+            transform: translateX(4px);
+        }
+
+        .update-icon {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--llizard-light);
+            flex-shrink: 0;
+            width: 1.5rem;
+        }
+
+        .update-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .update-text strong {
+            color: var(--llizard-light);
+            font-weight: 500;
+        }
+
+        /* Tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--llizard-light);
+            background: transparent;
+            padding: 0.3rem 0.6rem;
+            border: 1px solid var(--llizard-green);
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--llizard-light);
+            text-decoration: none;
+            opacity: 0.3;
+            transition: opacity 0.5s;
+            z-index: 100;
+            letter-spacing: 0.05em;
+        }
+
+        .return-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--llizard-light);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.5;
+        }
+
+        /* Decorative circuit lines */
+        .circuit-line {
+            position: fixed;
+            background: var(--llizard-green);
+            opacity: 0.08;
+        }
+
+        .circuit-h { height: 1px; width: 60px; }
+        .circuit-v { width: 1px; height: 60px; }
+
+        .circuit-1 { top: 15%; right: 5%; }
+        .circuit-2 { bottom: 25%; left: 3%; }
+        .circuit-3 { top: 45%; right: 8%; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { padding: 2rem 1.5rem 4rem; }
+            .timeline { padding-left: 1.5rem; }
+            .day-entry::before { left: -1.5rem; }
+            .day-header { flex-direction: column; gap: 0.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div class="circuit-line circuit-h circuit-1"></div>
+    <div class="circuit-line circuit-v circuit-2"></div>
+    <div class="circuit-line circuit-h circuit-3"></div>
+
+    <a href="index.html" class="return-link">return to projects</a>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">field notes</div>
+            <p class="tagline">observations from the llizard ecosystem</p>
+            <p class="subtitle">a development log</p>
+        </header>
+
+        <div class="timeline">
+
+            <!-- January 22, 2025 -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.22</span>
+                    <h2 class="day-title">The back button learns patience</h2>
+                </div>
+                <div class="day-content">
+                    <p>Today the SDK learned to distinguish between a quick tap and a thoughtful hold. The back button now understands intent - a brief press means "go back," while a longer hold opens the media channel selector without triggering navigation on release.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Back button hold detection</strong> - new SDK fields: backHold, backClick, backDown, backHoldTime. Long press (0.5s) triggers backHold, quick release triggers backClick.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Media channels popup</strong> in Now Playing - long-press back to open a floating panel for switching between Spotify, YouTube Music, Podcasts, and other active media sources.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Input event semantics</strong> - backReleased no longer fires after a long press. The hold was the action; the release is silence.</span>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 1.5rem; font-style: italic; opacity: 0.7;">Documentation updated across all repositories - SDK, Mercury, Janus, and LlizardOS now have comprehensive READMEs.</p>
+
+                    <div class="tags">
+                        <span class="tag">sdk</span>
+                        <span class="tag">input</span>
+                        <span class="tag">nowplaying</span>
+                        <span class="tag">media-channels</span>
+                        <span class="tag">documentation</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- January 21, 2025 -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.21</span>
+                    <h2 class="day-title">Channels and courtesy</h2>
+                </div>
+                <div class="day-content">
+                    <p>The media channel system grows more polite. When switching from Spotify to YouTube Music, the old app now gracefully pauses before the new one takes the stage. No more two voices speaking at once.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Media Channels plugin</strong> - a dedicated screen for browsing and selecting active media sources, accessible from Settings.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Refresh button</strong> in media channels - pull the latest list of active apps from your phone on demand.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Podcasts as a channel</strong> - Janus now reports its internal podcast player alongside external apps like Spotify.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Auto-pause on switch</strong> - changing channels pauses the currently playing app first. Courteous transitions.</span>
+                        </div>
+                    </div>
+
+                    <div class="tags">
+                        <span class="tag">media-channels</span>
+                        <span class="tag">janus</span>
+                        <span class="tag">podcasts</span>
+                        <span class="tag">settings</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- January 20, 2025 -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.20</span>
+                    <h2 class="day-title">Five ways to see a menu</h2>
+                </div>
+                <div class="day-content">
+                    <p>The main menu now speaks five visual languages. List view for the minimalists, Carousel for those who like to swipe, Cards for the tactile, CarThing for nostalgia, and Grid for the Apple-hearted. Each style persists across reboots.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Grid menu style</strong> - a clean 3x2 icon grid with Apple-inspired white aesthetic and iBrand font.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>CarThing menu style</strong> - the original Spotify aesthetic returns, complete with Omicron and Tracklister fonts.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Menu style persistence</strong> - your preferred style survives power cycles via SDK config.</span>
+                        </div>
+                    </div>
+
+                    <div class="tags">
+                        <span class="tag">menu</span>
+                        <span class="tag">ui</span>
+                        <span class="tag">fonts</span>
+                        <span class="tag">config</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- January 19, 2025 -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.19</span>
+                    <h2 class="day-title">The blur follows the music</h2>
+                </div>
+                <div class="day-content">
+                    <p>Album art now bleeds into the background. The SDK tracks album art changes in Redis and automatically generates blurred backdrops. Nine animated background styles can now inherit colors from whatever's playing.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Auto-blur album art</strong> - SDK background system tracks Redis album art keys and generates blur textures automatically.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Color extraction</strong> - dominant colors pulled from album art to tint UI elements and background animations.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Crossfade transitions</strong> - smooth alpha blending when album art changes. No jarring switches.</span>
+                        </div>
+                    </div>
+
+                    <div class="tags">
+                        <span class="tag">sdk</span>
+                        <span class="tag">album-art</span>
+                        <span class="tag">backgrounds</span>
+                        <span class="tag">redis</span>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <script>
+        // Stillness messages
+        const messages = [
+            'the code grows in the quiet',
+            'each commit, a small evolution',
+            'cold-blooded progress',
+            'the log remembers',
+            'building in the margins of the day'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 10000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('scroll', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cfield notes', 'font-size: 14px; color: #4a7c59; font-weight: 300;');
+        console.log('%cobservations from the llizard ecosystem', 'font-size: 10px; color: #86b398; font-style: italic;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            stillnessMessage.textContent = 'the work continues';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>
