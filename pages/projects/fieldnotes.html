@@ -7,16 +7,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --llizard-dark: #0a150a;
-            --llizard-mid: #1a2a1a;
-            --llizard-green: #4a7c59;
-            --llizard-light: #86b398;
-            --llizard-glow: rgba(134, 179, 152, 0.15);
-            --bone: #f5f0e6;
-            --bone-dim: rgba(245, 240, 230, 0.7);
-            --amber: #d4a056;
-            --amber-dim: rgba(212, 160, 86, 0.6);
+            /* Night mode (default) */
+            --bg-primary: #0f1a14;
+            --bg-secondary: #1a2e22;
+            --bg-card: #1e3328;
+            --accent-primary: #5a9b6e;
+            --accent-secondary: #7ec492;
+            --accent-glow: rgba(126, 196, 146, 0.12);
+            --text-primary: #e8efe9;
+            --text-secondary: #b8cfbe;
+            --text-muted: rgba(184, 207, 190, 0.65);
+            --amber: #e2b86b;
+            --amber-dim: rgba(226, 184, 107, 0.7);
+            --border-color: rgba(90, 155, 110, 0.25);
             --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="day"] {
+            --bg-primary: #f8f6f1;
+            --bg-secondary: #efeae0;
+            --bg-card: #ffffff;
+            --accent-primary: #3d7a4f;
+            --accent-secondary: #2d5e3c;
+            --accent-glow: rgba(61, 122, 79, 0.08);
+            --text-primary: #2a3a2e;
+            --text-secondary: #4a5f4e;
+            --text-muted: rgba(74, 95, 78, 0.7);
+            --amber: #b8892d;
+            --amber-dim: rgba(184, 137, 45, 0.8);
+            --border-color: rgba(61, 122, 79, 0.2);
         }
 
         * {
@@ -27,10 +46,11 @@
 
         body {
             font-family: 'Cormorant Garamond', serif;
-            background: var(--llizard-dark);
+            background: var(--bg-primary);
             min-height: 100vh;
-            color: var(--bone-dim);
+            color: var(--text-secondary);
             overflow-x: hidden;
+            transition: background 0.4s var(--ease-smooth), color 0.4s var(--ease-smooth);
         }
 
         /* Grain texture */
@@ -38,14 +58,18 @@
             position: fixed;
             inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            opacity: 0.04;
+            opacity: 0.03;
             pointer-events: none;
             z-index: 1000;
         }
 
+        [data-theme="day"] .grain {
+            opacity: 0.02;
+        }
+
         /* Container */
         .container {
-            max-width: 750px;
+            max-width: 780px;
             margin: 0 auto;
             padding: 3rem 2rem 6rem;
         }
@@ -65,25 +89,53 @@
         .logo {
             font-family: 'JetBrains Mono', monospace;
             font-size: 2rem;
-            color: var(--llizard-green);
+            color: var(--accent-primary);
             margin-bottom: 0.5rem;
             letter-spacing: 0.15em;
+            transition: color 0.4s var(--ease-smooth);
         }
 
         .tagline {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-style: italic;
-            color: var(--llizard-light);
-            opacity: 0.6;
+            color: var(--accent-secondary);
+            opacity: 0.75;
+            transition: color 0.4s var(--ease-smooth);
         }
 
         .subtitle {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.65rem;
-            color: var(--bone-dim);
-            opacity: 0.4;
+            color: var(--text-muted);
             margin-top: 1rem;
             letter-spacing: 0.2em;
+            transition: color 0.4s var(--ease-smooth);
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.85rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.3s var(--ease-smooth);
+            z-index: 100;
+            letter-spacing: 0.05em;
+            border-radius: 2px;
+        }
+
+        .theme-toggle:hover {
+            opacity: 1;
+            background: var(--accent-glow);
+            border-color: var(--accent-primary);
+            color: var(--accent-secondary);
         }
 
         /* Timeline */
@@ -102,11 +154,12 @@
             background: linear-gradient(
                 to bottom,
                 transparent,
-                var(--llizard-green) 5%,
-                var(--llizard-green) 95%,
+                var(--accent-primary) 5%,
+                var(--accent-primary) 95%,
                 transparent
             );
-            opacity: 0.3;
+            opacity: 0.35;
+            transition: background 0.4s var(--ease-smooth);
         }
 
         /* Day entry */
@@ -122,11 +175,12 @@
             position: absolute;
             left: -2rem;
             top: 0.5rem;
-            width: 7px;
-            height: 7px;
-            background: var(--llizard-green);
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
             border-radius: 50%;
-            transform: translateX(-3px);
+            transform: translateX(-3.5px);
+            transition: background 0.4s var(--ease-smooth);
         }
 
         .day-entry:nth-child(1) { animation-delay: 0.2s; }
@@ -134,6 +188,8 @@
         .day-entry:nth-child(3) { animation-delay: 0.4s; }
         .day-entry:nth-child(4) { animation-delay: 0.5s; }
         .day-entry:nth-child(5) { animation-delay: 0.6s; }
+        .day-entry:nth-child(6) { animation-delay: 0.7s; }
+        .day-entry:nth-child(7) { animation-delay: 0.8s; }
 
         .day-header {
             display: flex;
@@ -148,19 +204,21 @@
             font-size: 0.75rem;
             color: var(--amber);
             letter-spacing: 0.1em;
+            transition: color 0.4s var(--ease-smooth);
         }
 
         .day-title {
-            font-size: 1.3rem;
-            color: var(--bone-dim);
+            font-size: 1.35rem;
+            color: var(--text-primary);
             font-weight: 400;
+            transition: color 0.4s var(--ease-smooth);
         }
 
         .day-content {
-            font-size: 0.95rem;
-            line-height: 1.9;
-            color: var(--bone-dim);
-            opacity: 0.8;
+            font-size: 1rem;
+            line-height: 1.95;
+            color: var(--text-secondary);
+            transition: color 0.4s var(--ease-smooth);
         }
 
         .day-content p {
@@ -169,40 +227,44 @@
 
         /* Update items */
         .updates {
-            margin-top: 1rem;
+            margin-top: 1.25rem;
         }
 
         .update-item {
             display: flex;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            padding: 0.75rem 1rem;
-            background: var(--llizard-mid);
-            border-left: 2px solid var(--llizard-green);
-            transition: background 0.3s, transform 0.3s;
+            gap: 0.85rem;
+            margin-bottom: 0.85rem;
+            padding: 0.85rem 1.1rem;
+            background: var(--bg-card);
+            border-left: 2px solid var(--accent-primary);
+            transition: all 0.3s var(--ease-smooth);
+            border-radius: 0 3px 3px 0;
         }
 
         .update-item:hover {
-            background: var(--llizard-glow);
+            background: var(--accent-glow);
             transform: translateX(4px);
+            border-left-color: var(--accent-secondary);
         }
 
         .update-icon {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--llizard-light);
+            font-size: 0.75rem;
+            color: var(--accent-secondary);
             flex-shrink: 0;
             width: 1.5rem;
+            transition: color 0.4s var(--ease-smooth);
         }
 
         .update-text {
-            font-size: 0.85rem;
-            line-height: 1.6;
+            font-size: 0.9rem;
+            line-height: 1.7;
         }
 
         .update-text strong {
-            color: var(--llizard-light);
+            color: var(--accent-secondary);
             font-weight: 500;
+            transition: color 0.4s var(--ease-smooth);
         }
 
         /* Tags */
@@ -210,18 +272,25 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
-            margin-top: 1rem;
+            margin-top: 1.25rem;
         }
 
         .tag {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.55rem;
-            color: var(--llizard-light);
+            font-size: 0.6rem;
+            color: var(--accent-secondary);
             background: transparent;
-            padding: 0.3rem 0.6rem;
-            border: 1px solid var(--llizard-green);
-            opacity: 0.5;
+            padding: 0.35rem 0.65rem;
+            border: 1px solid var(--border-color);
+            opacity: 0.65;
             letter-spacing: 0.05em;
+            border-radius: 2px;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .tag:hover {
+            opacity: 1;
+            border-color: var(--accent-primary);
         }
 
         /* Return link */
@@ -231,16 +300,17 @@
             left: 1.5rem;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.7rem;
-            color: var(--llizard-light);
+            color: var(--text-muted);
             text-decoration: none;
-            opacity: 0.3;
-            transition: opacity 0.5s;
+            opacity: 0.5;
+            transition: all 0.4s var(--ease-smooth);
             z-index: 100;
             letter-spacing: 0.05em;
         }
 
         .return-link:hover {
-            opacity: 0.8;
+            opacity: 1;
+            color: var(--accent-secondary);
         }
 
         /* Stillness message */
@@ -249,22 +319,27 @@
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-style: italic;
-            color: var(--llizard-light);
+            color: var(--accent-secondary);
             opacity: 0;
-            transition: opacity 2s var(--ease-smooth);
+            transition: opacity 2s var(--ease-smooth), color 0.4s var(--ease-smooth);
             pointer-events: none;
         }
 
         .stillness-message.visible {
-            opacity: 0.5;
+            opacity: 0.55;
         }
 
         /* Decorative circuit lines */
         .circuit-line {
             position: fixed;
-            background: var(--llizard-green);
+            background: var(--accent-primary);
+            opacity: 0.06;
+            transition: background 0.4s var(--ease-smooth);
+        }
+
+        [data-theme="day"] .circuit-line {
             opacity: 0.08;
         }
 
@@ -275,12 +350,22 @@
         .circuit-2 { bottom: 25%; left: 3%; }
         .circuit-3 { top: 45%; right: 8%; }
 
+        /* Note/aside style */
+        .note {
+            margin-top: 1.5rem;
+            font-style: italic;
+            opacity: 0.75;
+            padding-left: 1rem;
+            border-left: 2px solid var(--border-color);
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             .container { padding: 2rem 1.5rem 4rem; }
             .timeline { padding-left: 1.5rem; }
             .day-entry::before { left: -1.5rem; }
             .day-header { flex-direction: column; gap: 0.25rem; }
+            .theme-toggle { top: auto; bottom: 1.5rem; right: 1.5rem; }
         }
     </style>
 </head>
@@ -292,6 +377,7 @@
     <div class="circuit-line circuit-h circuit-3"></div>
 
     <a href="index.html" class="return-link">return to projects</a>
+    <button class="theme-toggle" id="themeToggle">night</button>
 
     <div class="container">
         <header class="header">
@@ -301,6 +387,61 @@
         </header>
 
         <div class="timeline">
+
+            <!-- January 23, 2025 -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.23</span>
+                    <h2 class="day-title">The arena learns to fight back</h2>
+                </div>
+                <div class="day-content">
+                    <p>Six new creatures enter the arena, each with their own philosophy of combat. The Hornet keeps its distance and draws lines of fire. The Spinner hides its eye until the storm passes. The Mirror asks: which one is real? The bullet hell has arrived.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Hornet enemy</strong> (Wave 8) - approaches to 250 units, stops, charges a laser for 1.5s with visible warning line, then fires a powerful beam that stays on course. Wasp-shaped with wings and stripes.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Spinner enemy</strong> (Wave 12) - fires spiral bullet patterns from rotating spokes. Only vulnerable when its eye opens between barrages. Classic shmup design.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Mirror enemy</strong> (Wave 13) - creates decoy copies of itself. Only the real one takes damage. Briefly reveals its true form (golden glow) after splitting.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Shielder enemy</strong> (Wave 14) - carries a rotating energy shield that blocks frontal attacks. Must be hit from behind. Performs charge attacks when close.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Bomber enemy</strong> (Wave 16) - drops clusters of delayed explosive mines. Stunned and vulnerable briefly after each drop. Mines blink faster as detonation approaches.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Phaser enemy</strong> (Wave 18) - phases in and out of reality. Only damageable when visible. Teleports near player and fires bullet bursts when phasing in. Ghost-like translucent form.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Enemy bullet system</strong> - new projectile pool for bullet hell patterns. Enemy bullets have glowing cores and damage player on contact.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Mine system</strong> - timed explosives with visual warning radius. Spiky appearance, blinking indicator accelerates before boom.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">Victory condition added: reach level 20 to win. Lifesteal nerfed with exponential dropoff - raw 50% becomes ~15% effective. The endgame now has teeth.</p>
+
+                    <div class="tags">
+                        <span class="tag">llzsurvivors</span>
+                        <span class="tag">bullet-hell</span>
+                        <span class="tag">enemies</span>
+                        <span class="tag">balance</span>
+                    </div>
+                </div>
+            </article>
 
             <!-- January 22, 2025 (evening) -->
             <article class="day-entry">
@@ -330,7 +471,7 @@
                         </div>
                     </div>
 
-                    <p style="margin-top: 1.5rem; font-style: italic; opacity: 0.7;">18 plugins now live in the llizardOS resources - five newcomers: bejeweled, llzsurvivors, media_channels, menu_sorter, plugin_manager.</p>
+                    <p class="note">18 plugins now live in the llizardOS resources - five newcomers: bejeweled, llzsurvivors, media_channels, menu_sorter, plugin_manager.</p>
 
                     <div class="tags">
                         <span class="tag">llzsurvivors</span>
@@ -366,7 +507,7 @@
                         </div>
                     </div>
 
-                    <p style="margin-top: 1.5rem; font-style: italic; opacity: 0.7;">Documentation updated across all repositories - SDK, Mercury, Janus, and LlizardOS now have comprehensive READMEs.</p>
+                    <p class="note">Documentation updated across all repositories - SDK, Mercury, Janus, and LlizardOS now have comprehensive READMEs.</p>
 
                     <div class="tags">
                         <span class="tag">sdk</span>
@@ -487,13 +628,44 @@
     <div class="stillness-message" id="stillnessMessage"></div>
 
     <script>
+        // Theme management with cookies
+        const themeToggle = document.getElementById('themeToggle');
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        function setCookie(name, value, days = 365) {
+            const expires = new Date(Date.now() + days * 864e5).toUTCString();
+            document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            themeToggle.textContent = theme === 'day' ? 'day' : 'night';
+            setCookie('fieldnotes-theme', theme);
+        }
+
+        // Initialize theme from cookie or default to night
+        const savedTheme = getCookie('fieldnotes-theme') || 'night';
+        setTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            setTheme(currentTheme === 'day' ? 'night' : 'day');
+        });
+
         // Stillness messages
         const messages = [
             'the code grows in the quiet',
             'each commit, a small evolution',
             'cold-blooded progress',
             'the log remembers',
-            'building in the margins of the day'
+            'building in the margins of the day',
+            'the arena never sleeps'
         ];
 
         let lastActivity = Date.now();
@@ -526,8 +698,8 @@
         checkStillness();
 
         // Console
-        console.log('%cfield notes', 'font-size: 14px; color: #4a7c59; font-weight: 300;');
-        console.log('%cobservations from the llizard ecosystem', 'font-size: 10px; color: #86b398; font-style: italic;');
+        console.log('%cfield notes', 'font-size: 14px; color: #5a9b6e; font-weight: 300;');
+        console.log('%cobservations from the llizard ecosystem', 'font-size: 10px; color: #7ec492; font-style: italic;');
 
         // Right-click
         document.addEventListener('contextmenu', (e) => {
@@ -535,6 +707,14 @@
             stillnessMessage.textContent = 'the work continues';
             stillnessMessage.classList.add('visible');
             setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+
+        // Keyboard shortcut for theme toggle
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'd' && !e.ctrlKey && !e.metaKey) {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                setTheme(currentTheme === 'day' ? 'night' : 'day');
+            }
         });
     </script>
 </body>
