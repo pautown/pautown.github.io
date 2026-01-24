@@ -388,6 +388,90 @@
 
         <div class="timeline">
 
+            <!-- January 24, 2025 - The Arena Evolves -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.24</span>
+                    <h2 class="day-title">The arena learns who you are</h2>
+                </div>
+                <div class="day-content">
+                    <p>LLZ Survivors grows a soul. Five warrior classes step into the arena, each with their own philosophy of survival. The upgrade screen becomes a shop where choices linger. Champions emerge from the horde with golden halos and dangerous gifts. The spatial grid learns to see, and the engine breathes easier.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Class selection system</strong> - five starting classes with unique stats. Warrior (130 HP, 15% armor), Scout (fast, +25% XP), Tank (180 HP, slow, 25% armor), Mage (60 HP, +40% XP, magic bonus), Balanced (classic mode). Carousel UI with stat previews.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Multi-upgrade shop</strong> - level-up screen transformed into a point-spending session. Buy multiple upgrades, see "SOLD OUT" on purchased cards, confirm when done. No more forced single choices.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Champion enemies</strong> - 5% of enemies after wave 3 spawn as Champions with random affixes. Swift (+50% speed), Vampiric (regenerates), Armored (50% DR), Splitter (spawns copies on death). Golden glow, 2.5x XP reward.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Spatial grid optimization</strong> - FindNearestEnemyGrid() replaces O(n) loops with grid cell queries. Melee spin and chain lightning now target through the grid. The engine runs lighter.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Enemy AI refactor</strong> - 200-line switch statement dissolved into function pointer dispatch. Each enemy type gets its own AI function. Adding new creatures is now a single function and one table entry.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">~900 lines added. The class system flows: Menu → Class Select → Weapon Select → Arena. Each class's preferred weapon gets bonus damage.</p>
+
+                    <div class="tags">
+                        <span class="tag">llzsurvivors</span>
+                        <span class="tag">classes</span>
+                        <span class="tag">champions</span>
+                        <span class="tag">optimization</span>
+                        <span class="tag">architecture</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- January 24, 2025 - Risk and Reward -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.24</span>
+                    <h2 class="day-title">The arena rewards the bold</h2>
+                </div>
+                <div class="day-content">
+                    <p>New systems emerge that reward aggression and punish complacency. Kill milestones mark your journey with permanent buffs. Danger zones bloom across the battlefield - step inside for bonus XP, pay with your health. The combo system learns to count higher, and each tier brings new power.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Kill milestone rewards</strong> - eight thresholds (50 to 2000 kills) with unique rewards. FIRST BLOOD heals, CENTURION grants upgrade points, EXTERMINATOR nukes the screen. Progress bar shows kills to next milestone.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Danger zones</strong> - hazardous areas spawn every 25 seconds after wave 2. Fire (2x XP, burns), Electric (1.75x XP, shocks), Slow (1.5x XP, drags). 3-second warning, 15-second duration, visible on minimap.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Combo tier system</strong> - seven tiers from Nice (5 kills) to GODLIKE (100+). Each tier adds XP bonus (up to 2x) and damage bonus (up to 30%). 2.5-second timeout keeps the pressure on.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Draw call optimizations</strong> - danger glow uses gradient rectangles (140 → 4 calls), enemy angles cached (no redundant atan2f), shielder arcs halved, minimap uses squared distance, particle system early-exits when empty.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">~850 more lines. Total survivors codebase now exceeds 7,000 lines. The CarThing's Cortex-A7 breathes easier with every optimization.</p>
+
+                    <div class="tags">
+                        <span class="tag">llzsurvivors</span>
+                        <span class="tag">milestones</span>
+                        <span class="tag">danger-zones</span>
+                        <span class="tag">combo</span>
+                        <span class="tag">performance</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 23, 2025 - Release Day -->
             <article class="day-entry">
                 <div class="day-header">
