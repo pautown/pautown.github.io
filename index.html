@@ -282,6 +282,10 @@
         .fragment[data-page="gary"] { background: linear-gradient(135deg, var(--paper) 0%, var(--amber-soft) 30%, var(--bone-dark) 70%, var(--slate-light) 100%); }
         .fragment[data-page="gary"] .fragment-glyph { font-family: 'JetBrains Mono', monospace; }
         .fragment[data-page="gary"] .fragment-whisper { color: var(--amber-deep); }
+        .fragment[data-page="games/survivors/index"] { background: linear-gradient(135deg, #0a1520 0%, #00c8c8 20%, #1a3040 60%, #00a0a0 100%); }
+        .fragment[data-page="games/survivors/index"] .fragment-glyph { color: #00ffff; text-shadow: 0 0 10px #00c8c8; font-family: 'JetBrains Mono', monospace; }
+        .fragment[data-page="games/survivors/index"] .fragment-name { color: #b0e0e0; }
+        .fragment[data-page="games/survivors/index"] .fragment-whisper { color: #60a0a0; background: linear-gradient(transparent, #0a1520); }
 
         .fragment[data-page="shadow"] .fragment-name,
         .fragment[data-page="mystery"] .fragment-name,
@@ -856,7 +860,8 @@
             { page: 'honest', glyph: '|', name: 'honest', whisper: 'the cursor waits' },
             { page: 'castle', glyph: '◆', name: 'castle', whisper: 'built by no one' },
             { page: 'projects/index', glyph: '⚙', name: 'projects', whisper: 'things that were built' },
-            { page: 'books/index', glyph: '§', name: 'book', whisper: 'a year in pages' }
+            { page: 'books/index', glyph: '§', name: 'book', whisper: 'a year in pages' },
+            { page: 'games/survivors/index', glyph: '⚔', name: 'survivors', whisper: 'the arena awaits' }
         ];
 
         const STILLNESS_MESSAGES = [

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LLZ Survivors - townhaus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0f14;
+            --bg-card: #141c24;
+            --accent: #00c8c8;
+            --accent-dim: rgba(0, 200, 200, 0.3);
+            --text: #e8f0f0;
+            --text-dim: rgba(232, 240, 240, 0.6);
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+        }
+
+        .placeholder {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            box-shadow: 0 0 40px rgba(0, 200, 200, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .placeholder-text {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .features {
+            text-align: left;
+            background: rgba(0, 200, 200, 0.05);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin: 1.5rem 0;
+        }
+
+        .features h3 {
+            color: var(--accent);
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .features ul {
+            list-style: none;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+
+        .features li::before {
+            content: '◆ ';
+            color: var(--accent);
+            opacity: 0.6;
+        }
+
+        .build-info {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: left;
+            overflow-x: auto;
+        }
+
+        .build-info code {
+            display: block;
+            margin: 0.25rem 0;
+        }
+
+        .back-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.1; }
+            100% { transform: translateY(-10vh); opacity: 0; }
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 4s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 6s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 7s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 1s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 5s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 8s; }
+    </style>
+</head>
+<body>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <h1>LLZ Survivors</h1>
+        <p class="subtitle">a vampire survivors-style arena game</p>
+
+        <div class="placeholder">
+            <div class="placeholder-icon">⚔</div>
+            <p class="placeholder-text">
+                The web version is being prepared.<br>
+                The arena will open soon.
+            </p>
+
+            <div class="features">
+                <h3>Game Features</h3>
+                <ul>
+                    <li>5 Starting Classes - Warrior, Scout, Tank, Mage, Balanced</li>
+                    <li>9 Weapons with branching skill trees</li>
+                    <li>13 Enemy types with unique AI and attack patterns</li>
+                    <li>Champion enemies with special affixes</li>
+                    <li>Kill milestones with permanent rewards</li>
+                    <li>Danger zones for risk/reward gameplay</li>
+                    <li>7-tier combo system with escalating bonuses</li>
+                    <li>Multi-upgrade shop at level-up</li>
+                </ul>
+            </div>
+
+            <div class="build-info">
+                <strong># To build the web version:</strong>
+                <code>cd llizardgui-host/plugins_src/llzsurvivors/web</code>
+                <code>./build_and_deploy.sh</code>
+                <code></code>
+                <strong># Requires Emscripten SDK</strong>
+            </div>
+        </div>
+
+        <a href="../../index.html" class="back-link">← return to townhaus</a>
+    </div>
+</body>
+</html>
