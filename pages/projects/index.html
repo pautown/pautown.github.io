@@ -322,6 +322,28 @@
             background: linear-gradient(transparent, #0a0f10);
         }
 
+        /* Announcements (birthday/release) styling */
+        .project[data-project="announcements"] {
+            background: linear-gradient(135deg, var(--paper) 0%, #1a1220 40%, #0f0a14 100%);
+        }
+
+        .project[data-project="announcements"] .project-glyph {
+            color: #c87cdb;
+        }
+
+        .project[data-project="announcements"] .project-name {
+            color: #e8a0f0;
+        }
+
+        .project[data-project="announcements"] .project-description {
+            color: #d090e0;
+        }
+
+        .project[data-project="announcements"] .project-whisper {
+            color: #c87cdb;
+            background: linear-gradient(transparent, #0f0a14);
+        }
+
         /* Return link */
         .return-link {
             position: fixed;
@@ -439,6 +461,12 @@
             <span class="project-name">Field Notes</span>
             <span class="project-description">development log<br>daily observations from the ecosystem</span>
             <span class="project-whisper">the code grows in the quiet</span>
+        </a>
+        <a href="announcements.html" class="project" data-project="announcements" style="--delay: 0.8s;">
+            <span class="project-glyph">&#127874;</span>
+            <span class="project-name">Announcements</span>
+            <span class="project-description">releases and milestones<br>fukai sake edition is live</span>
+            <span class="project-whisper">celebrate the small things</span>
         </a>
     </div>
 

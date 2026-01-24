@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements - llizard ecosystem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0a14;
+            --bg-secondary: #1a1220;
+            --bg-card: #221828;
+            --accent-primary: #c87cdb;
+            --accent-secondary: #e8a0f0;
+            --accent-gold: #e8c060;
+            --accent-glow: rgba(200, 124, 219, 0.15);
+            --text-primary: #f0e8f4;
+            --text-secondary: #d0c0d8;
+            --text-muted: rgba(208, 192, 216, 0.65);
+            --border-color: rgba(200, 124, 219, 0.25);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --confetti-1: #e88a9c;
+            --confetti-2: #8ae8c4;
+            --confetti-3: #e8d08a;
+            --confetti-4: #8ab8e8;
+            --confetti-5: #c8a0e8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-secondary);
+            overflow-x: hidden;
+        }
+
+        /* Grain texture */
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Confetti particles */
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            opacity: 0;
+            pointer-events: none;
+            animation: confettiFall var(--dur, 12s) linear infinite;
+            animation-delay: var(--del, 0s);
+            left: var(--x, 50%);
+            z-index: 5;
+        }
+
+        .confetti-1 { background: var(--confetti-1); border-radius: 50%; }
+        .confetti-2 { background: var(--confetti-2); transform: rotate(45deg); }
+        .confetti-3 { background: var(--confetti-3); border-radius: 2px; }
+        .confetti-4 { background: var(--confetti-4); border-radius: 50%; width: 6px; height: 6px; }
+        .confetti-5 { background: var(--confetti-5); transform: rotate(30deg); width: 10px; height: 4px; }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.7; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Sparkle effect */
+        .sparkle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            animation: sparkle var(--dur, 3s) ease-in-out infinite;
+            animation-delay: var(--del, 0s);
+            left: var(--x, 50%);
+            top: var(--y, 50%);
+            z-index: 4;
+            box-shadow: 0 0 6px var(--accent-gold);
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 2rem 6rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 1.5s var(--ease-smooth) forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .birthday-emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.2rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--accent-secondary);
+            opacity: 0.85;
+        }
+
+        .edition {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+            margin-top: 0.75rem;
+            letter-spacing: 0.15em;
+            opacity: 0.9;
+        }
+
+        .edition-jp {
+            font-size: 1rem;
+            margin-left: 0.5rem;
+            opacity: 0.7;
+        }
+
+        /* Announcement cards */
+        .announcement {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideIn 0.8s var(--ease-smooth) forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .announcement::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--confetti-1), var(--confetti-2), var(--confetti-3), var(--confetti-4), var(--confetti-5));
+        }
+
+        .announcement:nth-child(1) { animation-delay: 0.2s; }
+        .announcement:nth-child(2) { animation-delay: 0.4s; }
+        .announcement:nth-child(3) { animation-delay: 0.6s; }
+        .announcement:nth-child(4) { animation-delay: 0.8s; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .announcement-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .announcement-icon {
+            font-size: 1.8rem;
+        }
+
+        .announcement-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+        }
+
+        .announcement-date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+            letter-spacing: 0.1em;
+            margin-left: auto;
+        }
+
+        .announcement-content {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: var(--text-secondary);
+        }
+
+        .announcement-content p {
+            margin-bottom: 1rem;
+        }
+
+        .announcement-content strong {
+            color: var(--accent-secondary);
+            font-weight: 500;
+        }
+
+        /* Links */
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s var(--ease-smooth);
+            letter-spacing: 0.03em;
+        }
+
+        .link-btn:hover {
+            background: var(--accent-glow);
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(200, 124, 219, 0.2);
+        }
+
+        .link-btn .icon {
+            font-size: 1rem;
+        }
+
+        /* Feature list */
+        .features {
+            margin-top: 1.25rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .feature {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .feature-icon {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Tech tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1.25rem;
+        }
+
+        .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--accent-secondary);
+            background: transparent;
+            padding: 0.3rem 0.6rem;
+            border: 1px solid var(--border-color);
+            opacity: 0.7;
+            letter-spacing: 0.05em;
+            border-radius: 2px;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .tag:hover {
+            opacity: 1;
+            border-color: var(--accent-primary);
+        }
+
+        /* Community section */
+        .community-highlight {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(200, 124, 219, 0.1) 100%);
+            border: 1px solid var(--accent-primary);
+        }
+
+        .quote {
+            font-style: italic;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .quote::before {
+            content: '"';
+            position: absolute;
+            top: -0.5rem;
+            left: 0.5rem;
+            font-size: 3rem;
+            color: var(--accent-primary);
+            opacity: 0.3;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* Return link */
+        .return-link {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            opacity: 0.5;
+            transition: all 0.4s var(--ease-smooth);
+            z-index: 100;
+            letter-spacing: 0.05em;
+        }
+
+        .return-link:hover {
+            opacity: 1;
+            color: var(--accent-secondary);
+        }
+
+        /* Stillness message */
+        .stillness-message {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--accent-secondary);
+            opacity: 0;
+            transition: opacity 2s var(--ease-smooth);
+            pointer-events: none;
+        }
+
+        .stillness-message.visible {
+            opacity: 0.55;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { padding: 2rem 1.5rem 4rem; }
+            .announcement-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .announcement-date { margin-left: 0; margin-top: 0.5rem; }
+            .links { flex-direction: column; }
+            .link-btn { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <!-- Confetti -->
+    <div class="confetti confetti-1" style="--x: 10%; --dur: 10s; --del: 0s;"></div>
+    <div class="confetti confetti-2" style="--x: 25%; --dur: 14s; --del: 2s;"></div>
+    <div class="confetti confetti-3" style="--x: 40%; --dur: 11s; --del: 4s;"></div>
+    <div class="confetti confetti-4" style="--x: 55%; --dur: 13s; --del: 1s;"></div>
+    <div class="confetti confetti-5" style="--x: 70%; --dur: 12s; --del: 3s;"></div>
+    <div class="confetti confetti-1" style="--x: 85%; --dur: 15s; --del: 5s;"></div>
+    <div class="confetti confetti-3" style="--x: 5%; --dur: 11s; --del: 6s;"></div>
+    <div class="confetti confetti-2" style="--x: 95%; --dur: 13s; --del: 7s;"></div>
+
+    <!-- Sparkles -->
+    <div class="sparkle" style="--x: 15%; --y: 20%; --dur: 2.5s; --del: 0s;"></div>
+    <div class="sparkle" style="--x: 80%; --y: 15%; --dur: 3s; --del: 1s;"></div>
+    <div class="sparkle" style="--x: 60%; --y: 70%; --dur: 2.8s; --del: 0.5s;"></div>
+    <div class="sparkle" style="--x: 25%; --y: 80%; --dur: 3.2s; --del: 1.5s;"></div>
+    <div class="sparkle" style="--x: 90%; --y: 50%; --dur: 2.6s; --del: 2s;"></div>
+
+    <a href="index.html" class="return-link">return to projects</a>
+
+    <div class="container">
+        <header class="header">
+            <div class="birthday-emoji">🎂</div>
+            <div class="logo">announcements</div>
+            <p class="tagline">the llizard ecosystem emerges</p>
+            <p class="edition">FUKAI SAKE EDITION <span class="edition-jp">深い</span></p>
+        </header>
+
+        <div class="announcements">
+            <!-- Main Release Announcement -->
+            <article class="announcement community-highlight">
+                <div class="announcement-header">
+                    <span class="announcement-icon">🎉</span>
+                    <h2 class="announcement-title">Open Beta Release</h2>
+                    <span class="announcement-date">2025.01.23</span>
+                </div>
+                <div class="announcement-content">
+                    <p>The llizardOS ecosystem is now public. After months of development, the <strong>Fukai Sake Edition</strong> brings a complete, standalone media controller experience to your Spotify Car Thing.</p>
+
+                    <p>This release includes the full system image, the Android companion app, and all 18 built-in plugins. It's deeply functional and beautiful - not quite perfect, but ready for the world.</p>
+
+                    <div class="features">
+                        <div class="feature">
+                            <span class="feature-icon">+</span>
+                            <span class="feature-text"><strong>LlizardOS</strong> - Custom Void Linux firmware with native raylib graphics on DRM</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">+</span>
+                            <span class="feature-text"><strong>Janus</strong> - Android BLE companion app that bridges any media source to your Car Thing</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">+</span>
+                            <span class="feature-text"><strong>Mercury</strong> - Go BLE daemon that syncs media state to Redis</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">+</span>
+                            <span class="feature-text"><strong>18 Plugins</strong> - Media players, games, utilities, all running natively</span>
+                        </div>
+                    </div>
+
+                    <div class="links">
+                        <a href="https://github.com/pautown/llizardOS/releases/tag/open_beta" class="link-btn" target="_blank">
+                            <span class="icon">📦</span>
+                            LlizardOS Release
+                        </a>
+                        <a href="https://github.com/pautown/janus/releases/tag/open_beta" class="link-btn" target="_blank">
+                            <span class="icon">📱</span>
+                            Janus APK
+                        </a>
+                        <a href="https://github.com/pautown/mercury" class="link-btn" target="_blank">
+                            <span class="icon">⚡</span>
+                            Mercury Source
+                        </a>
+                    </div>
+
+                    <div class="tags">
+                        <span class="tag">void-linux</span>
+                        <span class="tag">raylib</span>
+                        <span class="tag">ble</span>
+                        <span class="tag">redis</span>
+                        <span class="tag">drm</span>
+                        <span class="tag">armv7</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- How It Works -->
+            <article class="announcement">
+                <div class="announcement-header">
+                    <span class="announcement-icon">🔧</span>
+                    <h2 class="announcement-title">How It All Works</h2>
+                </div>
+                <div class="announcement-content">
+                    <p>The system is composed of several components working in harmony:</p>
+
+                    <div class="features">
+                        <div class="feature">
+                            <span class="feature-icon">1</span>
+                            <span class="feature-text"><strong>Janus</strong> runs on your phone as a BLE GATT server, reading media state and broadcasting it over Bluetooth</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">2</span>
+                            <span class="feature-text"><strong>Mercury</strong> runs on the Car Thing, connecting to Janus and storing media state in Redis</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">3</span>
+                            <span class="feature-text"><strong>Llizard</strong> renders the GUI using raylib, reading from Redis and handling touch/button input</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">4</span>
+                            <span class="feature-text"><strong>Salamander</strong> plugins are loaded dynamically as .so files, extending functionality</span>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 1rem;">Control flows back the same way: button presses become Redis commands, Mercury forwards them to Janus, and Janus controls your phone's media playback.</p>
+                </div>
+            </article>
+
+            <!-- What's Included -->
+            <article class="announcement">
+                <div class="announcement-header">
+                    <span class="announcement-icon">🦎</span>
+                    <h2 class="announcement-title">18 Plugins Included</h2>
+                </div>
+                <div class="announcement-content">
+                    <p><strong>Media (5):</strong> Now Playing with 4 display modes, Lyrics with karaoke highlighting, Podcasts browser, Album Art Viewer, Media Channels switcher</p>
+
+                    <p><strong>Games (6):</strong> Jeweled (match-3), Survivors (arena survival), Swipe 2048, Blocks (tetris), Alchemy (element merging), Millionaire (trivia)</p>
+
+                    <p><strong>Utilities (7):</strong> Clock with multiple styles, Settings, Redis Status (debug panel), Flashcards, Menu Sorter, Plugin Manager, Album Art Viewer</p>
+
+                    <div class="tags">
+                        <span class="tag">nowplaying</span>
+                        <span class="tag">lyrics</span>
+                        <span class="tag">podcasts</span>
+                        <span class="tag">survivors</span>
+                        <span class="tag">jeweled</span>
+                        <span class="tag">alchemy</span>
+                        <span class="tag">millionaire</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Community -->
+            <article class="announcement">
+                <div class="announcement-header">
+                    <span class="announcement-icon">💬</span>
+                    <h2 class="announcement-title">Join the Community</h2>
+                </div>
+                <div class="announcement-content">
+                    <p>The llizardOS subreddit is now live. Share your setup, report bugs, request features, or just hang out with fellow Car Thing enthusiasts.</p>
+
+                    <div class="quote">
+                        It's not quite perfect but it is deeply functional and beautiful.
+                    </div>
+
+                    <p>iOS support is coming. The BLE implementation was designed with Apple's requirements in mind - once the Android version is stable, iOS will follow.</p>
+
+                    <div class="links">
+                        <a href="https://reddit.com/r/llizardOS" class="link-btn" target="_blank">
+                            <span class="icon">🔴</span>
+                            r/llizardOS
+                        </a>
+                        <a href="https://github.com/pautown/llizardOS" class="link-btn" target="_blank">
+                            <span class="icon">⭐</span>
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- spotSDK Preview -->
+            <article class="announcement">
+                <div class="announcement-header">
+                    <span class="announcement-icon">🔮</span>
+                    <h2 class="announcement-title">Coming Soon: spotSDK</h2>
+                </div>
+                <div class="announcement-content">
+                    <p>A new project is taking shape: <strong>spotSDK</strong> - a collection of service-specific SDKs for streaming platforms. Spotify, Apple Music, YouTube Music, and more.</p>
+
+                    <p>The goal is to provide unified, well-documented APIs for media control across different services, making it easier for developers to build media applications that work with any platform.</p>
+
+                    <div class="features">
+                        <div class="feature">
+                            <span class="feature-icon">~</span>
+                            <span class="feature-text">Spotify API integration with playback control and metadata</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">~</span>
+                            <span class="feature-text">Apple Music support (in planning)</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">~</span>
+                            <span class="feature-text">YouTube Music integration</span>
+                        </div>
+                    </div>
+
+                    <div class="tags">
+                        <span class="tag">in-development</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">apple-music</span>
+                        <span class="tag">youtube-music</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <div class="stillness-message" id="stillnessMessage"></div>
+
+    <script>
+        // Stillness messages
+        const messages = [
+            'the ecosystem grows',
+            'from car thing to something more',
+            'deeply functional, beautifully simple',
+            'cold blooded efficiency',
+            'built with intention',
+            'every commit a small celebration'
+        ];
+
+        let lastActivity = Date.now();
+        let stillnessShown = false;
+        const stillnessMessage = document.getElementById('stillnessMessage');
+
+        function checkStillness() {
+            const elapsed = Date.now() - lastActivity;
+
+            if (elapsed > 10000 && !stillnessShown) {
+                stillnessMessage.textContent = messages[Math.floor(Math.random() * messages.length)];
+                stillnessMessage.classList.add('visible');
+                stillnessShown = true;
+            }
+
+            requestAnimationFrame(checkStillness);
+        }
+
+        function resetStillness() {
+            lastActivity = Date.now();
+            if (stillnessShown) {
+                stillnessMessage.classList.remove('visible');
+                stillnessShown = false;
+            }
+        }
+
+        document.addEventListener('mousemove', resetStillness, { passive: true });
+        document.addEventListener('scroll', resetStillness, { passive: true });
+        document.addEventListener('keydown', resetStillness);
+        checkStillness();
+
+        // Console
+        console.log('%cannouncements', 'font-size: 14px; color: #c87cdb; font-weight: 300;');
+        console.log('%cthe llizard ecosystem emerges', 'font-size: 10px; color: #e8a0f0; font-style: italic;');
+        console.log('%c🎂 fukai sake edition', 'font-size: 10px; color: #e8c060;');
+
+        // Right-click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            stillnessMessage.textContent = 'celebrate the small things';
+            stillnessMessage.classList.add('visible');
+            setTimeout(() => stillnessMessage.classList.remove('visible'), 3000);
+        });
+    </script>
+</body>
+</html>
