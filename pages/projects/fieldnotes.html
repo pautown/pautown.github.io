@@ -388,6 +388,50 @@
 
         <div class="timeline">
 
+            <!-- January 24, 2025 - Spotify Integration -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.24</span>
+                    <h2 class="day-title">Janus learns to speak Spotify</h2>
+                </div>
+                <div class="day-content">
+                    <p>The Android companion app grows a new voice. A full Spotify integration page emerges - OAuth flows, library statistics, playback controls, and a queue viewer that lets you skip through your upcoming tracks. The spotSDK learns new endpoints, and the BLE bridge prepares to carry richer data.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Spotify Auth Page</strong> - complete OAuth 2.0 PKCE flow with configurable Client ID. Paste your credentials, login with Spotify, see your profile with avatar, premium status, and follower count.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Library statistics</strong> - saved tracks, albums, playlists, and followed artists displayed with refresh button. Currently playing and recently played tracks shown in real-time.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Playback controls</strong> - shuffle toggle (off/on) and repeat cycle (off/all/one). State syncs with Spotify and persists across app restarts.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Queue viewer</strong> - shows up to 10 upcoming tracks with album art, artist, and duration. Tap any track to skip forward through the queue (calls skip-to-next repeatedly to preserve queue context).</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>spotSDK endpoints</strong> - added playback state (GET /me/player), shuffle/repeat toggles, play endpoint, skip-to-next, and queue retrieval. user-follow-read scope for artist following.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The queue skip uses Spotify's skip-to-next API repeatedly rather than playing tracks directly. This preserves the queue context - after the skipped-to track finishes, playback continues naturally.</p>
+
+                    <div class="tags">
+                        <span class="tag">janus</span>
+                        <span class="tag">spotsdk</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">oauth</span>
+                        <span class="tag">playback</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 24, 2025 - The Arena Evolves -->
             <article class="day-entry">
                 <div class="day-header">
