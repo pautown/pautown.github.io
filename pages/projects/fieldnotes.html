@@ -388,6 +388,45 @@
 
         <div class="timeline">
 
+            <!-- January 25, 2025 - Queue Polish -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.25</span>
+                    <h2 class="day-title">The queue learns to skip gracefully</h2>
+                </div>
+                <div class="day-content">
+                    <p>When you skip through a queue of ten songs to reach the eleventh, you don't want to see nine flashing album covers along the way. The BLE bridge learns discretion - intermediate tracks pass in silence, only the destination announces itself.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Track change detection</strong> - the Queue plugin now polls media state every 500ms. When the track title changes, a fresh queue is requested automatically.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>"Now Playing" stays current</strong> - the queue's header item syncs directly from Redis media state, independent of queue API responses. No stale data.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Suppressed intermediate updates</strong> - during multi-skip queue jumps, MediaControllerManager silences metadata broadcasts. Only the final destination track triggers BLE notifications.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Skip callback system</strong> - skipToPositionLocal() now accepts an onBeforeSkip callback with (skipNumber, totalSkips, isFinalSkip). Callers control suppression timing.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The pattern: suppress before intermediate skips, enable before the final one, always re-enable after completion (success or error). The user sees one smooth transition, not a slideshow.</p>
+
+                    <div class="tags">
+                        <span class="tag">queue</span>
+                        <span class="tag">janus</span>
+                        <span class="tag">ble</span>
+                        <span class="tag">polish</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 24, 2025 - Spotify Integration -->
             <article class="day-entry">
                 <div class="day-header">
