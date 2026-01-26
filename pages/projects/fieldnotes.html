@@ -388,6 +388,55 @@
 
         <div class="timeline">
 
+            <!-- January 26, 2025 - Albums Plugin -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.26</span>
+                    <h2 class="day-title">The library comes to the llizard</h2>
+                </div>
+                <div class="day-content">
+                    <p>Your Spotify library now lives on the CarThing. A new Albums plugin presents your saved albums in a smooth carousel, album art floating past like vinyl in a crate. Select one and the music starts - the plugin bows out, Now Playing takes the stage. The whole stack learned new tricks to make it happen.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Albums plugin</strong> - carousel UI for browsing saved Spotify albums. Spring-based physics scrolling, album art from dual cache directories, auto-navigation to Now Playing after selection.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>SDK library API</strong> - new functions for fetching and displaying Spotify library data. LlzMediaRequestLibraryAlbums, LlzMediaGetLibraryAlbums, LlzMediaPlaySpotifyUri. The host speaks Spotify now.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>BLE response types 7-11</strong> - the Go bridge learns five new languages. Spotify state, library overview, track lists, album lists, playlist lists. Each reassembled from chunks, stored in Redis.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Separate preview cache</strong> - library album art (150×150) lives in /var/mediadash/album_art_previews. Now playing art (250×250) stays in album_art_cache. The Albums plugin checks both.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Auto token refresh</strong> - Janus no longer forgets its Spotify credentials. SpotifyLibraryManager refreshes expired tokens automatically. Play commands work without visiting the app first.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>play_uri command</strong> - BLE can now start any Spotify content. Albums, playlists, individual tracks - send the URI, music plays. The CarThing becomes a remote.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The full vertical: CarThing requests albums → Go bridge sends BLE command → Janus fetches from Spotify API → chunks flow back → Redis stores → C plugin displays → user selects → play_uri command → music. Each layer trusts the next.</p>
+
+                    <div class="tags">
+                        <span class="tag">albums</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">sdk</span>
+                        <span class="tag">mercury</span>
+                        <span class="tag">janus</span>
+                        <span class="tag">ble</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 25, 2025 - Queue Polish -->
             <article class="day-entry">
                 <div class="day-header">
