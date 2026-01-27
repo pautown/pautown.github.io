@@ -388,6 +388,50 @@
 
         <div class="timeline">
 
+            <!-- January 27, 2025 - View Album/Artist -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.27</span>
+                    <h2 class="day-title">The music card opens its doors</h2>
+                </div>
+                <div class="day-content">
+                    <p>Tap a song and the world behind it unfolds. Two new buttons appear beneath Now Playing when Spotify is the source - one for the album, one for the artist. Bottom sheets slide up with track listings, follower counts, genres, and top tracks. The data flows from Spotify's API through the SDK, through the controller, into modal surfaces that feel like opening a liner note.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>View Album sheet</strong> - album art, name, artists, release year, track count, label, and a full track listing with durations. The Spotify API's album endpoint finally has a home in the SDK.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>View Artist sheet</strong> - circular artist photo, follower count, genres, and top tracks with album art thumbnails. Two API calls combined into one coherent view.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>spotSDK endpoints</strong> - getAlbum, getArtist, getArtistTopTracks added to the API service. AlbumTracksWrapper model for the album's embedded track paging object.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>SpotifyPlaybackController</strong> learns fetchAlbumDetails and fetchArtistDetails - reusing the existing token infrastructure to serve the new sheets.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>MainViewModel</strong> extended with reactive detail state. Six new flows combined via chained combine operators, loading state properly reactive through the full chain.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The buttons only appear when spotifyAlbumId or spotifyArtistId are present in MediaState - invisible for non-Spotify sources. The bottom sheets use Coil for async image loading and Material 3's ModalBottomSheet with skip-partial-expand for full-height content.</p>
+
+                    <div class="tags">
+                        <span class="tag">janus</span>
+                        <span class="tag">spotsdk</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">bottom-sheets</span>
+                        <span class="tag">compose</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 26, 2025 - Albums Plugin -->
             <article class="day-entry">
                 <div class="day-header">
