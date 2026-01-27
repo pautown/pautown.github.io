@@ -388,6 +388,46 @@
 
         <div class="timeline">
 
+            <!-- January 27, 2025 - Mercury & Firmware Defaults -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.27</span>
+                    <h2 class="day-title">Mercury rises, the image remembers</h2>
+                </div>
+                <div class="day-content">
+                    <p>The BLE connection gets its own home. A new Mercury plugin surfaces as the face of the Bluetooth bridge - a pulsing orb that breathes when scanning, glows green when connected, and dims red when lost. Two buttons let you reconnect or restart the service without leaving the GUI. Meanwhile, the firmware learns to remember. Menu layout, plugin visibility, and sort order are now baked into the llizardOS image so new installs boot into a curated home screen instead of an alphabetical list of everything.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Mercury plugin</strong> - BLE connection status with a liquid metal aesthetic. Status orb pulses during scanning, holds steady when connected. Connect and Restart Service buttons with tap feedback and cooldown timers.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Firmware config defaults</strong> - plugin_visibility.ini, menu_sort_order.ini, and config.ini are now copied from the live CarThing and baked into the llizardOS build. New installs start with a curated menu layout.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Settings becomes the control panel</strong> - Plugin Manager and Menu Sorter are hidden from the main menu by default. They now live as launch buttons at the bottom of Settings, reached through LlzRequestOpenPlugin navigation.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>24 plugins rebuilt</strong> - full ARM binary refresh with 5 new .so files: albums, artists, mercury, queue, and spotify. The image build pipeline copies everything in one pass.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The Mercury orb draws with layered alpha circles - a soft outer glow, a solid core, and a clean inner ring for depth. No textures, just math and transparency. The config bake reads three .ini files from the device over SCP and installs them into /var/llizard/ during the rootfs build stage.</p>
+
+                    <div class="tags">
+                        <span class="tag">mercury</span>
+                        <span class="tag">ble</span>
+                        <span class="tag">llizardos</span>
+                        <span class="tag">firmware</span>
+                        <span class="tag">settings</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 27, 2025 - View Album/Artist -->
             <article class="day-entry">
                 <div class="day-header">
