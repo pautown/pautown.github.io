@@ -388,6 +388,51 @@
 
         <div class="timeline">
 
+            <!-- January 28, 2025 - Spotify OAuth & Compose Crash Fix -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.28</span>
+                    <h2 class="day-title">The handshake that kept dropping</h2>
+                </div>
+                <div class="day-content">
+                    <p>Spotify OAuth on Janus was a three-bug puzzle. First: two activities claimed the same redirect URI, so Android asked the user to choose between two identical "Janus" options - one that worked and one that didn't. Second: singleTask launch mode broke ActivityResult delivery, so a successful login killed the app. Third and strangest: Coil's crossfade animation on the profile picture corrupted Compose's internal layout tree during the activity resume after the browser redirect. The fix was an AsyncImage inside a stable Box with crossfade disabled - the green placeholder circle shows first, then the profile photo paints over it without Compose ever needing to swap nodes.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>OAuth redirect disambiguation</strong> - removed duplicate janus://spotify-callback intent-filter from MainActivity. Only AppAuth's RedirectUriReceiverActivity handles the redirect now. No more "Open with" dialog.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Activity launch mode</strong> - changed MainActivity from singleTask to singleTop. ActivityResult delivery works across the OAuth browser round-trip without collapsing the activity stack.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Compose LayoutNode crash</strong> - Coil's crossfade(true) on AsyncImage triggered an ArrayIndexOutOfBoundsException in MutableVector.add during node insertion. Fixed by wrapping the image in a stable Box container and disabling the Coil crossfade. The Compose tree never changes shape now - only the pixels inside the Box change.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>State update batching</strong> - fetchLibraryStats and checkSavedTracksStatus now collect all API results into local variables and emit a single StateFlow update instead of one per network response. Fewer recompositions, no more mid-layout mutations.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Crossfade transition</strong> - login, logged-in, and setup states now crossfade between each other in an isolated sub-composition, keeping the parent Column's node count stable.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The real lesson: Compose's layout tree is a living thing. You can't swap a dozen nodes into a Column while the Choreographer is mid-frame and expect the internal arrays to agree on their own length. Give the tree one stable shape and change what's painted inside it.</p>
+
+                    <div class="tags">
+                        <span class="tag">janus</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">oauth</span>
+                        <span class="tag">compose</span>
+                        <span class="tag">coil</span>
+                        <span class="tag">robustness</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 27, 2025 - Mercury Polish & Now Playing Actions -->
             <article class="day-entry">
                 <div class="day-header">
