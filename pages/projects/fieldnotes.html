@@ -388,6 +388,88 @@
 
         <div class="timeline">
 
+            <!-- January 27, 2025 - Mercury Polish & Now Playing Actions -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.27</span>
+                    <h2 class="day-title">The orb sharpens, the music card learns context</h2>
+                </div>
+                <div class="day-content">
+                    <p>Mercury sheds its prototype skin. The orb tightens, the buttons grow to fill the screen properly, and "Janus" replaces "Mercury" where the user looks - because the service is Mercury, but the companion it connects to is Janus. Meanwhile, Now Playing learns to think about what it's playing. Long-press the select button and two new doors appear: play this album, play this artist. The Albums and Artists plugins learn patience too - art loads one image at a time instead of stampeding the filesystem.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Mercury UI overhaul</strong> - buttons enlarged to proper touch targets, orb geometry cleaned up with tighter layering, status text reworded to reference Janus (the Android app the user actually interacts with).</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Play Album / Play Artist actions</strong> - Now Playing's context menu gains two new entries. Long-press select, choose "Play Album" or "Play Artist" to start the full album or artist radio via spotify: URI. Only appears when Spotify IDs are present in media state.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>spotifyAlbumId / spotifyArtistId</strong> - two new fields in LlzMediaState, fetched from Redis. The SDK now knows not just what's playing, but where it lives in the Spotify graph.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">~</span>
+                            <span class="update-text"><strong>Defensive lazy loading</strong> - Albums and Artists plugins gain a LoadState machine (INIT → REQUESTING → LOADED → EMPTY → ERROR). Art loads one image at a time with a 0.5s init delay. Bounds checking everywhere. No more crashes from racing the filesystem.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The staggered art loading matters on the Cortex-A7. Loading 20 album covers simultaneously would starve the render loop. One at a time keeps the carousel smooth while art fills in behind the user's gaze.</p>
+
+                    <div class="tags">
+                        <span class="tag">mercury</span>
+                        <span class="tag">nowplaying</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">albums</span>
+                        <span class="tag">artists</span>
+                        <span class="tag">robustness</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- January 26, 2025 - Artists Plugin & Spotify State -->
+            <article class="day-entry">
+                <div class="day-header">
+                    <span class="day-date">2025.01.26</span>
+                    <h2 class="day-title">The artists take the stage</h2>
+                </div>
+                <div class="day-content">
+                    <p>The Spotify library grows a second wing. Where albums scroll past as rectangles, artists arrive as circles - profile photos cropped round, names centered beneath. The carousel shares its physics with Albums but the aesthetic is its own. Select an artist and their top tracks shuffle into life. Deeper in the stack, the SDK learns to speak Spotify's language of shuffle, repeat, and like.</p>
+
+                    <div class="updates">
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Artists plugin</strong> - horizontal carousel of followed Spotify artists with circular profile cards. Displays name, primary genre, and follower count. Spring-based scrolling physics shared with Albums. Select to shuffle an artist's top tracks.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>Cursor-based pagination</strong> - Spotify's followed artists endpoint uses cursor pagination instead of offset. The SDK and BLE bridge handle the cursor handoff so the plugin just sees a flat list.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">★</span>
+                            <span class="update-text"><strong>Spotify playback state API</strong> - the SDK gains first-class shuffle, repeat, and like controls. LlzMediaToggleShuffle(), LlzMediaCycleRepeat(), LlzMediaLikeTrack(). State flows back through BLE into LlzMediaState fields.</span>
+                        </div>
+                        <div class="update-item">
+                            <span class="update-icon">+</span>
+                            <span class="update-text"><strong>SDK artist library API</strong> - LlzMediaRequestLibraryArtists and LlzMediaGetLibraryArtists join the library family. Artist data stored in Redis with the same chunked BLE transfer pattern as albums.</span>
+                        </div>
+                    </div>
+
+                    <p class="note">The circular artist cards use DrawCircle masking rather than texture manipulation - the source images are square, cropped visually at draw time. Cheaper than generating circular textures, and the spring physics keep the carousel feeling alive rather than mechanical.</p>
+
+                    <div class="tags">
+                        <span class="tag">artists</span>
+                        <span class="tag">spotify</span>
+                        <span class="tag">sdk</span>
+                        <span class="tag">playback</span>
+                        <span class="tag">ble</span>
+                        <span class="tag">library</span>
+                    </div>
+                </div>
+            </article>
+
             <!-- January 27, 2025 - Mercury & Firmware Defaults -->
             <article class="day-entry">
                 <div class="day-header">
